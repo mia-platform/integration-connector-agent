@@ -39,7 +39,7 @@ func NewRouter(env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App,
 
 	middlewareLog := glogrus.GetLogger(logrus.NewEntry(log))
 	app.Use(middleware.RequestMiddlewareLogger(middlewareLog, []string{"/-/"}))
-	statusRoutes(app, "data-connector-agent", utils.Version)
+	statusRoutes(app, "data-connector-agent", utils.ServiceVersionInformation())
 	if env.ServicePrefix != "" && env.ServicePrefix != "/" {
 		log.WithField("servicePrefix", env.ServicePrefix).Trace("applying service prefix")
 		app.Use(pprof.New(pprof.Config{Prefix: path.Clean(env.ServicePrefix)}))
