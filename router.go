@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"path"
 
-	"data-connector-agent/config"
+	"github.com/mia-platform/data-connector-agent/config"
 
 	swagger "github.com/davidebianchi/gswagger"
 	oasfiber "github.com/davidebianchi/gswagger/support/fiber"

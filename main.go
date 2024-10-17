@@ -22,7 +22,7 @@ import (
 	"syscall"
 	"time"
 
-	"data-connector-agent/config"
+	"github.com/mia-platform/data-connector-agent/config"
 
 	"github.com/caarlos0/env/v10"
 	"github.com/gofiber/fiber/v2"

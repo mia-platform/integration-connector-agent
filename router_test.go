@@ -21,7 +21,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"data-connector-agent/config"
+	"github.com/mia-platform/data-connector-agent/config"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus/hooks/test"

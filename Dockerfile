@@ -5,7 +5,7 @@ ARG TARGETPLATFORM
 
 WORKDIR /app
 
-COPY bin/${TARGETPLATFORM}/data-integration-agent .
+COPY bin/${TARGETPLATFORM}/data-connector-agent .
 COPY LICENSE .
 
 FROM scratch
@@ -18,4 +18,4 @@ COPY --from=builder /app /app
 # Use an unprivileged user.
 USER 1000
 
-CMD ["/app/data-integration-agent"]
+CMD ["/app/data-connector-agent"]
