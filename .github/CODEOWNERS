@@ -1,0 +1,2 @@
+# Actions must also be checked by security
+.github/workflows @mia-platform/sig-security

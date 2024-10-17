@@ -1,0 +1,46 @@
+{
+	"name": "Go",
+	"image": "golang:1.23.2",
+	"features": {
+		"ghcr.io/devcontainers/features/common-utils:2": {"username": "golang"},
+		"ghcr.io/devcontainers/features/go:1": {"version": "none", "golangciLintVersion": "1.61.0"},
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"moby": true,
+			"installDockerComposeSwitch": false
+		}
+	},
+	"runArgs": [
+		"--cap-add=SYS_PTRACE",
+		"--security-opt",
+		"seccomp=unconfined"
+	],
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"files.eol": "\n",
+				"files.insertFinalNewline": true,
+				"files.trimFinalNewlines": true,
+				"files.trimTrailingWhitespace": false,
+				"go.coverMode": "atomic",
+				"go.toolsManagement.checkForUpdates": "local",
+				"go.lintTool": "golangci-lint",
+				"go.useLanguageServer": true,
+				"go.gopath": "/go",
+				"go.buildFlags": [
+					"-tags=conformance,integration"
+				]
+			},
+			"extensions": [
+				"redhat.vscode-yaml",
+				"editorconfig.editorconfig",
+				"davidanson.vscode-markdownlint"
+			]
+		},
+		"codespaces": {
+			"openFiles": [
+				"README.md",
+				"CONTRIBUTING.md"
+			]
+		}
+	}
+}
