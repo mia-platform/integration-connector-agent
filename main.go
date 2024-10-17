@@ -22,7 +22,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mia-platform/data-connector-agent/config"
+	"github.com/mia-platform/data-connector-agent/internal/config"
+	"github.com/mia-platform/data-connector-agent/internal/router"
 
 	"github.com/caarlos0/env/v10"
 	"github.com/gofiber/fiber/v2"
@@ -48,7 +49,7 @@ func entrypoint(shutdown chan os.Signal) {
 		panic(err.Error())
 	}
 
-	app, err := setupRouter(envVar, log)
+	app, err := router.New(envVar, log)
 	if err != nil {
 		panic(err.Error())
 	}

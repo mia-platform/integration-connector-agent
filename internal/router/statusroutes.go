@@ -13,23 +13,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package router
 
 import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// StatusResponse type.
-type StatusResponse struct {
+// statusResponse type.
+type statusResponse struct {
 	Status  string `json:"status"`
 	Name    string `json:"name"`
 	Version string `json:"version"`
 }
 
-// StatusRoutes add status routes to router.
-func StatusRoutes(app *fiber.App, serviceName, serviceVersion string) {
+// statusRoutes add status routes to router.
+func statusRoutes(app *fiber.App, serviceName, serviceVersion string) {
 	app.Get("/-/healthz", func(c *fiber.Ctx) error {
-		status := StatusResponse{
+		status := statusResponse{
 			Status:  "OK",
 			Name:    serviceName,
 			Version: serviceVersion,
@@ -38,7 +38,7 @@ func StatusRoutes(app *fiber.App, serviceName, serviceVersion string) {
 	})
 
 	app.Get("/-/ready", func(c *fiber.Ctx) error {
-		status := StatusResponse{
+		status := statusResponse{
 			Status:  "OK",
 			Name:    serviceName,
 			Version: serviceVersion,
@@ -47,7 +47,7 @@ func StatusRoutes(app *fiber.App, serviceName, serviceVersion string) {
 	})
 
 	app.Get("/-/check-up", func(c *fiber.Ctx) error {
-		status := StatusResponse{
+		status := statusResponse{
 			Status:  "OK",
 			Name:    serviceName,
 			Version: serviceVersion,

@@ -3,7 +3,7 @@
 .github
 .idea
 .vscode
-config
+internal
 tools
 .dockerignore
 .editorconfig

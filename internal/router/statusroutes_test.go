@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package router
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ func TestStatusRoutes(t *testing.T) {
 	app := fiber.New()
 	serviceName := "my-service-name"
 	serviceVersion := "0.0.0"
-	StatusRoutes(app, serviceName, serviceVersion)
+	statusRoutes(app, serviceName, serviceVersion)
 
 	t.Run("/-/healthz - ok", func(t *testing.T) {
 		expectedResponse := fmt.Sprintf("{\"status\":\"OK\",\"name\":\"%s\",\"version\":\"%s\"}", serviceName, serviceVersion)

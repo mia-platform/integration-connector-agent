@@ -13,14 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package router
 
 import (
 	"context"
 	"fmt"
 	"path"
 
-	"github.com/mia-platform/data-connector-agent/config"
+	"github.com/mia-platform/data-connector-agent/internal/config"
 
 	swagger "github.com/davidebianchi/gswagger"
 	oasfiber "github.com/davidebianchi/gswagger/support/fiber"
@@ -32,12 +32,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func setupRouter(env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App, error) {
+func New(env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App, error) {
 	app := fiber.New()
 
 	middlewareLog := glogrus.GetLogger(logrus.NewEntry(log))
 	app.Use(middleware.RequestMiddlewareLogger[*logrus.Entry](middlewareLog, []string{"/-/"}))
-	StatusRoutes(app, "data-connector-agent", env.ServiceVersion)
+	statusRoutes(app, "data-connector-agent", env.ServiceVersion)
 	if env.ServicePrefix != "" && env.ServicePrefix != "/" {
 		log.WithField("servicePrefix", env.ServicePrefix).Trace("applying service prefix")
 		app.Use(pprof.New(pprof.Config{Prefix: fmt.Sprintf("%s/", path.Clean(env.ServicePrefix))}))

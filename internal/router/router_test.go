@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package router
 
 import (
 	"io"
@@ -21,7 +21,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/mia-platform/data-connector-agent/config"
+	"github.com/mia-platform/data-connector-agent/internal/config"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -36,7 +36,7 @@ func TestSetupRouter(t *testing.T) {
 		ServicePrefix:  "my-prefix",
 	}
 
-	app, err := setupRouter(env, log)
+	app, err := New(env, log)
 	require.NoError(t, err, "unexpected error")
 
 	t.Run("API documentation is correctly exposed without prefix - json", func(t *testing.T) {
