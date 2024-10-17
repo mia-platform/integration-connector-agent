@@ -13,14 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package router
+package server
 
 import (
 	"context"
-	"fmt"
 	"path"
 
 	"github.com/mia-platform/data-connector-agent/internal/config"
+	"github.com/mia-platform/data-connector-agent/internal/utils"
 
 	swagger "github.com/davidebianchi/gswagger"
 	oasfiber "github.com/davidebianchi/gswagger/support/fiber"
@@ -32,15 +32,17 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func New(env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App, error) {
-	app := fiber.New()
+func NewRouter(env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App, error) {
+	app := fiber.New(fiber.Config{
+		DisableStartupMessage: true,
+	})
 
 	middlewareLog := glogrus.GetLogger(logrus.NewEntry(log))
-	app.Use(middleware.RequestMiddlewareLogger[*logrus.Entry](middlewareLog, []string{"/-/"}))
-	statusRoutes(app, "data-connector-agent", env.ServiceVersion)
+	app.Use(middleware.RequestMiddlewareLogger(middlewareLog, []string{"/-/"}))
+	statusRoutes(app, "data-connector-agent", utils.Version)
 	if env.ServicePrefix != "" && env.ServicePrefix != "/" {
 		log.WithField("servicePrefix", env.ServicePrefix).Trace("applying service prefix")
-		app.Use(pprof.New(pprof.Config{Prefix: fmt.Sprintf("%s/", path.Clean(env.ServicePrefix))}))
+		app.Use(pprof.New(pprof.Config{Prefix: path.Clean(env.ServicePrefix)}))
 	}
 
 	oasRouter, err := swagger.NewRouter(oasfiber.NewRouter(app), swagger.Options{
@@ -48,7 +50,7 @@ func New(env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App, error
 		Openapi: &openapi3.T{
 			Info: &openapi3.Info{
 				Title:   "data-connector-agent",
-				Version: env.ServiceVersion,
+				Version: utils.Version,
 			},
 		},
 		JSONDocumentationPath: "/documentations/json",

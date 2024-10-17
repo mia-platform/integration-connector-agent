@@ -47,11 +47,6 @@ ifeq ($(origin TOOLS_BIN),undefined)
 TOOLS_BIN:= $(TOOLS_DIR)/bin
 endif
 
-# Set here the name of the package you want to build
-CMDNAME:= REPO_NAME
-BUILD_PATH:= .
-CONFORMANCE_TEST_PATH:= $(PROJECT_DIR)/tests/e2e
-
 # enable modules
 GO111MODULE:= on
 GOOS:= $(shell go env GOOS)

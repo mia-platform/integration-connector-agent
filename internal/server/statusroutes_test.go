@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package router
+package server
 
 import (
 	"fmt"
@@ -23,13 +23,14 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/mia-platform/data-connector-agent/internal/utils"
 	"github.com/stretchr/testify/require"
 )
 
 func TestStatusRoutes(t *testing.T) {
 	app := fiber.New()
 	serviceName := "my-service-name"
-	serviceVersion := "0.0.0"
+	serviceVersion := utils.Version
 	statusRoutes(app, serviceName, serviceVersion)
 
 	t.Run("/-/healthz - ok", func(t *testing.T) {

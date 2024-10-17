@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package router
+package server
 
 import (
 	"io"
@@ -31,12 +31,11 @@ import (
 func TestSetupRouter(t *testing.T) {
 	log, _ := test.NewNullLogger()
 	env := config.EnvironmentVariables{
-		ServiceVersion: "my-version",
-		HTTPPort:       "3000",
-		ServicePrefix:  "my-prefix",
+		HTTPPort:      "3000",
+		ServicePrefix: "my-prefix",
 	}
 
-	app, err := New(env, log)
+	app, err := NewRouter(env, log)
 	require.NoError(t, err, "unexpected error")
 
 	t.Run("API documentation is correctly exposed without prefix - json", func(t *testing.T) {

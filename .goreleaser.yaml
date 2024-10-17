@@ -2,7 +2,7 @@ version: 2
 dist: bin
 
 builds:
-- main: "{{ .Env.BUILD_PATH }}"
+- main: "."
   binary: >-
     {{ .Os }}/
     {{- .Arch }}/
@@ -16,6 +16,8 @@ builds:
   ldflags:
   - -s
   - -w
+  - -X github.com/mia-platform/internal/utils.Version={{ .Version }}
+  - -X github.com/mia-platform/internal/utils.BuildDate={{ .Date }}
   goos:
   - linux
   - darwin

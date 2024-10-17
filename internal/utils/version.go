@@ -13,14 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package utils
 
-// EnvironmentVariables struct with the mapping of desired
-// environment variables.
-type EnvironmentVariables struct {
-	LogLevel             string `env:"LOG_LEVEL" envDefault:"info"`
-	HTTPPort             string `env:"HTTP_PORT" envDefault:"8080"`
-	HTTPAddress          string `env:"HTTP_ADDRESS" envDefault:"0.0.0.0"`
-	ServicePrefix        string `env:"SERVICE_PREFIX"`
-	DelayShutdownSeconds int    `env:"DELAY_SHUTDOWN_SECONDS" envDefault:"10"`
-}
+var (
+	// Version  is dynamically set at build time
+	Version = "DEV"
+	// BuildDate is dynamically set at build time
+	BuildDate = "" // YYYY-MM-DD
+)

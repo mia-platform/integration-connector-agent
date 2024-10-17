@@ -3,7 +3,7 @@ module github.com/mia-platform/data-connector-agent
 go 1.23.2
 
 require (
-	github.com/caarlos0/env/v10 v10.0.0
+	github.com/caarlos0/env/v11 v11.2.2
 	github.com/davidebianchi/gswagger v0.10.0
 	github.com/getkin/kin-openapi v0.128.0
 	github.com/gofiber/fiber/v2 v2.52.5

@@ -20,52 +20,27 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
+	"github.com/caarlos0/env/v11"
 	"github.com/mia-platform/data-connector-agent/internal/config"
-	"github.com/mia-platform/data-connector-agent/internal/router"
-
-	"github.com/caarlos0/env/v10"
-	"github.com/gofiber/fiber/v2"
-	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
-	"github.com/sirupsen/logrus"
+	"github.com/mia-platform/data-connector-agent/internal/server"
 )
 
 func main() {
-	entrypoint(make(chan os.Signal, 1))
-	os.Exit(0)
-}
-
-func entrypoint(shutdown chan os.Signal) {
-	var envVar config.EnvironmentVariables
-	err := env.Parse(&envVar)
-	if err != nil {
-		panic(err.Error())
+	envVars := config.EnvironmentVariables{}
+	if err := env.Parse(&envVars); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 
-	// Init logger instance.
-	log, err := glogrus.InitHelper(glogrus.InitOptions{Level: envVar.LogLevel})
-	if err != nil {
-		panic(err.Error())
+	sysChan := make(chan os.Signal, 1)
+	signal.Notify(sysChan, syscall.SIGTERM)
+	exitCode := 0
+	if err := server.New(envVars, sysChan); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		exitCode = 1
 	}
 
-	app, err := router.New(envVar, log)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	go func(app *fiber.App, log *logrus.Logger, env config.EnvironmentVariables) {
-		log.WithField("port", env.HTTPPort).Info("starting server")
-		if err := app.Listen(fmt.Sprintf(":%s", env.HTTPPort)); err != nil {
-			log.Println(err)
-		}
-	}(app, log, envVar)
-
-	signal.Notify(shutdown, syscall.SIGTERM)
-	<-shutdown
-	time.Sleep(time.Duration(envVar.DelayShutdownSeconds) * time.Second)
-	log.Info("Gracefully shutting down...")
-	if err := app.Shutdown(); err != nil {
-		panic(err.Error())
-	}
+	close(sysChan)
+	os.Exit(exitCode)
 }
