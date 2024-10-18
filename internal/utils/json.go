@@ -20,6 +20,7 @@ import (
 	"os"
 )
 
+// ReadJSONFile read file at path and parse its content as json in data
 func ReadJSONFile(path string, data any) error {
 	configFile, err := os.Open(path)
 	if err != nil {
