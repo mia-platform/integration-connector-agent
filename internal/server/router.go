@@ -23,7 +23,6 @@ import (
 
 	"github.com/mia-platform/data-connector-agent/internal/config"
 	"github.com/mia-platform/data-connector-agent/internal/utils"
-	"github.com/mia-platform/data-connector-agent/internal/webhook"
 
 	swagger "github.com/davidebianchi/gswagger"
 	oasfiber "github.com/davidebianchi/gswagger/support/fiber"
@@ -66,9 +65,9 @@ func NewRouter(env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App,
 		return nil, err
 	}
 
-	if _, err := oasRouter.AddRoute(webhook.Route()); err != nil {
-		return nil, err
-	}
+	// if _, err := oasRouter.AddRoute(webhook.Route()); err != nil {
+	// 	return nil, err
+	// }
 
 	if err := oasRouter.GenerateAndExposeOpenapi(); err != nil {
 		return nil, err
