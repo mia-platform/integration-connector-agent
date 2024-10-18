@@ -1,0 +1,6 @@
+{
+	"secret": {
+		"fromEnv": "ENV_NAME",
+		"fromFile": "file/path"
+	}
+}

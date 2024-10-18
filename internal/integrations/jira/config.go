@@ -17,6 +17,7 @@ package jira
 
 import (
 	"os"
+	"strings"
 
 	"github.com/mia-platform/data-connector-agent/internal/utils"
 )
@@ -46,14 +47,15 @@ func ReadConfiguration(path string) (*Configuration, error) {
 
 // WebhookSecret return the secret value for validating the webhook if configured correctly
 func (c *Configuration) WebhookSecret() string {
+	secret := ""
 	switch {
 	case c.Secret.FromEnv != "":
-		return secretFromEnv(c.Secret.FromEnv)
+		secret = secretFromEnv(c.Secret.FromEnv)
 	case c.Secret.FromFile != "":
-		return secretFromFile(c.Secret.FromFile)
+		secret = secretFromFile(c.Secret.FromFile)
 	}
 
-	return ""
+	return strings.TrimSpace(secret)
 }
 
 // secretFromEnv return the value contained in envName environment variable or the empty string if is not found
