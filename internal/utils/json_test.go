@@ -23,6 +23,8 @@ import (
 )
 
 func TestReadJSON(t *testing.T) {
+	t.Parallel()
+
 	tests := map[string]struct {
 		path           string
 		expectedError  string
