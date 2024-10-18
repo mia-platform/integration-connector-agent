@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/mia-platform/data-connector-agent/internal/config"
+	integration "github.com/mia-platform/data-connector-agent/internal/integrations"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,6 +37,7 @@ func TestServer(t *testing.T) {
 			HTTPAddress:          "127.0.0.1",
 			LogLevel:             "error",
 			DelayShutdownSeconds: 10,
+			ServiceType:          integration.Jira,
 		}
 
 		go func() {
@@ -66,6 +68,7 @@ func TestServer(t *testing.T) {
 			ServicePrefix:        "/prefix",
 			LogLevel:             "error",
 			DelayShutdownSeconds: 10,
+			ServiceType:          integration.Jira,
 		}
 		go func() {
 			require.NoError(t, New(envVars, shutdown))
@@ -99,6 +102,7 @@ func TestShutdown(t *testing.T) {
 			HTTPPort:             "8080",
 			LogLevel:             "error",
 			DelayShutdownSeconds: 3,
+			ServiceType:          integration.Jira,
 		}
 		require.NoError(t, New(envVars, shutdown))
 		done <- true

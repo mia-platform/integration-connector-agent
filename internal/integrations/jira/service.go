@@ -13,24 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package webhook
+package jira
 
 import (
-	"net/http"
-
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
 )
 
-const (
-	webhookRoutePath = ""
-)
-
-// Route return a new webhook route to handle the configured service request
-func Route() (string, string, fiber.Handler, swagger.Definitions) {
-	return http.MethodPost, webhookRoutePath, nil, swagger.Definitions{
-		RequestBody: nil,
-		Responses:   make(map[int]swagger.ContentValue),
-		Security:    make([]swagger.SecurityRequirement, 0),
-	}
+func SetupService(string, *swagger.Router[fiber.Handler, fiber.Router]) error {
+	return nil
 }

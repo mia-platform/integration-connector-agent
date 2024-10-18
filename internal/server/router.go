@@ -17,11 +17,14 @@ package server
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path"
 	"path/filepath"
 
 	"github.com/mia-platform/data-connector-agent/internal/config"
+	integration "github.com/mia-platform/data-connector-agent/internal/integrations"
+	"github.com/mia-platform/data-connector-agent/internal/integrations/jira"
 	"github.com/mia-platform/data-connector-agent/internal/utils"
 
 	swagger "github.com/davidebianchi/gswagger"
@@ -65,9 +68,14 @@ func NewRouter(env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App,
 		return nil, err
 	}
 
-	// if _, err := oasRouter.AddRoute(webhook.Route()); err != nil {
-	// 	return nil, err
-	// }
+	switch env.ServiceType {
+	case integration.Jira:
+		if err := jira.SetupService(env.ConfigurationPath, oasRouter); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, errors.New("unsupported integration type")
+	}
 
 	if err := oasRouter.GenerateAndExposeOpenapi(); err != nil {
 		return nil, err
