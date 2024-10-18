@@ -73,6 +73,8 @@ func NewRouter(env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App,
 		if err := jira.SetupService(env.ConfigurationPath, oasRouter); err != nil {
 			return nil, err
 		}
+	case "test":
+		// do nothing only for testing
 	default:
 		return nil, errors.New("unsupported integration type")
 	}

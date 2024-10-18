@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	"github.com/mia-platform/data-connector-agent/internal/config"
-	integration "github.com/mia-platform/data-connector-agent/internal/integrations"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -34,7 +33,7 @@ func TestSetupRouter(t *testing.T) {
 	env := config.EnvironmentVariables{
 		HTTPPort:      "3000",
 		ServicePrefix: "/my-prefix",
-		ServiceType:   integration.Jira,
+		ServiceType:   "test",
 	}
 
 	app, err := NewRouter(env, log)
