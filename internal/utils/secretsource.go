@@ -26,6 +26,9 @@ type SecretSource struct {
 	FromFile string `json:"fromFile"`
 }
 
+// Secret return the secret contained in s reading it from environment or the referenced file, it will return
+// an empty string in case of error or if it cannot be read from the target source. If both sources are defined
+// environment variable has the priority.
 func (s SecretSource) Secret() string {
 	secret := ""
 	switch {
