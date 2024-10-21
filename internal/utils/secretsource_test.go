@@ -13,50 +13,53 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jira
+package utils
 
 import (
 	"path/filepath"
 	"testing"
 
-	"github.com/mia-platform/data-connector-agent/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestReadConfiguration(t *testing.T) {
+func TestSecret(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		path                  string
-		expectedConfiguration *Configuration
-		expectedErr           string
+		source         SecretSource
+		expectedSecret string
 	}{
-		"wrong file return error": {
-			path:        filepath.Join("testdata", "missing"),
-			expectedErr: "no such file or directory",
+		"from missing env return empty string": {
+			source: SecretSource{
+				FromEnv: "ENV_NAME",
+			},
 		},
-		"configuration is read from valid file": {
-			path: filepath.Join("testdata", "valid.json"),
-			expectedConfiguration: &Configuration{
-				Secret: utils.SecretSource{
-					FromEnv:  "ENV_NAME",
-					FromFile: "file/path",
-				},
+		"from missing file return empty string": {
+			source: SecretSource{
+				FromFile: filepath.Join("testdata", "missing"),
+			},
+		},
+		"from missing secret section return emptry string": {
+			source: SecretSource{},
+		},
+		"from valid file return secret string": {
+			source: SecretSource{
+				FromFile: filepath.Join("testdata", "secret"),
+			},
+			expectedSecret: "secret-from-file",
+		},
+		"with both from env has priority": {
+			source: SecretSource{
+				FromEnv:  "ENV_NAME",
+				FromFile: filepath.Join("testdata", "secret"),
 			},
 		},
 	}
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			config, err := ReadConfiguration(test.path)
-			switch len(test.expectedErr) {
-			case 0:
-				assert.NoError(t, err)
-				assert.Equal(t, test.expectedConfiguration, config)
-			default:
-				assert.ErrorContains(t, err, test.expectedErr)
-				assert.Nil(t, config)
-			}
+			secret := test.source.Secret()
+			assert.Equal(t, test.expectedSecret, secret)
 		})
 	}
 }

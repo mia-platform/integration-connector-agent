@@ -39,7 +39,7 @@ func SetupService(ctx context.Context, configPath string, router *swagger.Router
 		consumeWebhooksData(ctx, messageChan)
 	}()
 
-	handler := webhookHandler(config.WebhookSecret(), messageChan)
+	handler := webhookHandler(config.Secret.Secret(), messageChan)
 	if _, err := router.AddRoute(http.MethodPost, webhookEndpoint, handler, swagger.Definitions{}); err != nil {
 		return err
 	}
