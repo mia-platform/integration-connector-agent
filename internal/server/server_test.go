@@ -16,9 +16,8 @@
 package server
 
 import (
+	"context"
 	"net/http"
-	"os"
-	"syscall"
 	"testing"
 	"time"
 
@@ -29,7 +28,7 @@ import (
 
 func TestServer(t *testing.T) {
 	t.Run("open server on port 3000", func(t *testing.T) {
-		shutdown := make(chan os.Signal, 1)
+		shutdown := make(chan interface{}, 1)
 
 		envVars := config.EnvironmentVariables{
 			HTTPPort:             "3000",
@@ -39,12 +38,14 @@ func TestServer(t *testing.T) {
 			ServiceType:          "test",
 		}
 
+		ctx := context.TODO()
 		go func() {
-			require.NoError(t, New(envVars, shutdown))
+			assert.NoError(t, New(ctx, envVars, shutdown))
+			assert.ErrorIs(t, ctx.Err(), context.Canceled)
 		}()
 
 		defer func() {
-			shutdown <- syscall.SIGTERM
+			shutdown <- struct{}{}
 			close(shutdown)
 		}()
 
@@ -52,14 +53,12 @@ func TestServer(t *testing.T) {
 		resp, err := http.DefaultClient.Get("http://localhost:3000/-/healthz")
 		require.NoError(t, err)
 
-		if resp.Body != nil {
-			resp.Body.Close()
-		}
-		require.Equal(t, 200, resp.StatusCode)
+		resp.Body.Close()
+		assert.Equal(t, 200, resp.StatusCode)
 	})
 
 	t.Run("sets correct path prefix", func(t *testing.T) {
-		shutdown := make(chan os.Signal, 1)
+		shutdown := make(chan interface{}, 1)
 
 		envVars := config.EnvironmentVariables{
 			HTTPPort:             "8080",
@@ -70,24 +69,21 @@ func TestServer(t *testing.T) {
 			ServiceType:          "test",
 		}
 		go func() {
-			require.NoError(t, New(envVars, shutdown))
+			assert.NoError(t, New(context.TODO(), envVars, shutdown))
 		}()
-		defer func() { shutdown <- syscall.SIGTERM }()
+		defer func() { shutdown <- struct{}{} }()
 
 		time.Sleep(1 * time.Second)
 		resp, err := http.DefaultClient.Get("http://localhost:8080/prefix/")
 		require.NoError(t, err)
 
-		if resp.Body != nil {
-			resp.Body.Close()
-		}
-
+		resp.Body.Close()
 		assert.Equal(t, 404, resp.StatusCode)
 	})
 }
 
 func TestShutdown(t *testing.T) {
-	shutdown := make(chan os.Signal, 1)
+	shutdown := make(chan interface{}, 1)
 	done := make(chan bool, 1)
 
 	go func() {
@@ -99,16 +95,16 @@ func TestShutdown(t *testing.T) {
 		envVars := config.EnvironmentVariables{
 			HTTPAddress:          "127.0.0.1",
 			HTTPPort:             "8080",
-			LogLevel:             "error",
+			LogLevel:             "trace",
 			DelayShutdownSeconds: 3,
 			ServiceType:          "test",
 		}
-		require.NoError(t, New(envVars, shutdown))
+		assert.NoError(t, New(context.TODO(), envVars, shutdown))
 		done <- true
 	}()
 
-	shutdown <- syscall.SIGTERM
+	shutdown <- struct{}{}
 
 	flag := <-done
-	require.True(t, flag)
+	assert.True(t, flag)
 }

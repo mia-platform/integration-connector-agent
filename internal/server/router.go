@@ -37,7 +37,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func NewRouter(env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App, error) {
+func NewRouter(ctx context.Context, env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App, error) {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 	})
@@ -70,7 +70,7 @@ func NewRouter(env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App,
 
 	switch env.ServiceType {
 	case integration.Jira:
-		if err := jira.SetupService(env.ConfigurationPath, oasRouter); err != nil {
+		if err := jira.SetupService(ctx, env.ConfigurationPath, oasRouter); err != nil {
 			return nil, err
 		}
 	case "test":

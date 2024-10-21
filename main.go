@@ -16,6 +16,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -36,7 +37,8 @@ func main() {
 	sysChan := make(chan os.Signal, 1)
 	signal.Notify(sysChan, syscall.SIGTERM)
 	exitCode := 0
-	if err := server.New(envVars, sysChan); err != nil {
+
+	if err := server.New(context.Background(), envVars, sysChan); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		exitCode = 1
 	}
