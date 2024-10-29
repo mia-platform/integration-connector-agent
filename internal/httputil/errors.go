@@ -17,6 +17,7 @@ package httputil
 
 import "errors"
 
+// TODO: move in utils
 var (
 	ErrValidationError = errors.New("validation error")
 )

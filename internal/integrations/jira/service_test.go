@@ -28,14 +28,24 @@ import (
 	oasfiber "github.com/davidebianchi/gswagger/support/fiber"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gofiber/fiber/v2"
+	"github.com/mia-platform/data-connector-agent/internal/entities"
 	"github.com/mia-platform/data-connector-agent/internal/httputil"
+	"github.com/mia-platform/data-connector-agent/internal/writer"
+	"github.com/mia-platform/data-connector-agent/internal/writer/fake"
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSetupServiceWithConfig(t *testing.T) {
+	log, _ := test.NewNullLogger()
+	logger := logrus.NewEntry(log)
+
 	type testItem struct {
-		config             *Configuration
-		req                func(t *testing.T) *http.Request
+		config *Configuration
+		req    func(t *testing.T) *http.Request
+		writer writer.Writer[entities.PipelineEvent]
+
 		expectedStatusCode int
 		expectedBody       func(t *testing.T, body io.ReadCloser)
 	}
@@ -70,12 +80,13 @@ func TestSetupServiceWithConfig(t *testing.T) {
 			req: func(t *testing.T) *http.Request {
 				t.Helper()
 
-				jiraIssue := jiraIssueEvent{
-					ID: 1,
-					Issue: jiraIssue{
-						Key: "ISSUE-KEY",
+				jiraIssue := map[string]any{
+					"id": 1,
+					"issue": map[string]any{
+						"id":  "1",
+						"key": "ISSUE-KEY",
 					},
-					WebhookEvent: "jira:issue_updated",
+					"webhookEvent": "jira:issue_updated",
 				}
 				reqBody, err := json.Marshal(jiraIssue)
 				require.NoError(t, err)
@@ -90,7 +101,11 @@ func TestSetupServiceWithConfig(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			app, router := getRouter(t)
 
-			err := setupWithConfig(context.TODO(), router, test.config)
+			if test.writer == nil {
+				test.writer = fake.New()
+			}
+
+			err := setupWithConfig(context.TODO(), logger, router, test.config, test.writer)
 			require.NoError(t, err)
 
 			res, err := app.Test(test.req(t))

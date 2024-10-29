@@ -33,16 +33,18 @@ to
 }
 */
 
-type IMapper interface {
+type IMapper[T any] interface {
+	Map(data map[string]any) (map[string]any, error)
 }
 
-type Mapper struct {
+type Mapper[T any] struct {
 }
 
-func (m *Mapper) Map(data map[string]any) map[string]interface{} {
-	return data
-}
+// func (m *Mapper[T]) Map(data []byte) (map[string]any, error) {
+// 	// TODO: implement the mapping logic
+// 	return data, nil
+// }
 
-func NewMapper(_ map[string]any) *Mapper {
-	return &Mapper{}
-}
+// func NewMapper(_ map[string]any) IMapper {
+// 	return &Mapper{}
+// }

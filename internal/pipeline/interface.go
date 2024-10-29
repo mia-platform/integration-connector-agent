@@ -13,8 +13,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aggregator
+package pipeline
 
-type IPipeline[T any] interface {
-	Write(data T) error
+import (
+	"context"
+
+	"github.com/mia-platform/data-connector-agent/internal/entities"
+)
+
+type IPipeline[T entities.PipelineEvent] interface {
+	AddMessage(data T)
+	Start(ctx context.Context) error
 }

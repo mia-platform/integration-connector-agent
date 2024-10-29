@@ -13,18 +13,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aggregator
+package entities
 
-import (
-	"github.com/mia-platform/data-connector-agent/internal/mapper"
-	"github.com/mia-platform/data-connector-agent/internal/writer"
+import "github.com/tidwall/gjson"
+
+type Operation int
+
+const (
+	Write Operation = iota
+	Delete
 )
 
-type Pipeline[T writer.DataWithIdentifier] struct {
-	writer writer.Writer[T]
-	mapper mapper.Mapper
+type Event struct {
+	ID            string
+	OperationType Operation
+
+	Raw    []byte
+	Parsed gjson.Result
 }
 
-func NewPipeline[T writer.DataWithIdentifier](writer writer.Writer[T], mapper mapper.Mapper) *Pipeline[T] {
-	return &Pipeline[T]{writer: writer, mapper: mapper}
+type PipelineEvent interface {
+	GetID() string
+	RawData() []byte
+	Type() Operation
+	ParsedData() gjson.Result
+}
+
+func (e Event) GetID() string {
+	return e.ID
+}
+
+func (e Event) RawData() []byte {
+	return e.Raw
+}
+
+func (e Event) ParsedData() gjson.Result {
+	return e.Parsed
+}
+
+func (e Event) Type() Operation {
+	return e.OperationType
 }

@@ -15,42 +15,46 @@
 
 package jira
 
-type jiraIssue struct {
-	ID     string         `json:"id"`
-	Self   string         `json:"self"`
-	Key    string         `json:"key"`
-	Fields map[string]any `json:"fields"`
+import (
+	"fmt"
+
+	"github.com/mia-platform/data-connector-agent/internal/entities"
+	"github.com/tidwall/gjson"
+)
+
+const (
+	issueCreated = "jira:issue_created"
+	issueUpdated = "jira:issue_updated"
+	issueDeleted = "jira:issue_deleted"
+)
+
+func getPipelineEvent(rawData []byte) (entities.PipelineEvent, error) {
+	parsed := gjson.ParseBytes(rawData)
+	id := parsed.Get("issue.id").String()
+	webhookEvent := parsed.Get("webhookEvent").String()
+
+	operationType, err := getOperationType(webhookEvent)
+	if err != nil {
+		return nil, err
+	}
+
+	return entities.Event{
+		ID:            id,
+		OperationType: operationType,
+
+		Raw:    rawData,
+		Parsed: parsed,
+	}, nil
 }
 
-type jiraUser struct {
-	Name         string `json:"name"`
-	EmailAddress string `json:"emailAddress"`
-	DisplayName  string `json:"displayName"`
-	Active       string `json:"active"`
-}
-
-type issueChange struct {
-	ToString   string         `json:"toString"`
-	To         map[string]any `json:"to"`
-	FromString string         `json:"fromString"`
-	From       map[string]any `json:"from"`
-	FieldType  string         `json:"fieldtype"` //nolint:tagliatelle
-	Field      string         `json:"field"`
-}
-
-type changelog struct {
-	ID    int64                    `json:"id"`
-	Items []map[string]issueChange `json:"items"`
-}
-
-type comment struct{}
-
-type jiraIssueEvent struct {
-	ID           int64     `json:"id"`
-	Timestamp    int64     `json:"timestamp"`
-	Issue        jiraIssue `json:"issue"`
-	User         jiraUser  `json:"user,omitempty"`
-	WebhookEvent string    `json:"webhookEvent"`
-	Changelog    changelog `json:"changelog,omitempty"`
-	Comment      comment   `json:"comment,omitempty"`
+func getOperationType(event string) (entities.Operation, error) {
+	switch event {
+	case issueCreated:
+		fallthrough
+	case issueUpdated:
+		return entities.Write, nil
+	case issueDeleted:
+		return entities.Delete, nil
+	}
+	return 0, fmt.Errorf("%w: %s", ErrUnsupportedWebhookEvent, event)
 }

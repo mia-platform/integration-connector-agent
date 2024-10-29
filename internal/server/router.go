@@ -26,6 +26,7 @@ import (
 	integration "github.com/mia-platform/data-connector-agent/internal/integrations"
 	"github.com/mia-platform/data-connector-agent/internal/integrations/jira"
 	"github.com/mia-platform/data-connector-agent/internal/utils"
+	"github.com/mia-platform/data-connector-agent/internal/writer/fake"
 
 	swagger "github.com/davidebianchi/gswagger"
 	oasfiber "github.com/davidebianchi/gswagger/support/fiber"
@@ -63,14 +64,13 @@ func NewRouter(ctx context.Context, env config.EnvironmentVariables, log *logrus
 		YAMLDocumentationPath: "/documentations/yaml",
 		PathPrefix:            env.ServicePrefix,
 	})
-
 	if err != nil {
 		return nil, err
 	}
 
 	switch env.ServiceType {
 	case integration.Jira:
-		if err := jira.SetupService(ctx, env.ConfigurationPath, oasRouter); err != nil {
+		if err := jira.SetupService(ctx, logrus.NewEntry(log), env.ConfigurationPath, oasRouter, fake.New()); err != nil {
 			return nil, err
 		}
 	case "test":

@@ -18,57 +18,57 @@ package fake
 import (
 	"context"
 
+	"github.com/mia-platform/data-connector-agent/internal/entities"
 	"github.com/mia-platform/data-connector-agent/internal/writer"
-)
-
-type OperationType int
-
-const (
-	Write OperationType = iota
-	Delete
 )
 
 type Call struct {
 	Data      writer.DataWithIdentifier
-	Operation OperationType
+	Operation entities.Operation
 }
 
 type Stub struct {
 	calls []Call
 }
 
-type Fake struct {
+type Writer struct {
 	Identifier string
 
 	mockCalls []Stub
 }
 
-func (f *Fake) ID() string {
-	return f.Identifier
+func New() writer.Writer[entities.PipelineEvent] {
+	return &Writer{
+		mockCalls: []Stub{},
+	}
 }
 
-func New() writer.Writer[writer.DataWithIdentifier] {
-	return &Fake{}
-}
+func (f *Writer) Write(_ context.Context, data entities.PipelineEvent) error {
+	if f.mockCalls == nil {
+		f.mockCalls = []Stub{}
+	}
 
-func (f *Fake) Write(_ context.Context, data writer.DataWithIdentifier) error {
 	f.mockCalls = append(f.mockCalls, Stub{
 		calls: []Call{
 			{
 				Data:      data,
-				Operation: Write,
+				Operation: entities.Write,
 			},
 		},
 	})
 	return nil
 }
 
-func (f *Fake) Delete(_ context.Context, data writer.DataWithIdentifier) error {
+func (f *Writer) Delete(_ context.Context, data entities.PipelineEvent) error {
+	if f.mockCalls == nil {
+		f.mockCalls = []Stub{}
+	}
+
 	f.mockCalls = append(f.mockCalls, Stub{
 		calls: []Call{
 			{
 				Data:      data,
-				Operation: Delete,
+				Operation: entities.Delete,
 			},
 		},
 	})

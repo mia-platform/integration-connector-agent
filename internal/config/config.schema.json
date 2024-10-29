@@ -1,0 +1,67 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"properties": {
+		"integrations": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"type": {
+						"type": "string"
+					},
+					"authentication": {
+						"type": "object",
+						"properties": {
+							"secret": {
+								"$ref": "#/definitions/secret"
+							}
+						}
+					},
+					"writer": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"type": {
+									"type": "string"
+								},
+								"url": {
+									"$ref": "#/definitions/secret"
+								},
+								"outputEvent": {
+									"type": "object"
+								}
+							},
+							"required": [
+								"type",
+								"url",
+								"outputEvent"
+							]
+						}
+					}
+				},
+				"required": [
+					"type",
+					"writer"
+				]
+			}
+		}
+	},
+	"required": [
+		"integrations"
+	],
+	"definitions": {
+		"secret": {
+			"type": "object",
+			"properties": {
+				"fromEnv": {
+					"type": "string"
+				},
+				"fromFile": {
+					"type": "string"
+				}
+			}
+		}
+	}
+}

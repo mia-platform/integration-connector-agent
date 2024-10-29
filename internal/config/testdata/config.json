@@ -1,0 +1,28 @@
+{
+	"integrations": [
+		{
+			"type": "jira",
+			"authentication": {
+				"secret": {
+					"fromEnv": "",
+					"fromFile": ""
+				}
+			},
+			"writer": [
+				{
+					"type": "mongo",
+					"url": {
+						"fromEnv": "",
+						"fromFile": ""
+					},
+					"outputEvent": {
+						"key": "{{ issue.key }}",
+						"summary": "{{ issue.fields.summary }}",
+						"createdAt": "{{ issue.fields.created }}",
+						"description": "{{ issue.fields.description }}"
+					}
+				}
+			]
+		}
+	]
+}

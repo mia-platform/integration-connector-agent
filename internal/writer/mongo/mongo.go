@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/mia-platform/data-connector-agent/internal/entities"
 	"github.com/mia-platform/data-connector-agent/internal/utils"
 	"github.com/mia-platform/data-connector-agent/internal/writer"
 	"go.mongodb.org/mongo-driver/bson"
@@ -42,7 +43,7 @@ type Config struct {
 }
 
 // Writer is a concrete implementation of a Writer that will save and delete data from a MongoDB instance.
-type Writer[T writer.DataWithIdentifier] struct {
+type Writer[T entities.PipelineEvent] struct {
 	client *mongo.Client
 
 	database   string
@@ -50,13 +51,13 @@ type Writer[T writer.DataWithIdentifier] struct {
 }
 
 // NewMongoDBWriter will construct a new MongoDB writer and validate the connection parameters via a ping request.
-func NewMongoDBWriter[T writer.DataWithIdentifier](ctx context.Context, config Config) (writer.Writer[T], error) {
+func NewMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config Config) (writer.Writer[T], error) {
 	return newMongoDBWriter[T](ctx, config, func(ctx context.Context, c *mongo.Client) error {
 		return c.Ping(ctx, nil)
 	})
 }
 
-func newMongoDBWriter[T writer.DataWithIdentifier](ctx context.Context, config Config, validate validateFunc) (writer.Writer[T], error) {
+func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config Config, validate validateFunc) (writer.Writer[T], error) {
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -131,11 +132,11 @@ func mongoClientOptionsFromConfig(config Config) (*options.ClientOptions, string
 }
 
 func (w Writer[T]) idFilter(data T) (bson.D, error) {
-	id := data.ID()
+	id := data.GetID()
 	if id == "" {
 		return bson.D{}, fmt.Errorf("id is empty")
 	}
-	return bson.D{{Key: "_id", Value: data.ID()}}, nil
+	return bson.D{{Key: "_id", Value: data.GetID()}}, nil
 }
 
 func (w Writer[T]) bsonData(_ T) bson.D {

@@ -21,11 +21,15 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/mia-platform/data-connector-agent/internal/entities"
+	"github.com/mia-platform/data-connector-agent/internal/httputil"
+	"github.com/mia-platform/data-connector-agent/internal/pipeline"
+	"github.com/mia-platform/data-connector-agent/internal/writer"
+
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
-	"github.com/mia-platform/data-connector-agent/internal/aggregator"
-	"github.com/mia-platform/data-connector-agent/internal/httputil"
 	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -33,30 +37,49 @@ const (
 )
 
 var (
-	ErrEmptyConfiguration = errors.New("empty configuration")
+	ErrEmptyConfiguration      = errors.New("empty configuration")
+	ErrUnmarshalEvent          = errors.New("error unmarshaling event")
+	ErrUnsupportedWebhookEvent = errors.New("unsupported webhook event")
 )
 
-func SetupService(ctx context.Context, configPath string, router *swagger.Router[fiber.Handler, fiber.Router]) error {
+func SetupService(
+	ctx context.Context,
+	logger *logrus.Entry,
+	configPath string,
+	router *swagger.Router[fiber.Handler, fiber.Router],
+	writer writer.Writer[entities.PipelineEvent],
+) error {
 	config, err := ReadConfiguration(configPath)
 	if err != nil {
 		return err
 	}
 
-	return setupWithConfig(ctx, router, config)
+	return setupWithConfig(ctx, logger, router, config, writer)
 }
 
-func setupWithConfig(_ context.Context, router *swagger.Router[fiber.Handler, fiber.Router], config *Configuration) error {
+func setupWithConfig(
+	ctx context.Context,
+	logger *logrus.Entry,
+	router *swagger.Router[fiber.Handler, fiber.Router],
+	config *Configuration,
+	writer writer.Writer[entities.PipelineEvent],
+) error {
 	if config == nil {
 		config = &Configuration{}
 	}
-	// TODO: here instead to use a buffer size it should be used a proper queue
-	messageChan := make(chan []byte, 1000000)
 
-	go func() {
-		// consumeWebhooksData(ctx, messageChan)
-	}()
+	p := pipeline.NewPipeline(logger, writer)
 
-	handler := webhookHandler(config.Secret, messageChan)
+	go func(p pipeline.IPipeline[entities.PipelineEvent]) {
+		err := p.Start(ctx)
+		if err != nil {
+			logger.WithError(err).Error("error starting pipeline")
+			// TODO: manage error
+			panic(err)
+		}
+	}(p)
+
+	handler := webhookHandler(config.Secret, p)
 	if _, err := router.AddRoute(http.MethodPost, webhookEndpoint, handler, swagger.Definitions{}); err != nil {
 		return err
 	}
@@ -64,7 +87,7 @@ func setupWithConfig(_ context.Context, router *swagger.Router[fiber.Handler, fi
 	return nil
 }
 
-func webhookHandler(secret string, messageChan chan<- []byte) fiber.Handler {
+func webhookHandler(secret string, p pipeline.IPipeline[entities.PipelineEvent]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		log := glogrus.FromContext(c.UserContext())
 
@@ -78,27 +101,15 @@ func webhookHandler(secret string, messageChan chan<- []byte) fiber.Handler {
 			log.Error("empty request body")
 			return c.SendStatus(http.StatusOK)
 		}
-		messageChan <- body
+
+		event, err := getPipelineEvent(body)
+		if err != nil {
+			log.WithError(err).Error("error unmarshaling event")
+			return c.Status(http.StatusBadRequest).JSON(httputil.ValidationError(err.Error()))
+		}
+
+		p.AddMessage(event)
 
 		return c.SendStatus(http.StatusOK)
-	}
-}
-
-func consumeWebhooksData[T any](ctx context.Context, messageChan chan []byte, _ aggregator.IPipeline[T]) {
-loop:
-	for {
-		select {
-		case _, open := <-messageChan:
-			if !open {
-				// the chanel has been closed, break the loop
-				break loop
-			}
-			// TODO: add mapper
-			// mappedMsg := msg
-			// pipeline.Write(msg)
-		case <-ctx.Done():
-			// context has been cancelled close che channel
-			close(messageChan)
-		}
 	}
 }

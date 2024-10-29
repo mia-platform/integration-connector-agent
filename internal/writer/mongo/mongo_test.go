@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mia-platform/data-connector-agent/internal/entities"
 	"github.com/mia-platform/data-connector-agent/internal/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,14 +32,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
 
-type fakeWriterData struct {
-	id string
-}
-
-func (f fakeWriterData) ID() string {
-	return f.id
-}
-
 func TestNewWriter(t *testing.T) {
 	t.Parallel()
 
@@ -47,7 +40,7 @@ func TestNewWriter(t *testing.T) {
 
 	tests := map[string]struct {
 		configuration  Config
-		expectedWriter *Writer[fakeWriterData]
+		expectedWriter *Writer[entities.PipelineEvent]
 		validateFunc   validateFunc
 		expectedError  bool
 	}{
@@ -80,7 +73,7 @@ func TestNewWriter(t *testing.T) {
 				Collection: "bar",
 			},
 			validateFunc: valid,
-			expectedWriter: &Writer[fakeWriterData]{
+			expectedWriter: &Writer[entities.PipelineEvent]{
 				collection: "bar",
 				database:   "baz",
 			},
@@ -94,7 +87,7 @@ func TestNewWriter(t *testing.T) {
 				Collection: "bar",
 			},
 			validateFunc: valid,
-			expectedWriter: &Writer[fakeWriterData]{
+			expectedWriter: &Writer[entities.PipelineEvent]{
 				collection: "bar",
 				database:   "baz",
 			},
@@ -106,12 +99,12 @@ func TestNewWriter(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
 			defer cancel()
 
-			writer, err := newMongoDBWriter[fakeWriterData](ctx, test.configuration, test.validateFunc)
+			writer, err := newMongoDBWriter[entities.PipelineEvent](ctx, test.configuration, test.validateFunc)
 			switch test.expectedError {
 			case false:
 				assert.NoError(t, err)
 				require.NotNil(t, writer)
-				mongoWriter, ok := writer.(*Writer[fakeWriterData])
+				mongoWriter, ok := writer.(*Writer[entities.PipelineEvent])
 				require.True(t, ok)
 				assert.NotNil(t, mongoWriter.client)
 				assert.Equal(t, test.expectedWriter.collection, mongoWriter.collection)
@@ -127,19 +120,19 @@ func TestNewWriter(t *testing.T) {
 func TestUpsert(t *testing.T) {
 	t.Parallel()
 	tests := map[string]struct {
-		data        fakeWriterData
+		data        entities.PipelineEvent
 		responses   primitive.D
 		expectedErr bool
 	}{
 		"no error": {
-			data: fakeWriterData{id: "12345"},
+			data: entities.Event{ID: "12345"},
 			responses: bson.D{
 				{Key: "ok", Value: 1},
 				{Key: "value", Value: bson.D{}},
 			},
 		},
 		"error": {
-			data:        fakeWriterData{},
+			data:        entities.Event{},
 			expectedErr: true,
 		},
 	}
@@ -148,7 +141,7 @@ func TestUpsert(t *testing.T) {
 		mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 
 		mt.Run(testName, func(mt *mtest.T) {
-			writer := &Writer[fakeWriterData]{
+			writer := &Writer[entities.PipelineEvent]{
 				client:     mt.Client,
 				collection: mt.Coll.Name(),
 				database:   mt.DB.Name(),
@@ -173,12 +166,12 @@ func TestUpsert(t *testing.T) {
 func TestDelete(t *testing.T) {
 	t.Parallel()
 	tests := map[string]struct {
-		data        fakeWriterData
+		data        entities.PipelineEvent
 		responses   primitive.D
 		expectedErr bool
 	}{
 		"no error": {
-			data: fakeWriterData{id: "12345"},
+			data: entities.Event{ID: "12345"},
 			responses: bson.D{
 				{Key: "ok", Value: 1},
 				{Key: "value", Value: bson.D{
@@ -187,7 +180,7 @@ func TestDelete(t *testing.T) {
 			},
 		},
 		"error": {
-			data:        fakeWriterData{},
+			data:        entities.Event{},
 			expectedErr: true,
 		},
 	}
@@ -196,7 +189,7 @@ func TestDelete(t *testing.T) {
 		mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 
 		mt.Run(testName, func(mt *mtest.T) {
-			writer := &Writer[fakeWriterData]{
+			writer := &Writer[entities.PipelineEvent]{
 				client:     mt.Client,
 				collection: mt.Coll.Name(),
 				database:   mt.DB.Name(),
