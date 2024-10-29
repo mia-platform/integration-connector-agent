@@ -19,7 +19,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/mia-platform/data-connector-agent/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,10 +37,7 @@ func TestReadConfiguration(t *testing.T) {
 		"configuration is read from valid file": {
 			path: filepath.Join("testdata", "valid.json"),
 			expectedConfiguration: &Configuration{
-				Secret: utils.SecretSource{
-					FromEnv:  "ENV_NAME",
-					FromFile: "file/path",
-				},
+				Secret: "SECRET",
 			},
 		},
 	}

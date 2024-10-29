@@ -13,64 +13,64 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package writer
+package mongo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/mia-platform/data-connector-agent/internal/utils"
+	"github.com/mia-platform/data-connector-agent/internal/writer"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
-const (
-	mongoDBInitializationErrorPrefix = "failed to start mongo writer:"
+var (
+	ErrMongoInitialization = errors.New("failed to start mongo writer")
 )
 
 type validateFunc func(context.Context, *mongo.Client) error
 
-// MongoDBConfig contains the configuration needed to connect to a remote MongoDB instance
-type MongoDBConfig struct {
+// Config contains the configuration needed to connect to a remote MongoDB instance
+type Config struct {
 	URI        utils.SecretSource `json:"uri"`
 	Database   string             `json:"database"`
 	Collection string             `json:"collection"`
 }
 
-// MongoDBWriter is a concrete implementation of a Writer that will save and delete data from a MongoDB instance.
-type MongoDBWriter struct {
+// Writer is a concrete implementation of a Writer that will save and delete data from a MongoDB instance.
+type Writer[T writer.DataWithIdentifier] struct {
 	client *mongo.Client
 
 	database   string
 	collection string
 }
 
-type MongoDBData struct{}
-
 // NewMongoDBWriter will construct a new MongoDB writer and validate the connection parameters via a ping request.
-func NewMongoDBWriter(ctx context.Context, config MongoDBConfig) (Writer[*MongoDBData], error) {
-	return newMongoDBWriter(ctx, config, func(ctx context.Context, c *mongo.Client) error {
+func NewMongoDBWriter[T writer.DataWithIdentifier](ctx context.Context, config Config) (writer.Writer[T], error) {
+	return newMongoDBWriter[T](ctx, config, func(ctx context.Context, c *mongo.Client) error {
 		return c.Ping(ctx, nil)
 	})
 }
 
-func newMongoDBWriter(ctx context.Context, config MongoDBConfig, validate validateFunc) (Writer[*MongoDBData], error) {
+func newMongoDBWriter[T writer.DataWithIdentifier](ctx context.Context, config Config, validate validateFunc) (writer.Writer[T], error) {
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	options, db, collection := mongoClientOptionsFromConfig(config)
 	client, err := mongo.Connect(ctxWithCancel, options)
 	if err != nil {
-		return nil, fmt.Errorf("%s %w", mongoDBInitializationErrorPrefix, err)
+		return nil, fmt.Errorf("%w: %s", ErrMongoInitialization, err)
 	}
 
 	if err := validate(ctxWithCancel, client); err != nil {
-		return nil, fmt.Errorf("%s %w", mongoDBInitializationErrorPrefix, err)
+		return nil, fmt.Errorf("%w: %s", ErrMongoInitialization, err)
 	}
 
-	return &MongoDBWriter{
+	return &Writer[T]{
 		client:     client,
 		database:   db,
 		collection: collection,
@@ -78,34 +78,44 @@ func newMongoDBWriter(ctx context.Context, config MongoDBConfig, validate valida
 }
 
 // Write implement the Writer interface. The MongoDBWriter will do an upsert of data using its id as primary key
-func (w *MongoDBWriter) Write(ctx context.Context, data *MongoDBData) error {
+func (w *Writer[T]) Write(ctx context.Context, data T) error {
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	opts := options.FindOneAndReplace()
 	opts.SetUpsert(true)
 
+	queryFilter, err := w.idFilter(data)
+	if err != nil {
+		return err
+	}
+
 	result := w.client.Database(w.database).
 		Collection(w.collection).
-		FindOneAndReplace(ctxWithCancel, data.idFilter(), data.bsonData(), opts)
+		FindOneAndReplace(ctxWithCancel, queryFilter, w.bsonData(data), opts)
 	return result.Err()
 }
 
 // Delete implement the Writer interface
-func (w *MongoDBWriter) Delete(ctx context.Context, data *MongoDBData) error {
+func (w *Writer[T]) Delete(ctx context.Context, data T) error {
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	queryFilter, err := w.idFilter(data)
+	if err != nil {
+		return err
+	}
 
 	opts := options.FindOneAndDelete()
 	result := w.client.Database(w.database).
 		Collection(w.collection).
-		FindOneAndDelete(ctxWithCancel, data.idFilter(), opts)
+		FindOneAndDelete(ctxWithCancel, queryFilter, opts)
 	return result.Err()
 }
 
 // mongoClientOptionsFromConfig return a ClientOptions, database and collection parameters parsed from a
 // MongoDBConfig struct.
-func mongoClientOptionsFromConfig(config MongoDBConfig) (*options.ClientOptions, string, string) {
+func mongoClientOptionsFromConfig(config Config) (*options.ClientOptions, string, string) {
 	connectionURI := config.URI.Secret()
 	options := options.Client()
 	options.ApplyURI(connectionURI)
@@ -120,12 +130,15 @@ func mongoClientOptionsFromConfig(config MongoDBConfig) (*options.ClientOptions,
 	return options, database, config.Collection
 }
 
-func (d *MongoDBData) idFilter() bson.D {
-	//TODO: implement real function
-	return bson.D{{Key: "_id", Value: "foo"}}
+func (w Writer[T]) idFilter(data T) (bson.D, error) {
+	id := data.ID()
+	if id == "" {
+		return bson.D{}, fmt.Errorf("id is empty")
+	}
+	return bson.D{{Key: "_id", Value: data.ID()}}, nil
 }
 
-func (d *MongoDBData) bsonData() bson.D {
+func (w Writer[T]) bsonData(_ T) bson.D {
 	//TODO: implement real function
 	return bson.D{{Key: "_id", Value: "foo"}}
 }

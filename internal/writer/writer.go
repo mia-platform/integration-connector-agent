@@ -15,11 +15,22 @@
 
 package writer
 
-import "context"
+import (
+	"context"
+	"errors"
+)
+
+var (
+	ErrEmptyID = errors.New("id is empty")
+)
+
+type DataWithIdentifier interface {
+	ID() string
+}
 
 // Writer interface abstract the implementation of an integration pipeline target. The concrete implementation has
 // to know how to write and delete a Data.
-type Writer[Data any] interface {
+type Writer[Data DataWithIdentifier] interface {
 	// Write will save the Data to the destination configured in the Writer. Writer implementation can choose to
 	// implement this function as a single write or to update data based on an identifier
 	Write(context.Context, Data) error

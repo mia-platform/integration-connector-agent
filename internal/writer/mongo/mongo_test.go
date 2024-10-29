@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package writer
+package mongo
 
 import (
 	"context"
@@ -31,6 +31,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
 
+type fakeWriterData struct {
+	id string
+}
+
+func (f fakeWriterData) ID() string {
+	return f.id
+}
+
 func TestNewWriter(t *testing.T) {
 	t.Parallel()
 
@@ -38,13 +46,13 @@ func TestNewWriter(t *testing.T) {
 	invalid := validateFunc(func(context.Context, *mongo.Client) error { return errors.New("invalid") })
 
 	tests := map[string]struct {
-		configuration  MongoDBConfig
-		expectedWriter *MongoDBWriter
+		configuration  Config
+		expectedWriter *Writer[fakeWriterData]
 		validateFunc   validateFunc
 		expectedError  bool
 	}{
 		"invalid connection string return error": {
-			configuration: MongoDBConfig{
+			configuration: Config{
 				URI: utils.SecretSource{
 					FromFile: filepath.Join("testdata", "invaliduri"),
 				},
@@ -55,7 +63,7 @@ func TestNewWriter(t *testing.T) {
 			expectedError: true,
 		},
 		"cannot receive ping from url return error": {
-			configuration: MongoDBConfig{
+			configuration: Config{
 				URI: utils.SecretSource{
 					FromFile: filepath.Join("testdata", "missingserver"),
 				},
@@ -65,20 +73,20 @@ func TestNewWriter(t *testing.T) {
 			expectedError: true,
 		},
 		"valid uri return writer": {
-			configuration: MongoDBConfig{
+			configuration: Config{
 				URI: utils.SecretSource{
 					FromFile: filepath.Join("testdata", "validuri"),
 				},
 				Collection: "bar",
 			},
 			validateFunc: valid,
-			expectedWriter: &MongoDBWriter{
+			expectedWriter: &Writer[fakeWriterData]{
 				collection: "bar",
 				database:   "baz",
 			},
 		},
 		"valid uri withtout database return writer": {
-			configuration: MongoDBConfig{
+			configuration: Config{
 				URI: utils.SecretSource{
 					FromFile: filepath.Join("testdata", "validuri-without-db"),
 				},
@@ -86,7 +94,7 @@ func TestNewWriter(t *testing.T) {
 				Collection: "bar",
 			},
 			validateFunc: valid,
-			expectedWriter: &MongoDBWriter{
+			expectedWriter: &Writer[fakeWriterData]{
 				collection: "bar",
 				database:   "baz",
 			},
@@ -98,18 +106,18 @@ func TestNewWriter(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
 			defer cancel()
 
-			writer, err := newMongoDBWriter(ctx, test.configuration, test.validateFunc)
+			writer, err := newMongoDBWriter[fakeWriterData](ctx, test.configuration, test.validateFunc)
 			switch test.expectedError {
 			case false:
 				assert.NoError(t, err)
 				require.NotNil(t, writer)
-				mongoWriter, ok := writer.(*MongoDBWriter)
+				mongoWriter, ok := writer.(*Writer[fakeWriterData])
 				require.True(t, ok)
 				assert.NotNil(t, mongoWriter.client)
 				assert.Equal(t, test.expectedWriter.collection, mongoWriter.collection)
 				assert.Equal(t, test.expectedWriter.database, mongoWriter.database)
 			case true:
-				assert.ErrorContains(t, err, mongoDBInitializationErrorPrefix)
+				assert.ErrorContains(t, err, ErrMongoInitialization.Error())
 				assert.Nil(t, writer)
 			}
 		})
@@ -119,22 +127,19 @@ func TestNewWriter(t *testing.T) {
 func TestUpsert(t *testing.T) {
 	t.Parallel()
 	tests := map[string]struct {
-		data        *MongoDBData
+		data        fakeWriterData
 		responses   primitive.D
 		expectedErr bool
 	}{
 		"no error": {
-			data: &MongoDBData{},
+			data: fakeWriterData{id: "12345"},
 			responses: bson.D{
 				{Key: "ok", Value: 1},
 				{Key: "value", Value: bson.D{}},
 			},
 		},
 		"error": {
-			data: &MongoDBData{},
-			responses: bson.D{
-				{Key: "ok", Value: 0},
-			},
+			data:        fakeWriterData{},
 			expectedErr: true,
 		},
 	}
@@ -143,7 +148,7 @@ func TestUpsert(t *testing.T) {
 		mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 
 		mt.Run(testName, func(mt *mtest.T) {
-			writer := &MongoDBWriter{
+			writer := &Writer[fakeWriterData]{
 				client:     mt.Client,
 				collection: mt.Coll.Name(),
 				database:   mt.DB.Name(),
@@ -168,12 +173,12 @@ func TestUpsert(t *testing.T) {
 func TestDelete(t *testing.T) {
 	t.Parallel()
 	tests := map[string]struct {
-		data        *MongoDBData
+		data        fakeWriterData
 		responses   primitive.D
 		expectedErr bool
 	}{
 		"no error": {
-			data: &MongoDBData{},
+			data: fakeWriterData{id: "12345"},
 			responses: bson.D{
 				{Key: "ok", Value: 1},
 				{Key: "value", Value: bson.D{
@@ -182,10 +187,7 @@ func TestDelete(t *testing.T) {
 			},
 		},
 		"error": {
-			data: &MongoDBData{},
-			responses: bson.D{
-				{Key: "ok", Value: 0},
-			},
+			data:        fakeWriterData{},
 			expectedErr: true,
 		},
 	}
@@ -194,7 +196,7 @@ func TestDelete(t *testing.T) {
 		mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 
 		mt.Run(testName, func(mt *mtest.T) {
-			writer := &MongoDBWriter{
+			writer := &Writer[fakeWriterData]{
 				client:     mt.Client,
 				collection: mt.Coll.Name(),
 				database:   mt.DB.Name(),

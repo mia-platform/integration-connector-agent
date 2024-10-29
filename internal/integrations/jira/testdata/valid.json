@@ -1,6 +1,5 @@
 {
 	"secret": {
-		"fromEnv": "ENV_NAME",
-		"fromFile": "file/path"
+		"fromFile": "testdata/test.env"
 	}
 }

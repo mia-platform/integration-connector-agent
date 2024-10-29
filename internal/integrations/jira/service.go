@@ -16,15 +16,24 @@
 package jira
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"net/http"
 
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
+	"github.com/mia-platform/data-connector-agent/internal/aggregator"
+	"github.com/mia-platform/data-connector-agent/internal/httputil"
+	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
 )
 
 const (
 	webhookEndpoint = "/jira/webhook"
+)
+
+var (
+	ErrEmptyConfiguration = errors.New("empty configuration")
 )
 
 func SetupService(ctx context.Context, configPath string, router *swagger.Router[fiber.Handler, fiber.Router]) error {
@@ -33,13 +42,21 @@ func SetupService(ctx context.Context, configPath string, router *swagger.Router
 		return err
 	}
 
-	messageChan := make(chan []byte)
+	return setupWithConfig(ctx, router, config)
+}
+
+func setupWithConfig(_ context.Context, router *swagger.Router[fiber.Handler, fiber.Router], config *Configuration) error {
+	if config == nil {
+		config = &Configuration{}
+	}
+	// TODO: here instead to use a buffer size it should be used a proper queue
+	messageChan := make(chan []byte, 1000000)
 
 	go func() {
-		consumeWebhooksData(ctx, messageChan)
+		// consumeWebhooksData(ctx, messageChan)
 	}()
 
-	handler := webhookHandler(config.Secret.Secret(), messageChan)
+	handler := webhookHandler(config.Secret, messageChan)
 	if _, err := router.AddRoute(http.MethodPost, webhookEndpoint, handler, swagger.Definitions{}); err != nil {
 		return err
 	}
@@ -49,21 +66,25 @@ func SetupService(ctx context.Context, configPath string, router *swagger.Router
 
 func webhookHandler(secret string, messageChan chan<- []byte) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		log := glogrus.FromContext(c.UserContext())
+
 		if err := ValidateWebhookRequest(c, secret); err != nil {
-			// return http error correctly
-			return err
+			log.WithError(err).Error("error validating webhook request")
+			return c.Status(http.StatusBadRequest).JSON(httputil.ValidationError(err.Error()))
 		}
 
-		body := []byte{}
-		copy(body, c.Body())
+		body := bytes.Clone(c.Body())
+		if len(body) == 0 {
+			log.Error("empty request body")
+			return c.SendStatus(http.StatusOK)
+		}
 		messageChan <- body
 
-		// return 200 ok
-		return nil
+		return c.SendStatus(http.StatusOK)
 	}
 }
 
-func consumeWebhooksData(ctx context.Context, messageChan chan []byte) {
+func consumeWebhooksData[T any](ctx context.Context, messageChan chan []byte, pipeline aggregator.IPipeline[T]) {
 loop:
 	for {
 		select {
@@ -72,6 +93,9 @@ loop:
 				// the chanel has been closed, break the loop
 				break loop
 			}
+			// TODO: add mapper
+			// mappedMsg := msg
+			// pipeline.Write(msg)
 		case <-ctx.Done():
 			// context has been cancelled close che channel
 			close(messageChan)

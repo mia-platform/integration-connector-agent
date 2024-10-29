@@ -19,8 +19,13 @@ import (
 	"github.com/mia-platform/data-connector-agent/internal/utils"
 )
 
-// Configuration is the rappresentation of the configuration for a Jira Cloud webhook
+// Configuration is the representation of the configuration for a Jira Cloud webhook
 type Configuration struct {
+	// Secret the webhook secret configuration for validating the data received
+	Secret string
+}
+
+type jsonConfiguration struct {
 	// Secret the webhook secret configuration for validating the data received
 	Secret utils.SecretSource `json:"secret"`
 }
@@ -28,10 +33,12 @@ type Configuration struct {
 // ReadConfiguration return the configuration data contained in the file at path or an error if it cannot be read or
 // parsed correctly
 func ReadConfiguration(path string) (*Configuration, error) {
-	config := new(Configuration)
+	config := new(jsonConfiguration)
 	if err := utils.ReadJSONFile(path, config); err != nil {
 		return nil, err
 	}
 
-	return config, nil
+	return &Configuration{
+		Secret: config.Secret.Secret(),
+	}, nil
 }
