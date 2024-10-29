@@ -43,6 +43,6 @@ func (m *Mapper) Map(data map[string]any) map[string]interface{} {
 	return data
 }
 
-func NewMapper(config map[string]any) *Mapper {
+func NewMapper(_ map[string]any) *Mapper {
 	return &Mapper{}
 }

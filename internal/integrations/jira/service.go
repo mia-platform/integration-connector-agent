@@ -84,7 +84,7 @@ func webhookHandler(secret string, messageChan chan<- []byte) fiber.Handler {
 	}
 }
 
-func consumeWebhooksData[T any](ctx context.Context, messageChan chan []byte, pipeline aggregator.IPipeline[T]) {
+func consumeWebhooksData[T any](ctx context.Context, messageChan chan []byte, _ aggregator.IPipeline[T]) {
 loop:
 	for {
 		select {

@@ -23,10 +23,10 @@ type jiraIssue struct {
 }
 
 type jiraUser struct {
-	Name        string `json:"name"`
-	Email       string `json:"emailAddress"`
-	DisplayName string `json:"displayName"`
-	Active      string `json:"active"`
+	Name         string `json:"name"`
+	EmailAddress string `json:"emailAddress"`
+	DisplayName  string `json:"displayName"`
+	Active       string `json:"active"`
 }
 
 type issueChange struct {
@@ -34,7 +34,7 @@ type issueChange struct {
 	To         map[string]any `json:"to"`
 	FromString string         `json:"fromString"`
 	From       map[string]any `json:"from"`
-	FieldType  string         `json:"fieldtype"`
+	FieldType  string         `json:"fieldtype"` //nolint:tagliatelle
 	Field      string         `json:"field"`
 }
 
