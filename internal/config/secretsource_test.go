@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package config
 
 import (
 	"path/filepath"
@@ -36,7 +36,7 @@ func TestSecret(t *testing.T) {
 		},
 		"from missing file return empty string": {
 			source: SecretSource{
-				FromFile: filepath.Join("testdata", "missing"),
+				FromFile: filepath.Join("testdata", "secretsource", "missing"),
 			},
 		},
 		"from missing secret section return emptry string": {
@@ -44,14 +44,14 @@ func TestSecret(t *testing.T) {
 		},
 		"from valid file return secret string": {
 			source: SecretSource{
-				FromFile: filepath.Join("testdata", "secret"),
+				FromFile: filepath.Join("testdata", "secretsource", "secret"),
 			},
 			expectedSecret: "secret-from-file",
 		},
 		"with both from env has priority": {
 			source: SecretSource{
 				FromEnv:  "ENV_NAME",
-				FromFile: filepath.Join("testdata", "secret"),
+				FromFile: filepath.Join("testdata", "secretsource", "secret"),
 			},
 		},
 	}

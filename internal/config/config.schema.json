@@ -8,7 +8,8 @@
 				"type": "object",
 				"properties": {
 					"type": {
-						"type": "string"
+						"type": "string",
+						"enum": ["jira"]
 					},
 					"authentication": {
 						"type": "object",
@@ -18,13 +19,14 @@
 							}
 						}
 					},
-					"writer": {
+					"writers": {
 						"type": "array",
 						"items": {
 							"type": "object",
 							"properties": {
 								"type": {
-									"type": "string"
+									"type": "string",
+									"enum": ["mongo"]
 								},
 								"url": {
 									"$ref": "#/definitions/secret"
@@ -43,7 +45,7 @@
 				},
 				"required": [
 					"type",
-					"writer"
+					"writers"
 				]
 			}
 		}

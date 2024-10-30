@@ -15,19 +15,20 @@
 
 package utils
 
-import (
-	"encoding/json"
-	"os"
+import "errors"
+
+var (
+	ErrValidationError = errors.New("validation error")
 )
 
-// ReadJSONFile read file at path and parse its content as json in data
-func ReadJSONFile(path string, data any) error {
-	configFile, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer configFile.Close()
+type HTTPError struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
 
-	decoder := json.NewDecoder(configFile)
-	return decoder.Decode(data)
+func ValidationError(message string) *HTTPError {
+	return &HTTPError{
+		Error:   "Validation Error",
+		Message: message,
+	}
 }

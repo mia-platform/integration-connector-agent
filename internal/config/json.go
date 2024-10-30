@@ -13,37 +13,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package config
 
 import (
-	"context"
-	"fmt"
+	"encoding/json"
 	"os"
-	"os/signal"
-	"syscall"
-
-	"github.com/mia-platform/data-connector-agent/internal/config"
-	"github.com/mia-platform/data-connector-agent/internal/server"
-
-	"github.com/caarlos0/env/v11"
 )
 
-func main() {
-	envVars, err := env.ParseAs[config.EnvironmentVariables]()
+// ReadJSONFile read file at path and parse its content as json in data
+func ReadJSONFile(path string, data any) error {
+	configFile, err := os.Open(path)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return err
 	}
+	defer configFile.Close()
 
-	sysChan := make(chan os.Signal, 1)
-	signal.Notify(sysChan, syscall.SIGTERM)
-	exitCode := 0
-
-	if err := server.New(context.Background(), envVars, sysChan); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		exitCode = 1
-	}
-
-	close(sysChan)
-	os.Exit(exitCode)
+	decoder := json.NewDecoder(configFile)
+	return decoder.Decode(data)
 }

@@ -20,8 +20,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/mia-platform/data-connector-agent/internal/config"
 	"github.com/mia-platform/data-connector-agent/internal/entities"
-	"github.com/mia-platform/data-connector-agent/internal/utils"
 	"github.com/mia-platform/data-connector-agent/internal/writer"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -37,9 +37,9 @@ type validateFunc func(context.Context, *mongo.Client) error
 
 // Config contains the configuration needed to connect to a remote MongoDB instance
 type Config struct {
-	URI        utils.SecretSource `json:"uri"`
-	Database   string             `json:"database"`
-	Collection string             `json:"collection"`
+	URI        config.SecretSource `json:"uri"`
+	Database   string              `json:"database"`
+	Collection string              `json:"collection"`
 }
 
 // Writer is a concrete implementation of a Writer that will save and delete data from a MongoDB instance.

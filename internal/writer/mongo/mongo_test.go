@@ -22,8 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mia-platform/data-connector-agent/internal/config"
 	"github.com/mia-platform/data-connector-agent/internal/entities"
-	"github.com/mia-platform/data-connector-agent/internal/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
@@ -46,7 +46,7 @@ func TestNewWriter(t *testing.T) {
 	}{
 		"invalid connection string return error": {
 			configuration: Config{
-				URI: utils.SecretSource{
+				URI: config.SecretSource{
 					FromFile: filepath.Join("testdata", "invaliduri"),
 				},
 				Database:   "foo",
@@ -57,7 +57,7 @@ func TestNewWriter(t *testing.T) {
 		},
 		"cannot receive ping from url return error": {
 			configuration: Config{
-				URI: utils.SecretSource{
+				URI: config.SecretSource{
 					FromFile: filepath.Join("testdata", "missingserver"),
 				},
 				Collection: "bar",
@@ -67,7 +67,7 @@ func TestNewWriter(t *testing.T) {
 		},
 		"valid uri return writer": {
 			configuration: Config{
-				URI: utils.SecretSource{
+				URI: config.SecretSource{
 					FromFile: filepath.Join("testdata", "validuri"),
 				},
 				Collection: "bar",
@@ -80,7 +80,7 @@ func TestNewWriter(t *testing.T) {
 		},
 		"valid uri withtout database return writer": {
 			configuration: Config{
-				URI: utils.SecretSource{
+				URI: config.SecretSource{
 					FromFile: filepath.Join("testdata", "validuri-without-db"),
 				},
 				Database:   "baz",

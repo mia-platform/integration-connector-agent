@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package config
 
 import (
 	"path/filepath"
@@ -31,29 +31,29 @@ func TestReadJSON(t *testing.T) {
 		expectedObject *fakeObj
 	}{
 		"missing file return error": {
-			path:          filepath.Join("testdata", "missing"),
+			path:          filepath.Join("testdata", "readjson", "missing"),
 			expectedError: "no such file or directory",
 		},
 		"no json file return error": {
-			path:          filepath.Join("testdata", "nonjson.toml"),
+			path:          filepath.Join("testdata", "readjson", "nonjson.toml"),
 			expectedError: "invalid character 'o'",
 		},
 		"file with wrong type return error": {
-			path:          filepath.Join("testdata", "wrong-data.json"),
+			path:          filepath.Join("testdata", "readjson", "wrong-data.json"),
 			expectedError: "cannot unmarshal number",
 		},
 		"file with invalid json data return error": {
-			path:          filepath.Join("testdata", "invalid.json"),
+			path:          filepath.Join("testdata", "readjson", "invalid.json"),
 			expectedError: "invalid character '}'",
 		},
 		"json file is parsed correctly": {
-			path: filepath.Join("testdata", "file.json"),
+			path: filepath.Join("testdata", "readjson", "file.json"),
 			expectedObject: &fakeObj{
 				Key: "value",
 			},
 		},
 		"file without extension is parsed correctly": {
-			path: filepath.Join("testdata", "file-without-extension"),
+			path: filepath.Join("testdata", "readjson", "file-without-extension"),
 			expectedObject: &fakeObj{
 				Key: "no-extension",
 			},

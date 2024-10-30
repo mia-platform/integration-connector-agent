@@ -22,8 +22,8 @@ import (
 	"net/http"
 
 	"github.com/mia-platform/data-connector-agent/internal/entities"
-	"github.com/mia-platform/data-connector-agent/internal/httputil"
 	"github.com/mia-platform/data-connector-agent/internal/pipeline"
+	"github.com/mia-platform/data-connector-agent/internal/utils"
 	"github.com/mia-platform/data-connector-agent/internal/writer"
 
 	swagger "github.com/davidebianchi/gswagger"
@@ -93,7 +93,7 @@ func webhookHandler(secret string, p pipeline.IPipeline[entities.PipelineEvent])
 
 		if err := ValidateWebhookRequest(c, secret); err != nil {
 			log.WithError(err).Error("error validating webhook request")
-			return c.Status(http.StatusBadRequest).JSON(httputil.ValidationError(err.Error()))
+			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
 		}
 
 		body := bytes.Clone(c.Body())
@@ -105,7 +105,7 @@ func webhookHandler(secret string, p pipeline.IPipeline[entities.PipelineEvent])
 		event, err := getPipelineEvent(body)
 		if err != nil {
 			log.WithError(err).Error("error unmarshaling event")
-			return c.Status(http.StatusBadRequest).JSON(httputil.ValidationError(err.Error()))
+			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
 		}
 
 		p.AddMessage(event)

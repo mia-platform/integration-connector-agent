@@ -29,7 +29,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gofiber/fiber/v2"
 	"github.com/mia-platform/data-connector-agent/internal/entities"
-	"github.com/mia-platform/data-connector-agent/internal/httputil"
+	"github.com/mia-platform/data-connector-agent/internal/utils"
 	"github.com/mia-platform/data-connector-agent/internal/writer"
 	"github.com/mia-platform/data-connector-agent/internal/writer/fake"
 	"github.com/sirupsen/logrus"
@@ -68,9 +68,9 @@ func TestSetupServiceWithConfig(t *testing.T) {
 			expectedStatusCode: http.StatusBadRequest,
 			expectedBody: func(t *testing.T, body io.ReadCloser) {
 				t.Helper()
-				expectedBody := httputil.HTTPError{}
+				expectedBody := utils.HTTPError{}
 				require.NoError(t, json.NewDecoder(body).Decode(&expectedBody))
-				require.Equal(t, httputil.HTTPError{
+				require.Equal(t, utils.HTTPError{
 					Error:   "Validation Error",
 					Message: noSignatureHeaderButSecretError,
 				}, expectedBody)

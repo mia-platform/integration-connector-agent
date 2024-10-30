@@ -13,23 +13,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httputil
+package utils
 
-import "errors"
+import (
+	"testing"
 
-// TODO: move in utils
-var (
-	ErrValidationError = errors.New("validation error")
+	"github.com/stretchr/testify/require"
 )
 
-type HTTPError struct {
-	Error   string `json:"error"`
-	Message string `json:"message"`
-}
-
-func ValidationError(message string) *HTTPError {
-	return &HTTPError{
-		Error:   "Validation Error",
-		Message: message,
-	}
+func TestValidationErrors(t *testing.T) {
+	t.Run("returns correct validation error", func(t *testing.T) {
+		err := ValidationError("test")
+		require.Equal(t, &HTTPError{
+			Message: "test",
+			Error:   "Validation Error",
+		}, err)
+	})
 }

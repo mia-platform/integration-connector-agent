@@ -25,7 +25,7 @@ endif
 .PHONY: test/unit
 test/unit:
 	$(info Running tests...)
-	go test $(GO_TEST_DEBUG_FLAG) -race ./...
+	go test $(GO_TEST_DEBUG_FLAG) -race -cover ./...
 
 .PHONY: test/coverage
 test/coverage:
