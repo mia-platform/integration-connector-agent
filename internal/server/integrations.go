@@ -25,7 +25,7 @@ import (
 	integration "github.com/mia-platform/data-connector-agent/internal/integrations"
 	"github.com/mia-platform/data-connector-agent/internal/integrations/jira"
 	"github.com/mia-platform/data-connector-agent/internal/writer"
-	"github.com/mia-platform/data-connector-agent/internal/writer/fake"
+	fakewriter "github.com/mia-platform/data-connector-agent/internal/writer/fake"
 	"github.com/mia-platform/data-connector-agent/internal/writer/mongo"
 
 	swagger "github.com/davidebianchi/gswagger"
@@ -79,7 +79,7 @@ func setupWriters(ctx context.Context, writers []config.Writer) ([]writer.Writer
 			}
 			w = append(w, mongoWriter)
 		case writer.Fake:
-			w = append(w, fake.New())
+			w = append(w, fakewriter.New())
 		default:
 			return nil, fmt.Errorf("%w: %s", errUnsupportedWriter, configuredWriter.Type)
 		}

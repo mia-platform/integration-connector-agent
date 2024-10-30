@@ -13,10 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fake
+package fakewriter
 
 import (
 	"context"
+	"sync"
 
 	"github.com/mia-platform/data-connector-agent/internal/entities"
 	"github.com/mia-platform/data-connector-agent/internal/writer"
@@ -27,50 +28,85 @@ type Call struct {
 	Operation entities.Operation
 }
 
-type Stub struct {
-	calls []Call
+type Calls []Call
+
+func (c Calls) At(n int) Call {
+	return c[n]
+}
+
+func (c Calls) LastCall() Call {
+	return c[len(c)-1]
+}
+
+type Mock struct {
+	Error error
+}
+
+type Mocks []Mock
+
+func (m *Mocks) ReadAndPop() Mock {
+	mock := (*m)[0]
+	*m = (*m)[1:]
+
+	return mock
 }
 
 type Writer struct {
-	Identifier string
+	mtx sync.Mutex
 
-	mockCalls []Stub
+	stub  Calls
+	mocks Mocks
 }
 
-func New() writer.Writer[entities.PipelineEvent] {
+func New() *Writer {
 	return &Writer{
-		mockCalls: []Stub{},
+		stub:  Calls{},
+		mocks: Mocks{},
 	}
+}
+
+func (f *Writer) Calls() Calls {
+	f.mtx.Lock()
+	defer f.mtx.Unlock()
+
+	return f.stub
+}
+
+func (f *Writer) AddMock(mock Mock) {
+	f.mtx.Lock()
+	defer f.mtx.Unlock()
+
+	f.mocks = append(f.mocks, mock)
 }
 
 func (f *Writer) Write(_ context.Context, data entities.PipelineEvent) error {
-	if f.mockCalls == nil {
-		f.mockCalls = []Stub{}
-	}
+	f.mtx.Lock()
+	defer f.mtx.Unlock()
 
-	f.mockCalls = append(f.mockCalls, Stub{
-		calls: []Call{
-			{
-				Data:      data,
-				Operation: entities.Write,
-			},
-		},
+	f.stub = append(f.stub, Call{
+		Data:      data,
+		Operation: entities.Write,
 	})
+
+	if len(f.mocks) > 0 {
+		mock := f.mocks.ReadAndPop()
+		return mock.Error
+	}
 	return nil
 }
 
 func (f *Writer) Delete(_ context.Context, data entities.PipelineEvent) error {
-	if f.mockCalls == nil {
-		f.mockCalls = []Stub{}
-	}
+	f.mtx.Lock()
+	defer f.mtx.Unlock()
 
-	f.mockCalls = append(f.mockCalls, Stub{
-		calls: []Call{
-			{
-				Data:      data,
-				Operation: entities.Delete,
-			},
-		},
+	f.stub = append(f.stub, Call{
+		Data:      data,
+		Operation: entities.Delete,
 	})
+
+	if len(f.mocks) > 0 {
+		mock := f.mocks.ReadAndPop()
+		return mock.Error
+	}
 	return nil
 }

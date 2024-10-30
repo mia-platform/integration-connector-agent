@@ -31,7 +31,7 @@ import (
 	"github.com/mia-platform/data-connector-agent/internal/entities"
 	"github.com/mia-platform/data-connector-agent/internal/utils"
 	"github.com/mia-platform/data-connector-agent/internal/writer"
-	"github.com/mia-platform/data-connector-agent/internal/writer/fake"
+	fakewriter "github.com/mia-platform/data-connector-agent/internal/writer/fake"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
@@ -102,7 +102,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 			app, router := getRouter(t)
 
 			if test.writer == nil {
-				test.writer = fake.New()
+				test.writer = fakewriter.New()
 			}
 
 			err := SetupService(context.TODO(), logger, router, test.config, test.writer)

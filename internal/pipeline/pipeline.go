@@ -18,7 +18,6 @@ package pipeline
 import (
 	"context"
 	"errors"
-	"fmt"
 	"reflect"
 
 	"github.com/mia-platform/data-connector-agent/internal/entities"
@@ -44,7 +43,6 @@ func (p Pipeline[T]) AddMessage(data T) {
 }
 
 func (p Pipeline[T]) Start(ctx context.Context) error {
-	fmt.Printf("Starting pipeline %+v %v\n", p.writer, p.writer == nil)
 	if isNil(p.writer) {
 		return ErrWriterNotDefined
 	}
@@ -65,10 +63,12 @@ loop:
 			switch message.Type() {
 			case entities.Write:
 				if err := p.writer.Write(ctx, message); err != nil {
+					// TODO: manage failure in writing message. DLQ?
 					p.logger.WithError(err).WithField("message", message).Error("error writing data")
 				}
 			case entities.Delete:
 				if err := p.writer.Delete(ctx, message); err != nil {
+					// TODO: manage failure in writing message. DLQ?
 					p.logger.WithError(err).WithField("message", message).Error("error deleting data")
 				}
 			}
@@ -76,6 +76,7 @@ loop:
 		case <-ctx.Done():
 			// context has been cancelled close che channel
 			close(p.eventChan)
+			return ctx.Err()
 		}
 	}
 
