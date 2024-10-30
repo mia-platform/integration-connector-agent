@@ -24,6 +24,5 @@ type EnvironmentVariables struct {
 	ServicePrefix        string `env:"SERVICE_PREFIX"`
 	DelayShutdownSeconds int    `env:"DELAY_SHUTDOWN_SECONDS" envDefault:"10"`
 
-	ServiceType       string `env:"INTEGRATION_TYPE,required"`
 	ConfigurationPath string `env:"CONFIGURATION_PATH,required"`
 }

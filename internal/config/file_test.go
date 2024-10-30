@@ -13,45 +13,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jira
+package config
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestReadConfiguration(t *testing.T) {
+func TestReadFile(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		path                  string
-		expectedConfiguration *Configuration
-		expectedErr           string
+		path            string
+		expectedError   string
+		expectedContent string
 	}{
-		"wrong file return error": {
-			path:        filepath.Join("testdata", "missing"),
-			expectedErr: "no such file or directory",
+		"missing file return error": {
+			path:          filepath.Join("testdata", "readfile", "missing"),
+			expectedError: "no such file or directory",
 		},
-		"configuration is read from valid file": {
-			path: filepath.Join("testdata", "valid.json"),
-			expectedConfiguration: &Configuration{
-				Secret: "SECRET",
-			},
+		"json file is parsed correctly": {
+			path:            filepath.Join("testdata", "readfile", "file.json"),
+			expectedContent: `{"key": "value"}`,
+		},
+		"file without extension is parsed correctly": {
+			path:            filepath.Join("testdata", "readfile", "file-without-extension"),
+			expectedContent: `{"key": "no-extension"}`,
 		},
 	}
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			config, err := ReadConfiguration(test.path)
-			switch len(test.expectedErr) {
+			out, err := readFile(test.path)
+			switch len(test.expectedError) {
 			case 0:
 				assert.NoError(t, err)
-				assert.Equal(t, test.expectedConfiguration, config)
+				assert.Equal(t, test.expectedContent, strings.TrimSpace(string(out)))
 			default:
-				assert.ErrorContains(t, err, test.expectedErr)
-				assert.Nil(t, config)
+				assert.ErrorContains(t, err, test.expectedError)
 			}
 		})
 	}

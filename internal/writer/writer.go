@@ -40,3 +40,10 @@ type Writer[Data entities.PipelineEvent] interface {
 	// Delete will delete the Data from the destination configured in the Writer.
 	Delete(ctx context.Context, data Data) error
 }
+
+const (
+	Mongo = "mongo"
+
+	// Fake is a fake writer used for testing purposes
+	Fake = "fake"
+)

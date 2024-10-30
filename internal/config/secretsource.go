@@ -16,20 +16,23 @@
 package config
 
 import (
+	"encoding/json"
 	"os"
 	"strings"
 )
 
-// SecretSource tells how to retrieve the webhook secret
-type SecretSource struct {
+type SecretSource string
+
+func (s SecretSource) String() string {
+	return string(s)
+}
+
+type secretConfig struct {
 	FromEnv  string `json:"fromEnv"`
 	FromFile string `json:"fromFile"`
 }
 
-// Secret return the secret contained in s reading it from environment or the referenced file, it will return
-// an empty string in case of error or if it cannot be read from the target source. If both sources are defined
-// environment variable has the priority.
-func (s SecretSource) Secret() string {
+func readSecret(s *secretConfig) string {
 	secret := ""
 	switch {
 	case s.FromEnv != "":
@@ -39,6 +42,18 @@ func (s SecretSource) Secret() string {
 	}
 
 	return strings.TrimSpace(secret)
+}
+
+func (s *SecretSource) UnmarshalJSON(data []byte) error {
+	aux := &secretConfig{}
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+
+	secret := readSecret(aux)
+	*s = SecretSource(secret)
+
+	return nil
 }
 
 // secretFromEnv return the value contained in envName environment variable or the empty string if is not found

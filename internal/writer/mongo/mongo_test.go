@@ -18,12 +18,11 @@ package mongo
 import (
 	"context"
 	"errors"
-	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/mia-platform/data-connector-agent/internal/config"
 	"github.com/mia-platform/data-connector-agent/internal/entities"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
@@ -46,9 +45,7 @@ func TestNewWriter(t *testing.T) {
 	}{
 		"invalid connection string return error": {
 			configuration: Config{
-				URI: config.SecretSource{
-					FromFile: filepath.Join("testdata", "invaliduri"),
-				},
+				URI:        "invalid://uri/for/mongo",
 				Database:   "foo",
 				Collection: "bar",
 			},
@@ -57,9 +54,7 @@ func TestNewWriter(t *testing.T) {
 		},
 		"cannot receive ping from url return error": {
 			configuration: Config{
-				URI: config.SecretSource{
-					FromFile: filepath.Join("testdata", "missingserver"),
-				},
+				URI:        "mongodb://localhost:27018/baz?connectTimeoutMS=200",
 				Collection: "bar",
 			},
 			validateFunc:  invalid,
@@ -67,9 +62,7 @@ func TestNewWriter(t *testing.T) {
 		},
 		"valid uri return writer": {
 			configuration: Config{
-				URI: config.SecretSource{
-					FromFile: filepath.Join("testdata", "validuri"),
-				},
+				URI:        "mongodb://localhost:27017/baz?connectTimeoutMS=200",
 				Collection: "bar",
 			},
 			validateFunc: valid,
@@ -80,9 +73,7 @@ func TestNewWriter(t *testing.T) {
 		},
 		"valid uri withtout database return writer": {
 			configuration: Config{
-				URI: config.SecretSource{
-					FromFile: filepath.Join("testdata", "validuri-without-db"),
-				},
+				URI:        "mongodb://localhost:27017/?connectTimeoutMS=200",
 				Database:   "baz",
 				Collection: "bar",
 			},

@@ -13,10 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jira
+package server
 
-// Configuration is the representation of the configuration for a Jira Cloud webhook
-type Configuration struct {
-	// Secret the webhook secret configuration for validating the data received
-	Secret string
-}
+import "errors"
+
+var (
+	errSetupWriter       = errors.New("error setting up writer")
+	errUnsupportedWriter = errors.New("unsupported writer type")
+)

@@ -13,21 +13,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package server
 
 import (
-	"encoding/json"
-	"os"
+	"context"
+	"testing"
+
+	"github.com/mia-platform/data-connector-agent/internal/config"
+	"github.com/mia-platform/data-connector-agent/internal/writer"
+	"github.com/stretchr/testify/require"
 )
 
-// ReadJSONFile read file at path and parse its content as json in data
-func ReadJSONFile(path string, data any) error {
-	configFile, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer configFile.Close()
+func TestSetupWriters(t *testing.T) {
+	ctx := context.Background()
 
-	decoder := json.NewDecoder(configFile)
-	return decoder.Decode(data)
+	t.Run("multiple writers", func(t *testing.T) {
+		configWriters := []config.Writer{
+			{
+				Type: writer.Fake,
+			},
+			{
+				Type: writer.Fake,
+			},
+		}
+
+		w, err := setupWriters(ctx, configWriters)
+		require.NoError(t, err)
+		require.Equal(t, 2, len(w))
+	})
 }

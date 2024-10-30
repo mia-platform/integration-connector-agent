@@ -35,11 +35,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	config, err := config.LoadServiceConfiguration(envVars.ConfigurationPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
 	sysChan := make(chan os.Signal, 1)
 	signal.Notify(sysChan, syscall.SIGTERM)
 	exitCode := 0
 
-	if err := server.New(context.Background(), envVars, sysChan); err != nil {
+	if err := server.New(context.Background(), envVars, config, sysChan); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		exitCode = 1
 	}

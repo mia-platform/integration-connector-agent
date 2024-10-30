@@ -31,6 +31,9 @@
 								"url": {
 									"$ref": "#/definitions/secret"
 								},
+								"collection": {
+									"type": "string"
+								},
 								"outputEvent": {
 									"type": "object"
 								}
@@ -38,7 +41,8 @@
 							"required": [
 								"type",
 								"url",
-								"outputEvent"
+								"outputEvent",
+								"collection"
 							]
 						}
 					}

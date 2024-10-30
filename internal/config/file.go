@@ -13,10 +13,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jira
+package config
 
-// Configuration is the representation of the configuration for a Jira Cloud webhook
-type Configuration struct {
-	// Secret the webhook secret configuration for validating the data received
-	Secret string
+import (
+	"bytes"
+	"os"
+)
+
+func readFile(path string) ([]byte, error) {
+	configFile, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer configFile.Close()
+
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(configFile); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }

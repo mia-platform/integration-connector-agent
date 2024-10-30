@@ -1,5 +1,0 @@
-{
-	"secret": {
-		"fromFile": "testdata/test.env"
-	}
-}

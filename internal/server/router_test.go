@@ -34,11 +34,11 @@ func TestSetupRouter(t *testing.T) {
 	env := config.EnvironmentVariables{
 		HTTPPort:      "3000",
 		ServicePrefix: "/my-prefix",
-		ServiceType:   "test",
 	}
+	cfg := &config.Configuration{}
 
 	ctx := context.TODO()
-	app, err := NewRouter(ctx, env, log)
+	app, err := NewRouter(ctx, env, log, cfg)
 	require.NoError(t, err, "unexpected error")
 
 	t.Run("API documentation is correctly exposed without prefix - json", func(t *testing.T) {

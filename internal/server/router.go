@@ -17,16 +17,12 @@ package server
 
 import (
 	"context"
-	"errors"
 	"os"
 	"path"
 	"path/filepath"
 
 	"github.com/mia-platform/data-connector-agent/internal/config"
-	integration "github.com/mia-platform/data-connector-agent/internal/integrations"
-	"github.com/mia-platform/data-connector-agent/internal/integrations/jira"
 	"github.com/mia-platform/data-connector-agent/internal/utils"
-	"github.com/mia-platform/data-connector-agent/internal/writer/fake"
 
 	swagger "github.com/davidebianchi/gswagger"
 	oasfiber "github.com/davidebianchi/gswagger/support/fiber"
@@ -38,7 +34,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func NewRouter(ctx context.Context, env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App, error) {
+func NewRouter(ctx context.Context, env config.EnvironmentVariables, log *logrus.Logger, cfg *config.Configuration) (*fiber.App, error) {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 	})
@@ -68,15 +64,8 @@ func NewRouter(ctx context.Context, env config.EnvironmentVariables, log *logrus
 		return nil, err
 	}
 
-	switch env.ServiceType {
-	case integration.Jira:
-		if err := jira.SetupService(ctx, logrus.NewEntry(log), env.ConfigurationPath, oasRouter, fake.New()); err != nil {
-			return nil, err
-		}
-	case "test":
-		// do nothing only for testing
-	default:
-		return nil, errors.New("unsupported integration type")
+	if err := setupIntegrations(ctx, log, cfg, oasRouter); err != nil {
+		return nil, err
 	}
 
 	if err := oasRouter.GenerateAndExposeOpenapi(); err != nil {

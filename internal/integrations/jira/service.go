@@ -45,29 +45,10 @@ var (
 func SetupService(
 	ctx context.Context,
 	logger *logrus.Entry,
-	configPath string,
 	router *swagger.Router[fiber.Handler, fiber.Router],
+	config Configuration,
 	writer writer.Writer[entities.PipelineEvent],
 ) error {
-	config, err := ReadConfiguration(configPath)
-	if err != nil {
-		return err
-	}
-
-	return setupWithConfig(ctx, logger, router, config, writer)
-}
-
-func setupWithConfig(
-	ctx context.Context,
-	logger *logrus.Entry,
-	router *swagger.Router[fiber.Handler, fiber.Router],
-	config *Configuration,
-	writer writer.Writer[entities.PipelineEvent],
-) error {
-	if config == nil {
-		config = &Configuration{}
-	}
-
 	p := pipeline.NewPipeline(logger, writer)
 
 	go func(p pipeline.IPipeline[entities.PipelineEvent]) {

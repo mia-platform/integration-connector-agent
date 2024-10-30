@@ -4,16 +4,16 @@
 			"type": "jira",
 			"authentication": {
 				"secret": {
-					"fromEnv": "SECRET_ENV",
-					"fromFile": "./secret/file"
+					"fromFile": "testdata/secret"
 				}
 			},
 			"writers": [
 				{
 					"type": "mongo",
 					"url": {
-						"fromEnv": "MONGO_URL"
+						"fromEnv": "TEST_LOAD_SERVICE_MONGO_URL"
 					},
+					"collection": "my-collection",
 					"outputEvent": {
 						"key": "{{ issue.key }}",
 						"summary": "{{ issue.fields.summary }}",

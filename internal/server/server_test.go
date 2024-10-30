@@ -35,12 +35,12 @@ func TestServer(t *testing.T) {
 			HTTPAddress:          "127.0.0.1",
 			LogLevel:             "error",
 			DelayShutdownSeconds: 10,
-			ServiceType:          "test",
 		}
+		cfg := &config.Configuration{}
 
 		ctx := context.TODO()
 		go func() {
-			assert.NoError(t, New(ctx, envVars, shutdown))
+			assert.NoError(t, New(ctx, envVars, cfg, shutdown))
 			assert.ErrorIs(t, ctx.Err(), context.Canceled)
 		}()
 
@@ -66,10 +66,10 @@ func TestServer(t *testing.T) {
 			ServicePrefix:        "/prefix",
 			LogLevel:             "error",
 			DelayShutdownSeconds: 10,
-			ServiceType:          "test",
 		}
+		cfg := &config.Configuration{}
 		go func() {
-			assert.NoError(t, New(context.TODO(), envVars, shutdown))
+			assert.NoError(t, New(context.TODO(), envVars, cfg, shutdown))
 		}()
 		defer func() { shutdown <- struct{}{} }()
 
@@ -83,6 +83,7 @@ func TestServer(t *testing.T) {
 }
 
 func TestShutdown(t *testing.T) {
+	cfg := &config.Configuration{}
 	shutdown := make(chan interface{}, 1)
 	done := make(chan bool, 1)
 
@@ -95,11 +96,10 @@ func TestShutdown(t *testing.T) {
 		envVars := config.EnvironmentVariables{
 			HTTPAddress:          "127.0.0.1",
 			HTTPPort:             "8080",
-			LogLevel:             "trace",
+			LogLevel:             "error",
 			DelayShutdownSeconds: 3,
-			ServiceType:          "test",
 		}
-		assert.NoError(t, New(context.TODO(), envVars, shutdown))
+		assert.NoError(t, New(context.TODO(), envVars, cfg, shutdown))
 		done <- true
 	}()
 

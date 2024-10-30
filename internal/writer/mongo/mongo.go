@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/mia-platform/data-connector-agent/internal/config"
 	"github.com/mia-platform/data-connector-agent/internal/entities"
 	"github.com/mia-platform/data-connector-agent/internal/writer"
 	"go.mongodb.org/mongo-driver/bson"
@@ -37,9 +36,9 @@ type validateFunc func(context.Context, *mongo.Client) error
 
 // Config contains the configuration needed to connect to a remote MongoDB instance
 type Config struct {
-	URI        config.SecretSource `json:"uri"`
-	Database   string              `json:"database"`
-	Collection string              `json:"collection"`
+	URI        string
+	Database   string
+	Collection string
 }
 
 // Writer is a concrete implementation of a Writer that will save and delete data from a MongoDB instance.
@@ -62,6 +61,7 @@ func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config Conf
 	defer cancel()
 
 	options, db, collection := mongoClientOptionsFromConfig(config)
+
 	client, err := mongo.Connect(ctxWithCancel, options)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrMongoInitialization, err)
@@ -117,7 +117,7 @@ func (w *Writer[T]) Delete(ctx context.Context, data T) error {
 // mongoClientOptionsFromConfig return a ClientOptions, database and collection parameters parsed from a
 // MongoDBConfig struct.
 func mongoClientOptionsFromConfig(config Config) (*options.ClientOptions, string, string) {
-	connectionURI := config.URI.Secret()
+	connectionURI := config.URI
 	options := options.Client()
 	options.ApplyURI(connectionURI)
 

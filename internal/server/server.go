@@ -24,7 +24,7 @@ import (
 	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
 )
 
-func New[Signal any](ctx context.Context, envVars config.EnvironmentVariables, sysChannel <-chan Signal) error {
+func New[Signal any](ctx context.Context, envVars config.EnvironmentVariables, cfg *config.Configuration, sysChannel <-chan Signal) error {
 	// Init logger instance.
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	log, err := glogrus.InitHelper(glogrus.InitOptions{Level: envVars.LogLevel})
@@ -32,7 +32,7 @@ func New[Signal any](ctx context.Context, envVars config.EnvironmentVariables, s
 		panic(err)
 	}
 
-	app, err := NewRouter(ctxWithCancel, envVars, log)
+	app, err := NewRouter(ctxWithCancel, envVars, log, cfg)
 	if err != nil {
 		cancel()
 		return err

@@ -42,7 +42,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 	logger := logrus.NewEntry(log)
 
 	type testItem struct {
-		config *Configuration
+		config Configuration
 		req    func(t *testing.T) *http.Request
 		writer writer.Writer[entities.PipelineEvent]
 
@@ -62,7 +62,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 				t.Helper()
 				return httptest.NewRequest(http.MethodPost, webhookEndpoint, nil)
 			},
-			config: &Configuration{
+			config: Configuration{
 				Secret: "SECRET",
 			},
 			expectedStatusCode: http.StatusBadRequest,
@@ -105,7 +105,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 				test.writer = fake.New()
 			}
 
-			err := setupWithConfig(context.TODO(), logger, router, test.config, test.writer)
+			err := SetupService(context.TODO(), logger, router, test.config, test.writer)
 			require.NoError(t, err)
 
 			res, err := app.Test(test.req(t))

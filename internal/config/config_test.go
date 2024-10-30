@@ -22,41 +22,63 @@ import (
 )
 
 func TestLoadServiceConfiguration(t *testing.T) {
-	t.Run("invalid configuration not match schema", func(t *testing.T) {
-		config, err := LoadServiceConfiguration("./testdata/invalid-config.json")
-		require.ErrorContains(t, err, "configuration not valid: json schema validation errors:")
-		require.Nil(t, config)
-	})
+	t.Setenv("TEST_LOAD_SERVICE_MONGO_URL", "mongodb://localhost:27017")
 
-	t.Run("returns configuration", func(t *testing.T) {
-		config, err := LoadServiceConfiguration("./testdata/config.json")
-		require.NoError(t, err)
-		require.Equal(t, &Configuration{
-			Integrations: []Integrations{
-				{
-					Type: "jira",
-					Authentication: Authentication{
-						Secret: SecretSource{
-							FromEnv:  "SECRET_ENV",
-							FromFile: "./secret/file",
+	tests := map[string]struct {
+		path            string
+		expectedError   string
+		expectedContent *Configuration
+	}{
+		"invalid configuration not match schema": {
+			path:          "./testdata/invalid-config.json",
+			expectedError: "configuration not valid: json schema validation errors:",
+		},
+		"configuration not found": {
+			path:          "./testdata/not-exist",
+			expectedError: "configuration not valid: open ./testdata/not-exist: no such file or directory",
+		},
+		"not json config": {
+			path:          "./testdata/invalid-json.json",
+			expectedError: "configuration not valid: error validating: unexpected EOF",
+		},
+		"config is parsed correctly": {
+			path: "./testdata/config.json",
+			expectedContent: &Configuration{
+				Integrations: []Integration{
+					{
+						Type: "jira",
+						Authentication: Authentication{
+							Secret: SecretSource("MY_SECRET"),
 						},
-					},
-					Writers: []Writer{
-						{
-							Type: "mongo",
-							URL: SecretSource{
-								FromEnv: "MONGO_URL",
-							},
-							OutputEvent: map[string]any{
-								"key":         "{{ issue.key }}",
-								"summary":     "{{ issue.fields.summary }}",
-								"createdAt":   "{{ issue.fields.created }}",
-								"description": "{{ issue.fields.description }}",
+						Writers: []Writer{
+							{
+								Type:       "mongo",
+								URL:        SecretSource("mongodb://localhost:27017"),
+								Collection: "my-collection",
+								OutputEvent: map[string]any{
+									"key":         "{{ issue.key }}",
+									"summary":     "{{ issue.fields.summary }}",
+									"createdAt":   "{{ issue.fields.created }}",
+									"description": "{{ issue.fields.description }}",
+								},
 							},
 						},
 					},
 				},
 			},
-		}, config)
-	})
+		},
+	}
+
+	for testName, test := range tests {
+		t.Run(testName, func(t *testing.T) {
+			config, err := LoadServiceConfiguration(test.path)
+			if test.expectedError != "" {
+				require.ErrorContains(t, err, test.expectedError)
+				require.Nil(t, config)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, test.expectedContent, config)
+			}
+		})
+	}
 }

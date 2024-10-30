@@ -16,46 +16,69 @@
 package config
 
 import (
-	"path"
-	"strings"
+	"encoding/json"
+	"fmt"
 
-	"github.com/mia-platform/configlib"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 type Writer struct {
 	Type        string         `json:"type"`
 	URL         SecretSource   `json:"url"`
 	OutputEvent map[string]any `json:"outputEvent"`
+	Collection  string         `json:"collection"`
 }
 
 type Authentication struct {
 	Secret SecretSource `json:"secret"`
 }
 
-type Integrations struct {
+type Integration struct {
 	Type           string         `json:"type"`
 	Authentication Authentication `json:"authentication"`
 	Writers        []Writer       `json:"writers"`
 }
 
 type Configuration struct {
-	Integrations []Integrations `json:"integrations"`
+	Integrations []Integration `json:"integrations"`
 }
 
+var (
+	ErrConfigNotValid = fmt.Errorf("configuration not valid")
+)
+
 func LoadServiceConfiguration(filePath string) (*Configuration, error) {
-	jsonSchema, err := configlib.ReadFile("./config.schema.json")
+	jsonSchema, err := readFile("./config.schema.json")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %s", ErrConfigNotValid, err)
 	}
 
-	fileName := path.Base(filePath)
-	fileNameWithoutExt := strings.TrimSuffix(fileName, path.Ext(fileName))
-	dir := path.Dir(filePath)
+	jsonConfig, err := readFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrConfigNotValid, err)
+	}
+
+	if err = validateJSONConfig(jsonSchema, jsonConfig); err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrConfigNotValid, err)
+	}
 
 	var config *Configuration
-	if err := configlib.GetConfigFromFile(fileNameWithoutExt, dir, jsonSchema, &config); err != nil {
-		return nil, err
+	if err := json.Unmarshal(jsonConfig, &config); err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrConfigNotValid, err)
 	}
 
 	return config, nil
+}
+
+func validateJSONConfig(schema, jsonConfig []byte) error {
+	schemaLoader := gojsonschema.NewBytesLoader(schema)
+	documentLoader := gojsonschema.NewBytesLoader(jsonConfig)
+	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
+	if err != nil {
+		return fmt.Errorf("error validating: %s", err.Error())
+	}
+	if !result.Valid() {
+		return fmt.Errorf("json schema validation errors: %s", result.Errors())
+	}
+	return nil
 }
