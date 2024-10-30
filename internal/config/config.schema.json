@@ -51,7 +51,8 @@
 					"type",
 					"writers"
 				]
-			}
+			},
+			"minItems": 1
 		}
 	},
 	"required": [

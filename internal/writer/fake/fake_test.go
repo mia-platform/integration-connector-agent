@@ -16,6 +16,8 @@
 package fakewriter
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	"github.com/mia-platform/data-connector-agent/internal/entities"
@@ -26,5 +28,75 @@ import (
 func TestImplementWriter(t *testing.T) {
 	t.Run("implement writer", func(t *testing.T) {
 		require.Implements(t, (*writer.Writer[entities.PipelineEvent])(nil), New())
+	})
+
+	t.Run("stub write", func(t *testing.T) {
+		f := New()
+
+		event := entities.Event{
+			ID: "id",
+		}
+		err := f.Write(context.Background(), event)
+		require.NoError(t, err)
+
+		require.Len(t, f.Calls(), 1)
+		require.Equal(t, Call{
+			Data:      event,
+			Operation: entities.Write,
+		}, f.Calls().LastCall())
+	})
+
+	t.Run("stub delete", func(t *testing.T) {
+		f := New()
+
+		event := entities.Event{
+			ID: "id",
+		}
+		err := f.Delete(context.Background(), event)
+		require.NoError(t, err)
+
+		require.Len(t, f.Calls(), 1)
+		require.Equal(t, Call{
+			Data:      event,
+			Operation: entities.Delete,
+		}, f.Calls().LastCall())
+	})
+
+	t.Run("mock error write", func(t *testing.T) {
+		f := New()
+
+		event := entities.Event{
+			ID: "id",
+		}
+		f.AddMock(Mock{
+			Error: errors.New("mock error"),
+		})
+		err := f.Write(context.Background(), event)
+		require.EqualError(t, err, "mock error")
+
+		require.Len(t, f.Calls(), 1)
+		require.Equal(t, Call{
+			Data:      event,
+			Operation: entities.Write,
+		}, f.Calls().LastCall())
+	})
+
+	t.Run("mock error delete", func(t *testing.T) {
+		f := New()
+
+		event := entities.Event{
+			ID: "id",
+		}
+		f.AddMock(Mock{
+			Error: errors.New("mock error"),
+		})
+		err := f.Delete(context.Background(), event)
+		require.EqualError(t, err, "mock error")
+
+		require.Len(t, f.Calls(), 1)
+		require.Equal(t, Call{
+			Data:      event,
+			Operation: entities.Delete,
+		}, f.Calls().LastCall())
 	})
 }

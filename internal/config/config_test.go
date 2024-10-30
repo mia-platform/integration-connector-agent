@@ -67,6 +67,10 @@ func TestLoadServiceConfiguration(t *testing.T) {
 				},
 			},
 		},
+		"invalid config if integrations is empty": {
+			path:          "./testdata/empty-integrations.json",
+			expectedError: "configuration not valid: json schema validation errors:",
+		},
 	}
 
 	for testName, test := range tests {

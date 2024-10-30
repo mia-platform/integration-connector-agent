@@ -32,7 +32,7 @@ func New[Signal any](ctx context.Context, envVars config.EnvironmentVariables, c
 		panic(err)
 	}
 
-	app, err := NewRouter(ctxWithCancel, envVars, log, cfg)
+	app, err := NewApp(ctxWithCancel, envVars, log, cfg)
 	if err != nil {
 		cancel()
 		return err

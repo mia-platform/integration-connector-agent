@@ -38,7 +38,7 @@ func TestSetupRouter(t *testing.T) {
 	cfg := &config.Configuration{}
 
 	ctx := context.TODO()
-	app, err := NewRouter(ctx, env, log, cfg)
+	app, err := NewApp(ctx, env, log, cfg)
 	require.NoError(t, err, "unexpected error")
 
 	t.Run("API documentation is correctly exposed without prefix - json", func(t *testing.T) {

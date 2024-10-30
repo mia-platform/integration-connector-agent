@@ -13,12 +13,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
+package entities
 
-import "errors"
+import (
+	"testing"
 
-var (
-	errSetupWriter                = errors.New("error setting up writer")
-	errUnsupportedWriter          = errors.New("unsupported writer type")
-	errUnsupportedIntegrationType = errors.New("unsupported integration type")
+	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
+
+func TestEvent(t *testing.T) {
+	e := Event{
+		ID:            "test",
+		OperationType: Write,
+		Raw:           []byte(`{"test": "test"}`),
+		Parsed:        gjson.Parse(`{"test": "test"}`),
+	}
+
+	require.Implements(t, (*PipelineEvent)(nil), e)
+	require.Equal(t, "test", e.GetID())
+	require.Equal(t, []byte(`{"test": "test"}`), e.RawData())
+	require.Equal(t, Write, e.Type())
+	require.Equal(t, gjson.Parse(`{"test": "test"}`), e.ParsedData())
+}

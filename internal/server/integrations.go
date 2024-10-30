@@ -17,7 +17,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/mia-platform/data-connector-agent/internal/config"
@@ -40,7 +39,7 @@ func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Conf
 		if err != nil {
 			return err
 		}
-		if len(writers) > 0 {
+		if len(writers) != 1 {
 			return fmt.Errorf("only 1 writer is supported, now there are %d for integration %s", len(writers), cfgIntegration.Type)
 		}
 		writer := writers[0]
@@ -58,7 +57,7 @@ func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Conf
 			// do nothing only for testing
 			return nil
 		default:
-			return errors.New("unsupported integration type")
+			return errUnsupportedIntegrationType
 		}
 	}
 

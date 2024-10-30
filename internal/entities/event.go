@@ -24,19 +24,19 @@ const (
 	Delete
 )
 
+type PipelineEvent interface {
+	GetID() string
+	RawData() []byte
+	Type() Operation
+	ParsedData() gjson.Result
+}
+
 type Event struct {
 	ID            string
 	OperationType Operation
 
 	Raw    []byte
 	Parsed gjson.Result
-}
-
-type PipelineEvent interface {
-	GetID() string
-	RawData() []byte
-	Type() Operation
-	ParsedData() gjson.Result
 }
 
 func (e Event) GetID() string {

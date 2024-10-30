@@ -30,10 +30,6 @@ type Call struct {
 
 type Calls []Call
 
-func (c Calls) At(n int) Call {
-	return c[n]
-}
-
 func (c Calls) LastCall() Call {
 	return c[len(c)-1]
 }
