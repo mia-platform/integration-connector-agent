@@ -13,33 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-##@ Lint Goals
+##@ Release Goals
 
-.PHONY: clean
-clean:
+SNAPSHOT_RELEASE?= 1
+GORELEASER_SNAPSHOT:=
 
-.PHONY: clean/coverage
-clean: clean/coverage
-clean/coverage:
-	$(info Clean coverage file...)
-	rm -fr coverage.txt
+ifeq ($(SNAPSHOT_RELEASE), 1)
+GORELEASER_SNAPSHOT=--snapshot
+endif
 
-.PHONY: clean/bin
-clean: clean/bin
-clean/bin:
-	$(info Clean artifacts files...)
-	rm -fr $(OUTPUT_DIR)
+.PHONY: goreleaser/release
+goreleaser/release:
+	$(GORELEASER_PATH) release $(GORELEASER_SNAPSHOT) --clean --config=.goreleaser.yaml
 
-.PHONY: clean/tools
-clean/tools:
-	$(info Clean tools folder...)
-	[ -d $(TOOLS_BIN)/k8s ] && chmod +w $(TOOLS_BIN)/k8s/* || true
-	rm -fr $(TOOLS_BIN)
+goreleaser/check:
+	$(GORELEASER_PATH) check --config=.goreleaser.yaml
 
-.PHONY: clean/go
-clean/go:
-	$(info Clean golang cache...)
-	go clean -cache
+.PHONY: release-deps
+release-deps: $(GORELEASER_PATH)
 
-.PHONY: clean-all
-clean-all: clean clean/tools clean/go
+.PHONY: ci-release
+ci-release: release-deps goreleaser/release
+
+.PHONY: goreleaser-check
+goreleaser-check: release-deps goreleaser/check

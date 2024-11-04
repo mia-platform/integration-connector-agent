@@ -13,33 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-##@ Lint Goals
+##@ Deepcopy Goals
 
-.PHONY: clean
-clean:
+.PHONY: generate-deps
+generate-deps:
 
-.PHONY: clean/coverage
-clean: clean/coverage
-clean/coverage:
-	$(info Clean coverage file...)
-	rm -fr coverage.txt
-
-.PHONY: clean/bin
-clean: clean/bin
-clean/bin:
-	$(info Clean artifacts files...)
-	rm -fr $(OUTPUT_DIR)
-
-.PHONY: clean/tools
-clean/tools:
-	$(info Clean tools folder...)
-	[ -d $(TOOLS_BIN)/k8s ] && chmod +w $(TOOLS_BIN)/k8s/* || true
-	rm -fr $(TOOLS_BIN)
-
-.PHONY: clean/go
-clean/go:
-	$(info Clean golang cache...)
-	go clean -cache
-
-.PHONY: clean-all
-clean-all: clean clean/tools clean/go
+.PHONY: generate
+generate: generate-deps
+	go generate -x -ldflags "$(GO_LDFLAGS)" ./...
