@@ -102,7 +102,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 			app, router := getRouter(t)
 
 			if test.writer == nil {
-				test.writer = fakewriter.New()
+				test.writer = fakewriter.New(map[string]any{})
 			}
 
 			err := SetupService(context.TODO(), logger, router, test.config, test.writer)

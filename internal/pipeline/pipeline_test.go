@@ -30,36 +30,38 @@ import (
 )
 
 func TestPipeline(t *testing.T) {
-	log, _ := test.NewNullLogger()
+	log := logrus.New()
+	model := map[string]any{}
 
 	t.Run("message pipelines is correctly managed adding messages", func(t *testing.T) {
-		w := fakewriter.New()
-		p := NewPipeline(logrus.NewEntry(log), w)
+		w := fakewriter.New(model)
+		p, err := NewPipeline(logrus.NewEntry(log), w)
+		require.NoError(t, err)
 
 		runPipeline(t, p)
 
 		id := "fake event"
 		testCases := map[string]struct {
-			event entities.Event
+			event *entities.Event
 
 			expectedOperation entities.Operation
 		}{
 			"default operation": {
-				event: entities.Event{
+				event: &entities.Event{
 					ID:            id,
 					OperationType: entities.Write,
 				},
 				expectedOperation: entities.Write,
 			},
 			"write operation": {
-				event: entities.Event{
+				event: &entities.Event{
 					ID:            id,
 					OperationType: entities.Write,
 				},
 				expectedOperation: entities.Write,
 			},
 			"delete operation": {
-				event: entities.Event{
+				event: &entities.Event{
 					ID:            id,
 					OperationType: entities.Delete,
 				},
@@ -69,15 +71,23 @@ func TestPipeline(t *testing.T) {
 
 		for name, tc := range testCases {
 			t.Run(name, func(t *testing.T) {
+				tc.event.OriginalRaw = []byte(`{}`)
+
 				p.AddMessage(tc.event)
 
 				require.Eventually(t, func() bool {
+					data := &entities.Event{
+						ID:            id,
+						OperationType: tc.expectedOperation,
+						OriginalRaw:   []byte(`{}`),
+					}
+					if tc.expectedOperation == entities.Write {
+						data.WithData(map[string]any{})
+					}
+
 					require.Equal(t, fakewriter.Call{
 						Operation: tc.expectedOperation,
-						Data: entities.Event{
-							ID:            id,
-							OperationType: tc.expectedOperation,
-						},
+						Data:      data,
 					}, w.Calls().LastCall())
 					return true
 				}, 1*time.Second, 10*time.Millisecond)
@@ -87,8 +97,9 @@ func TestPipeline(t *testing.T) {
 
 	t.Run("on channel closed, the pipeline stops", func(t *testing.T) {
 		ctx := context.Background()
-		w := fakewriter.New()
-		p := NewPipeline(logrus.NewEntry(log), w)
+		w := fakewriter.New(model)
+		p, err := NewPipeline(logrus.NewEntry(log), w)
+		require.NoError(t, err)
 
 		go func(t *testing.T) {
 			t.Helper()
@@ -98,14 +109,15 @@ func TestPipeline(t *testing.T) {
 			close(eventChannel)
 		}(t)
 
-		err := p.Start(ctx)
+		err = p.Start(ctx)
 		require.NoError(t, err)
 	})
 
 	t.Run("on context done, close channel", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		w := fakewriter.New()
-		p := NewPipeline(logrus.NewEntry(log), w)
+		w := fakewriter.New(model)
+		p, err := NewPipeline(logrus.NewEntry(log), w)
+		require.NoError(t, err)
 
 		go func(t *testing.T, cancel context.CancelFunc) {
 			t.Helper()
@@ -113,34 +125,40 @@ func TestPipeline(t *testing.T) {
 			cancel()
 		}(t, cancel)
 
-		err := p.Start(ctx)
+		err = p.Start(ctx)
 		require.EqualError(t, err, "context canceled")
 	})
 
 	t.Run("on error, the pipeline skips the element and logs - write", func(t *testing.T) {
-		w := fakewriter.New()
+		w := fakewriter.New(model)
 		w.AddMock(fakewriter.Mock{
 			Error: errors.New("fake error"),
 		})
 
 		log, hook := test.NewNullLogger()
 
-		p := NewPipeline(logrus.NewEntry(log), w)
+		p, err := NewPipeline(logrus.NewEntry(log), w)
+		require.NoError(t, err)
+
 		runPipeline(t, p)
 
 		id := "fake event"
-		p.AddMessage(entities.Event{
+		p.AddMessage(&entities.Event{
 			ID:            id,
 			OperationType: entities.Write,
+			OriginalRaw:   []byte(`{}`),
 		})
 
 		require.Eventually(t, func() bool {
+			event := &entities.Event{
+				ID:            id,
+				OperationType: entities.Write,
+				OriginalRaw:   []byte(`{}`),
+			}
+			event.WithData(map[string]any{})
 			require.Equal(t, fakewriter.Call{
 				Operation: entities.Write,
-				Data: entities.Event{
-					ID:            id,
-					OperationType: entities.Write,
-				},
+				Data:      event,
 			}, w.Calls().LastCall())
 			return true
 		}, 1*time.Second, 10*time.Millisecond)
@@ -148,18 +166,20 @@ func TestPipeline(t *testing.T) {
 	})
 
 	t.Run("on error, the pipeline skips the element and logs - delete", func(t *testing.T) {
-		w := fakewriter.New()
+		w := fakewriter.New(model)
 		w.AddMock(fakewriter.Mock{
 			Error: errors.New("fake error"),
 		})
 
 		log, hook := test.NewNullLogger()
 
-		p := NewPipeline(logrus.NewEntry(log), w)
+		p, err := NewPipeline(logrus.NewEntry(log), w)
+		require.NoError(t, err)
+
 		runPipeline(t, p)
 
 		id := "fake event"
-		p.AddMessage(entities.Event{
+		p.AddMessage(&entities.Event{
 			ID:            id,
 			OperationType: entities.Delete,
 		})
@@ -167,7 +187,7 @@ func TestPipeline(t *testing.T) {
 		require.Eventually(t, func() bool {
 			require.Equal(t, fakewriter.Call{
 				Operation: entities.Delete,
-				Data: entities.Event{
+				Data: &entities.Event{
 					ID:            id,
 					OperationType: entities.Delete,
 				},

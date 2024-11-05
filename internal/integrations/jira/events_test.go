@@ -67,12 +67,12 @@ func TestEvent(t *testing.T) {
 				require.NoError(t, err)
 
 				parsed := gjson.ParseBytes([]byte(tc.rawData))
-				require.Equal(t, entities.Event{
+				require.Equal(t, &entities.Event{
 					ID:            tc.expectedID,
 					OperationType: tc.expectedOperationType,
 
-					Raw:    []byte(tc.rawData),
-					Parsed: parsed,
+					OriginalRaw:    []byte(tc.rawData),
+					OriginalParsed: parsed,
 				}, event)
 			}
 		})

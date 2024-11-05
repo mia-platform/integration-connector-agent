@@ -15,36 +15,86 @@
 
 package mapper
 
-/*
-{
-  "id": "id1",
-	"fields": {
-		"foo": "bar",
-		"baz": "qux"
+import (
+	"encoding/json"
+	"strings"
+
+	"github.com/tidwall/gjson"
+)
+
+type IMapper interface {
+	Transform(data []byte) (map[string]any, error)
+}
+
+type Mapper struct {
+	operations []operation
+}
+
+func (m Mapper) Transform(input []byte) (map[string]any, error) {
+	output := []byte("{}")
+	var err error
+	for _, operation := range m.operations {
+		output, err = operation.apply(input, output)
+		if err != nil {
+			return nil, err
+		}
 	}
+
+	var outputMap map[string]any
+	if err := json.Unmarshal(output, &outputMap); err != nil {
+		return nil, err
+	}
+
+	return outputMap, nil
 }
 
-to
+func New(outEventModel map[string]any) (IMapper, error) {
+	model, err := json.Marshal(outEventModel)
+	if err != nil {
+		return nil, err
+	}
 
-{
-	"identifier": "id1",
-	"foo": "bar",
-	"pippo": "qux"
+	ops, err := generateOperations(gjson.ParseBytes(model))
+	if err != nil {
+		return nil, err
+	}
+
+	return &Mapper{
+		operations: ops,
+	}, nil
 }
-*/
 
-type IMapper[T any] interface {
-	Map(data map[string]any) (map[string]any, error)
+func generateOperations(jsonData gjson.Result) ([]operation, error) {
+	result := []operation{}
+	var resError error
+
+	var walk func(data gjson.Result, keyPrefix string)
+	walk = func(data gjson.Result, keyPrefix string) {
+		data.ForEach(func(key, value gjson.Result) bool {
+			keyToUpdate := key.String()
+			if keyPrefix != "" {
+				keyToUpdate = strings.Join([]string{keyPrefix, key.String()}, ".")
+			}
+
+			if value.IsObject() || value.IsArray() {
+				walk(value, keyToUpdate)
+				return true
+			}
+
+			if key.Exists() && key.String() != "" {
+				operation, err := newOperation(keyToUpdate, value)
+				if err != nil {
+					resError = err
+					return false
+				}
+				result = append(result, operation)
+			}
+
+			return true
+		})
+	}
+
+	walk(jsonData, "")
+
+	return result, resError
 }
-
-type Mapper[T any] struct {
-}
-
-// func (m *Mapper[T]) Map(data []byte) (map[string]any, error) {
-// 	// TODO: implement the mapping logic
-// 	return data, nil
-// }
-
-// func NewMapper(_ map[string]any) IMapper {
-// 	return &Mapper{}
-// }

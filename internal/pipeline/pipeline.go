@@ -32,7 +32,7 @@ var (
 
 type Pipeline[T entities.PipelineEvent] struct {
 	writer writer.Writer[T]
-	mapper mapper.Mapper[T]
+	mapper mapper.IMapper
 	logger *logrus.Entry
 
 	eventChan chan T
@@ -55,13 +55,16 @@ loop:
 				// the chanel has been closed, break the loop
 				break loop
 			}
-			// _, err := p.mapper.Map(message.RawData())
-			// if err != nil {
-			// 	p.logger.WithError(err).WithField("message", message).Error("error mapping data")
-			// 	continue
-			// }
+
 			switch message.Type() {
 			case entities.Write:
+				mappedData, err := p.mapper.Transform(message.RawData())
+				if err != nil {
+					p.logger.WithError(err).WithField("message", message).Error("error mapping data")
+					continue
+				}
+				message.WithData(mappedData)
+
 				if err := p.writer.Write(ctx, message); err != nil {
 					// TODO: manage failure in writing message. DLQ?
 					p.logger.WithError(err).WithField("message", message).Error("error writing data")
@@ -83,11 +86,14 @@ loop:
 	return nil
 }
 
-func NewPipeline[T entities.PipelineEvent](logger *logrus.Entry, writer writer.Writer[T]) IPipeline[T] {
+func NewPipeline[T entities.PipelineEvent](logger *logrus.Entry, writer writer.Writer[T]) (IPipeline[T], error) {
 	// TODO: here instead to use a buffer size it should be used a proper queue
 	messageChan := make(chan T, 1000000)
 
-	m := mapper.Mapper[T]{}
+	m, err := mapper.New(writer.OutputModel())
+	if err != nil {
+		return nil, err
+	}
 
 	return &Pipeline[T]{
 		writer: writer,
@@ -96,7 +102,7 @@ func NewPipeline[T entities.PipelineEvent](logger *logrus.Entry, writer writer.W
 		eventChan: messageChan,
 
 		logger: logger,
-	}
+	}, nil
 }
 
 func isNil(i any) bool {

@@ -49,7 +49,10 @@ func SetupService(
 	config Configuration,
 	writer writer.Writer[entities.PipelineEvent],
 ) error {
-	p := pipeline.NewPipeline(logger, writer)
+	p, err := pipeline.NewPipeline(logger, writer)
+	if err != nil {
+		return err
+	}
 
 	go func(p pipeline.IPipeline[entities.PipelineEvent]) {
 		err := p.Start(ctx)

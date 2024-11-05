@@ -26,14 +26,16 @@ import (
 )
 
 func TestImplementWriter(t *testing.T) {
+	outputModel := map[string]any{}
+
 	t.Run("implement writer", func(t *testing.T) {
-		require.Implements(t, (*writer.Writer[entities.PipelineEvent])(nil), New())
+		require.Implements(t, (*writer.Writer[entities.PipelineEvent])(nil), New(outputModel))
 	})
 
 	t.Run("stub write", func(t *testing.T) {
-		f := New()
+		f := New(outputModel)
 
-		event := entities.Event{
+		event := &entities.Event{
 			ID: "id",
 		}
 		err := f.Write(context.Background(), event)
@@ -47,9 +49,9 @@ func TestImplementWriter(t *testing.T) {
 	})
 
 	t.Run("stub delete", func(t *testing.T) {
-		f := New()
+		f := New(outputModel)
 
-		event := entities.Event{
+		event := &entities.Event{
 			ID: "id",
 		}
 		err := f.Delete(context.Background(), event)
@@ -63,9 +65,9 @@ func TestImplementWriter(t *testing.T) {
 	})
 
 	t.Run("mock error write", func(t *testing.T) {
-		f := New()
+		f := New(outputModel)
 
-		event := entities.Event{
+		event := &entities.Event{
 			ID: "id",
 		}
 		f.AddMock(Mock{
@@ -82,9 +84,9 @@ func TestImplementWriter(t *testing.T) {
 	})
 
 	t.Run("mock error delete", func(t *testing.T) {
-		f := New()
+		f := New(outputModel)
 
-		event := entities.Event{
+		event := &entities.Event{
 			ID: "id",
 		}
 		f.AddMock(Mock{
@@ -98,5 +100,11 @@ func TestImplementWriter(t *testing.T) {
 			Data:      event,
 			Operation: entities.Delete,
 		}, f.Calls().LastCall())
+	})
+
+	t.Run("output model", func(t *testing.T) {
+		f := New(outputModel)
+
+		require.Equal(t, outputModel, f.OutputModel())
 	})
 }

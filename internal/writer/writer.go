@@ -18,8 +18,6 @@ package writer
 import (
 	"context"
 	"errors"
-
-	"github.com/mia-platform/data-connector-agent/internal/entities"
 )
 
 var (
@@ -32,13 +30,15 @@ type DataWithIdentifier interface {
 
 // Writer interface abstract the implementation of an integration pipeline target. The concrete implementation has
 // to know how to write and delete a Data.
-type Writer[Data entities.PipelineEvent] interface {
+type Writer[Data DataWithIdentifier] interface {
 	// Write will save the Data to the destination configured in the Writer. Writer implementation can choose to
 	// implement this function as a single write or to update data based on an identifier
 	Write(ctx context.Context, data Data) error
 
 	// Delete will delete the Data from the destination configured in the Writer.
 	Delete(ctx context.Context, data Data) error
+
+	OutputModel() map[string]any
 }
 
 const (

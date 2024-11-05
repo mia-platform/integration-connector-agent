@@ -23,11 +23,11 @@ import (
 )
 
 func TestEvent(t *testing.T) {
-	e := Event{
-		ID:            "test",
-		OperationType: Write,
-		Raw:           []byte(`{"test": "test"}`),
-		Parsed:        gjson.Parse(`{"test": "test"}`),
+	e := &Event{
+		ID:             "test",
+		OperationType:  Write,
+		OriginalRaw:    []byte(`{"test": "test"}`),
+		OriginalParsed: gjson.Parse(`{"test": "test"}`),
 	}
 
 	require.Implements(t, (*PipelineEvent)(nil), e)
@@ -35,4 +35,7 @@ func TestEvent(t *testing.T) {
 	require.Equal(t, []byte(`{"test": "test"}`), e.RawData())
 	require.Equal(t, Write, e.Type())
 	require.Equal(t, gjson.Parse(`{"test": "test"}`), e.ParsedData())
+	data := map[string]any{"test": "test"}
+	e.WithData(data)
+	require.Equal(t, data, e.data)
 }

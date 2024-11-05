@@ -29,14 +29,16 @@ type PipelineEvent interface {
 	RawData() []byte
 	Type() Operation
 	ParsedData() gjson.Result
+	WithData(map[string]any)
 }
 
 type Event struct {
 	ID            string
 	OperationType Operation
 
-	Raw    []byte
-	Parsed gjson.Result
+	OriginalRaw    []byte
+	OriginalParsed gjson.Result
+	data           map[string]any
 }
 
 func (e Event) GetID() string {
@@ -44,13 +46,17 @@ func (e Event) GetID() string {
 }
 
 func (e Event) RawData() []byte {
-	return e.Raw
+	return e.OriginalRaw
 }
 
 func (e Event) ParsedData() gjson.Result {
-	return e.Parsed
+	return e.OriginalParsed
 }
 
 func (e Event) Type() Operation {
 	return e.OperationType
+}
+
+func (e *Event) WithData(data map[string]any) {
+	e.data = data
 }

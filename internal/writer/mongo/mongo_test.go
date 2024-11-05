@@ -116,14 +116,14 @@ func TestUpsert(t *testing.T) {
 		expectedErr bool
 	}{
 		"no error": {
-			data: entities.Event{ID: "12345"},
+			data: &entities.Event{ID: "12345"},
 			responses: bson.D{
 				{Key: "ok", Value: 1},
 				{Key: "value", Value: bson.D{}},
 			},
 		},
 		"error": {
-			data:        entities.Event{},
+			data:        &entities.Event{},
 			expectedErr: true,
 		},
 	}
@@ -162,7 +162,7 @@ func TestDelete(t *testing.T) {
 		expectedErr bool
 	}{
 		"no error": {
-			data: entities.Event{ID: "12345"},
+			data: &entities.Event{ID: "12345"},
 			responses: bson.D{
 				{Key: "ok", Value: 1},
 				{Key: "value", Value: bson.D{
@@ -171,7 +171,7 @@ func TestDelete(t *testing.T) {
 			},
 		},
 		"error": {
-			data:        entities.Event{},
+			data:        &entities.Event{},
 			expectedErr: true,
 		},
 	}
@@ -200,4 +200,21 @@ func TestDelete(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestOutputModel(t *testing.T) {
+	t.Parallel()
+
+	outputModel := map[string]any{}
+	config := Config{
+		URI:         "mongodb://localhost:27017/?connectTimeoutMS=200",
+		Database:    "foo",
+		Collection:  "bar",
+		OutputModel: outputModel,
+	}
+	valid := validateFunc(func(context.Context, *mongo.Client) error { return nil })
+
+	writer, err := newMongoDBWriter[entities.PipelineEvent](context.Background(), config, valid)
+	require.NoError(t, err)
+	require.Equal(t, outputModel, writer.OutputModel())
 }

@@ -31,6 +31,9 @@ type Call struct {
 type Calls []Call
 
 func (c Calls) LastCall() Call {
+	if len(c) == 0 {
+		return Call{}
+	}
 	return c[len(c)-1]
 }
 
@@ -52,12 +55,16 @@ type Writer struct {
 
 	stub  Calls
 	mocks Mocks
+
+	outputModel map[string]any
 }
 
-func New() *Writer {
+func New(outputModel map[string]any) *Writer {
 	return &Writer{
 		stub:  Calls{},
 		mocks: Mocks{},
+
+		outputModel: outputModel,
 	}
 }
 
@@ -105,4 +112,8 @@ func (f *Writer) Delete(_ context.Context, data entities.PipelineEvent) error {
 		return mock.Error
 	}
 	return nil
+}
+
+func (f *Writer) OutputModel() map[string]any {
+	return f.outputModel
 }

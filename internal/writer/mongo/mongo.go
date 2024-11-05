@@ -36,17 +36,19 @@ type validateFunc func(context.Context, *mongo.Client) error
 
 // Config contains the configuration needed to connect to a remote MongoDB instance
 type Config struct {
-	URI        string
-	Database   string
-	Collection string
+	URI         string
+	Database    string
+	Collection  string
+	OutputModel map[string]any
 }
 
 // Writer is a concrete implementation of a Writer that will save and delete data from a MongoDB instance.
 type Writer[T entities.PipelineEvent] struct {
 	client *mongo.Client
 
-	database   string
-	collection string
+	database    string
+	collection  string
+	outputModel map[string]any
 }
 
 // NewMongoDBWriter will construct a new MongoDB writer and validate the connection parameters via a ping request.
@@ -72,9 +74,10 @@ func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config Conf
 	}
 
 	return &Writer[T]{
-		client:     client,
-		database:   db,
-		collection: collection,
+		client:      client,
+		database:    db,
+		collection:  collection,
+		outputModel: config.OutputModel,
 	}, nil
 }
 
@@ -112,6 +115,10 @@ func (w *Writer[T]) Delete(ctx context.Context, data T) error {
 		Collection(w.collection).
 		FindOneAndDelete(ctxWithCancel, queryFilter, opts)
 	return result.Err()
+}
+
+func (w *Writer[T]) OutputModel() map[string]any {
+	return w.outputModel
 }
 
 // mongoClientOptionsFromConfig return a ClientOptions, database and collection parameters parsed from a
