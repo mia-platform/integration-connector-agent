@@ -21,7 +21,6 @@ import (
 
 	"github.com/mia-platform/data-connector-agent/internal/entities"
 	"github.com/stretchr/testify/require"
-	"github.com/tidwall/gjson"
 )
 
 func TestEvent(t *testing.T) {
@@ -66,13 +65,11 @@ func TestEvent(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 
-				parsed := gjson.ParseBytes([]byte(tc.rawData))
 				require.Equal(t, &entities.Event{
 					ID:            tc.expectedID,
 					OperationType: tc.expectedOperationType,
 
-					OriginalRaw:    []byte(tc.rawData),
-					OriginalParsed: parsed,
+					OriginalRaw: []byte(tc.rawData),
 				}, event)
 			}
 		})

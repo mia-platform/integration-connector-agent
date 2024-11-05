@@ -28,6 +28,8 @@ import (
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
+// TODO: add integration tests
+
 var (
 	ErrMongoInitialization = errors.New("failed to start mongo writer")
 )
@@ -94,9 +96,14 @@ func (w *Writer[T]) Write(ctx context.Context, data T) error {
 		return err
 	}
 
+	dataToUpsert, err := w.bsonData(data)
+	if err != nil {
+		return err
+	}
+
 	result := w.client.Database(w.database).
 		Collection(w.collection).
-		FindOneAndReplace(ctxWithCancel, queryFilter, w.bsonData(data), opts)
+		FindOneAndReplace(ctxWithCancel, queryFilter, dataToUpsert, opts)
 	return result.Err()
 }
 
@@ -143,10 +150,13 @@ func (w Writer[T]) idFilter(data T) (bson.D, error) {
 	if id == "" {
 		return bson.D{}, fmt.Errorf("id is empty")
 	}
-	return bson.D{{Key: "_id", Value: data.GetID()}}, nil
+	return bson.D{{Key: "identifier", Value: data.GetID()}}, nil
 }
 
-func (w Writer[T]) bsonData(_ T) bson.D {
-	//TODO: implement real function
-	return bson.D{{Key: "_id", Value: "foo"}}
+func (w Writer[T]) bsonData(event T) ([]byte, error) {
+	bsonData, err := bson.Marshal(event.Data())
+	if err != nil {
+		return nil, err
+	}
+	return bsonData, nil
 }

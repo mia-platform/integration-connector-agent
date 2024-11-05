@@ -15,8 +15,6 @@
 
 package entities
 
-import "github.com/tidwall/gjson"
-
 type Operation int
 
 const (
@@ -28,17 +26,16 @@ type PipelineEvent interface {
 	GetID() string
 	RawData() []byte
 	Type() Operation
-	ParsedData() gjson.Result
 	WithData(map[string]any)
+	Data() map[string]any
 }
 
 type Event struct {
 	ID            string
 	OperationType Operation
 
-	OriginalRaw    []byte
-	OriginalParsed gjson.Result
-	data           map[string]any
+	OriginalRaw []byte
+	data        map[string]any
 }
 
 func (e Event) GetID() string {
@@ -49,14 +46,14 @@ func (e Event) RawData() []byte {
 	return e.OriginalRaw
 }
 
-func (e Event) ParsedData() gjson.Result {
-	return e.OriginalParsed
-}
-
 func (e Event) Type() Operation {
 	return e.OperationType
 }
 
 func (e *Event) WithData(data map[string]any) {
 	e.data = data
+}
+
+func (e Event) Data() map[string]any {
+	return e.data
 }

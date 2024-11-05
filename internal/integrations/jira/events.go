@@ -42,8 +42,7 @@ func getPipelineEvent(rawData []byte) (entities.PipelineEvent, error) {
 		ID:            id,
 		OperationType: operationType,
 
-		OriginalRaw:    rawData,
-		OriginalParsed: parsed,
+		OriginalRaw: rawData,
 	}, nil
 }
 

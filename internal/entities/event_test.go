@@ -19,23 +19,20 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/tidwall/gjson"
 )
 
 func TestEvent(t *testing.T) {
 	e := &Event{
-		ID:             "test",
-		OperationType:  Write,
-		OriginalRaw:    []byte(`{"test": "test"}`),
-		OriginalParsed: gjson.Parse(`{"test": "test"}`),
+		ID:            "test",
+		OperationType: Write,
+		OriginalRaw:   []byte(`{"test": "test"}`),
 	}
 
 	require.Implements(t, (*PipelineEvent)(nil), e)
 	require.Equal(t, "test", e.GetID())
 	require.Equal(t, []byte(`{"test": "test"}`), e.RawData())
 	require.Equal(t, Write, e.Type())
-	require.Equal(t, gjson.Parse(`{"test": "test"}`), e.ParsedData())
 	data := map[string]any{"test": "test"}
 	e.WithData(data)
-	require.Equal(t, data, e.data)
+	require.Equal(t, data, e.Data())
 }
