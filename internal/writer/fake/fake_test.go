@@ -26,14 +26,16 @@ import (
 )
 
 func TestImplementWriter(t *testing.T) {
-	outputModel := map[string]any{}
+	config := &Config{
+		OutputModel: map[string]any{},
+	}
 
 	t.Run("implement writer", func(t *testing.T) {
-		require.Implements(t, (*writer.Writer[entities.PipelineEvent])(nil), New(outputModel))
+		require.Implements(t, (*writer.Writer[entities.PipelineEvent])(nil), New(config))
 	})
 
 	t.Run("stub write", func(t *testing.T) {
-		f := New(outputModel)
+		f := New(config)
 
 		event := &entities.Event{
 			ID: "id",
@@ -49,7 +51,7 @@ func TestImplementWriter(t *testing.T) {
 	})
 
 	t.Run("stub delete", func(t *testing.T) {
-		f := New(outputModel)
+		f := New(config)
 
 		event := &entities.Event{
 			ID: "id",
@@ -65,7 +67,7 @@ func TestImplementWriter(t *testing.T) {
 	})
 
 	t.Run("mock error write", func(t *testing.T) {
-		f := New(outputModel)
+		f := New(config)
 
 		event := &entities.Event{
 			ID: "id",
@@ -84,7 +86,7 @@ func TestImplementWriter(t *testing.T) {
 	})
 
 	t.Run("mock error delete", func(t *testing.T) {
-		f := New(outputModel)
+		f := New(config)
 
 		event := &entities.Event{
 			ID: "id",
@@ -103,8 +105,8 @@ func TestImplementWriter(t *testing.T) {
 	})
 
 	t.Run("output model", func(t *testing.T) {
-		f := New(outputModel)
+		f := New(config)
 
-		require.Equal(t, outputModel, f.OutputModel())
+		require.Equal(t, config.OutputModel, f.OutputModel())
 	})
 }

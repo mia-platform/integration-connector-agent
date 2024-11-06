@@ -22,11 +22,46 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
+var (
+	ErrConfigNotValid = fmt.Errorf("configuration not valid")
+)
+
 type Writer struct {
-	Type        string         `json:"type"`
-	URL         SecretSource   `json:"url"`
-	OutputEvent map[string]any `json:"outputEvent"`
-	Collection  string         `json:"collection"`
+	Type string `json:"type"`
+
+	Raw []byte `json:"-"`
+}
+
+func (w *Writer) UnmarshalJSON(data []byte) error {
+	var writerConfig struct {
+		Type string `json:"type"`
+	}
+
+	if err := json.Unmarshal(data, &writerConfig); err != nil {
+		return err
+	}
+
+	w.Type = writerConfig.Type
+	w.Raw = data
+
+	return nil
+}
+
+type WriterConfigValidator interface {
+	Validate() error
+}
+
+func WriterConfig[T WriterConfigValidator](config Writer) (T, error) {
+	var cfg T
+	if err := json.Unmarshal(config.Raw, &cfg); err != nil {
+		return cfg, err
+	}
+
+	if err := cfg.Validate(); err != nil {
+		return cfg, err
+	}
+
+	return cfg, nil
 }
 
 type Authentication struct {
@@ -42,10 +77,6 @@ type Integration struct {
 type Configuration struct {
 	Integrations []Integration `json:"integrations"`
 }
-
-var (
-	ErrConfigNotValid = fmt.Errorf("configuration not valid")
-)
 
 func LoadServiceConfiguration(filePath string) (*Configuration, error) {
 	jsonSchema, err := readFile("./config.schema.json")

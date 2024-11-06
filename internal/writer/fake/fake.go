@@ -23,6 +23,14 @@ import (
 	"github.com/mia-platform/data-connector-agent/internal/writer"
 )
 
+type Config struct {
+	OutputModel map[string]any
+}
+
+func (c *Config) Validate() error {
+	return nil
+}
+
 type Call struct {
 	Data      writer.DataWithIdentifier
 	Operation entities.Operation
@@ -59,12 +67,12 @@ type Writer struct {
 	outputModel map[string]any
 }
 
-func New(outputModel map[string]any) *Writer {
+func New(config *Config) *Writer {
 	return &Writer{
 		stub:  Calls{},
 		mocks: Mocks{},
 
-		outputModel: outputModel,
+		outputModel: config.OutputModel,
 	}
 }
 

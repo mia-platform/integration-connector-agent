@@ -69,17 +69,21 @@ func setupWriters(ctx context.Context, writers []config.Writer) ([]writer.Writer
 	for _, configuredWriter := range writers {
 		switch configuredWriter.Type {
 		case writer.Mongo:
-			mongoWriter, err := mongo.NewMongoDBWriter[entities.PipelineEvent](ctx, mongo.Config{
-				URI:         configuredWriter.URL.String(),
-				Collection:  configuredWriter.Collection,
-				OutputModel: configuredWriter.OutputEvent,
-			})
+			config, err := config.WriterConfig[*mongo.Config](configuredWriter)
+			if err != nil {
+				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+			}
+			mongoWriter, err := mongo.NewMongoDBWriter[entities.PipelineEvent](ctx, config)
 			if err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
 			}
 			w = append(w, mongoWriter)
 		case writer.Fake:
-			w = append(w, fakewriter.New(configuredWriter.OutputEvent))
+			config, err := config.WriterConfig[*fakewriter.Config](configuredWriter)
+			if err != nil {
+				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+			}
+			w = append(w, fakewriter.New(config))
 		default:
 			return nil, fmt.Errorf("%w: %s", errUnsupportedWriter, configuredWriter.Type)
 		}

@@ -9,7 +9,9 @@
 				"properties": {
 					"type": {
 						"type": "string",
-						"enum": ["jira"]
+						"enum": [
+							"jira"
+						]
 					},
 					"authentication": {
 						"type": "object",
@@ -22,27 +24,35 @@
 					"writers": {
 						"type": "array",
 						"items": {
-							"type": "object",
-							"properties": {
-								"type": {
-									"type": "string",
-									"enum": ["mongo"]
-								},
-								"url": {
-									"$ref": "#/definitions/secret"
-								},
-								"collection": {
-									"type": "string"
-								},
-								"outputEvent": {
-									"type": "object"
+							"oneOf": [
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"const": "mongo"
+										},
+										"url": {
+											"$ref": "#/definitions/secret"
+										},
+										"collection": {
+											"type": "string"
+										},
+										"outputEvent": {
+											"type": "object"
+										},
+										"idField": {
+											"type": "string",
+											"default": "_id"
+										}
+									},
+									"required": [
+										"type",
+										"url",
+										"outputEvent",
+										"collection"
+									]
 								}
-							},
-							"required": [
-								"type",
-								"url",
-								"outputEvent",
-								"collection"
 							]
 						}
 					}

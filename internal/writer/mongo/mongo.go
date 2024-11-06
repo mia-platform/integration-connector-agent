@@ -22,6 +22,7 @@ import (
 
 	"github.com/mia-platform/data-connector-agent/internal/entities"
 	"github.com/mia-platform/data-connector-agent/internal/writer"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -36,31 +37,23 @@ var (
 
 type validateFunc func(context.Context, *mongo.Client) error
 
-// Config contains the configuration needed to connect to a remote MongoDB instance
-type Config struct {
-	URI         string
-	Database    string
-	Collection  string
-	OutputModel map[string]any
-}
-
 // Writer is a concrete implementation of a Writer that will save and delete data from a MongoDB instance.
 type Writer[T entities.PipelineEvent] struct {
 	client *mongo.Client
 
 	database    string
 	collection  string
-	outputModel map[string]any
+	outputEvent map[string]any
 }
 
 // NewMongoDBWriter will construct a new MongoDB writer and validate the connection parameters via a ping request.
-func NewMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config Config) (writer.Writer[T], error) {
+func NewMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Config) (writer.Writer[T], error) {
 	return newMongoDBWriter[T](ctx, config, func(ctx context.Context, c *mongo.Client) error {
 		return c.Ping(ctx, nil)
 	})
 }
 
-func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config Config, validate validateFunc) (writer.Writer[T], error) {
+func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Config, validate validateFunc) (writer.Writer[T], error) {
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -79,7 +72,7 @@ func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config Conf
 		client:      client,
 		database:    db,
 		collection:  collection,
-		outputModel: config.OutputModel,
+		outputEvent: config.OutputEvent,
 	}, nil
 }
 
@@ -125,19 +118,19 @@ func (w *Writer[T]) Delete(ctx context.Context, data T) error {
 }
 
 func (w *Writer[T]) OutputModel() map[string]any {
-	return w.outputModel
+	return w.outputEvent
 }
 
 // mongoClientOptionsFromConfig return a ClientOptions, database and collection parameters parsed from a
 // MongoDBConfig struct.
-func mongoClientOptionsFromConfig(config Config) (*options.ClientOptions, string, string) {
+func mongoClientOptionsFromConfig(config *Config) (*options.ClientOptions, string, string) {
 	connectionURI := config.URI
 	options := options.Client()
-	options.ApplyURI(connectionURI)
+	options.ApplyURI(connectionURI.String())
 
 	database := config.Database
 	if len(database) == 0 {
-		if cs, err := connstring.ParseAndValidate(connectionURI); err == nil {
+		if cs, err := connstring.ParseAndValidate(connectionURI.String()); err == nil {
 			database = cs.Database
 		}
 	}

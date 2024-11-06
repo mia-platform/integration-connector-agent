@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mia-platform/data-connector-agent/internal/config"
 	"github.com/mia-platform/data-connector-agent/internal/entities"
 
 	"github.com/stretchr/testify/assert"
@@ -38,13 +39,13 @@ func TestNewWriter(t *testing.T) {
 	invalid := validateFunc(func(context.Context, *mongo.Client) error { return errors.New("invalid") })
 
 	tests := map[string]struct {
-		configuration  Config
+		configuration  *Config
 		expectedWriter *Writer[entities.PipelineEvent]
 		validateFunc   validateFunc
 		expectedError  bool
 	}{
 		"invalid connection string return error": {
-			configuration: Config{
+			configuration: &Config{
 				URI:        "invalid://uri/for/mongo",
 				Database:   "foo",
 				Collection: "bar",
@@ -53,7 +54,7 @@ func TestNewWriter(t *testing.T) {
 			expectedError: true,
 		},
 		"cannot receive ping from url return error": {
-			configuration: Config{
+			configuration: &Config{
 				URI:        "mongodb://localhost:27018/baz?connectTimeoutMS=200",
 				Collection: "bar",
 			},
@@ -61,7 +62,7 @@ func TestNewWriter(t *testing.T) {
 			expectedError: true,
 		},
 		"valid uri return writer": {
-			configuration: Config{
+			configuration: &Config{
 				URI:        "mongodb://localhost:27017/baz?connectTimeoutMS=200",
 				Collection: "bar",
 			},
@@ -72,7 +73,7 @@ func TestNewWriter(t *testing.T) {
 			},
 		},
 		"valid uri withtout database return writer": {
-			configuration: Config{
+			configuration: &Config{
 				URI:        "mongodb://localhost:27017/?connectTimeoutMS=200",
 				Database:   "baz",
 				Collection: "bar",
@@ -206,11 +207,11 @@ func TestOutputModel(t *testing.T) {
 	t.Parallel()
 
 	outputModel := map[string]any{}
-	config := Config{
-		URI:         "mongodb://localhost:27017/?connectTimeoutMS=200",
+	config := &Config{
+		URI:         config.SecretSource("mongodb://localhost:27017/?connectTimeoutMS=200"),
 		Database:    "foo",
 		Collection:  "bar",
-		OutputModel: outputModel,
+		OutputEvent: outputModel,
 	}
 	valid := validateFunc(func(context.Context, *mongo.Client) error { return nil })
 

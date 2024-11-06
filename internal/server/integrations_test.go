@@ -48,12 +48,8 @@ func TestSetupWriters(t *testing.T) {
 		},
 		"multiple writers": {
 			writers: []config.Writer{
-				{
-					Type: writer.Fake,
-				},
-				{
-					Type: writer.Fake,
-				},
+				getFakeWriter(t),
+				getFakeWriter(t),
 			},
 		},
 	}
@@ -84,12 +80,8 @@ func TestSetupIntegrations(t *testing.T) {
 					{
 						Type: integration.Jira,
 						Writers: []config.Writer{
-							{
-								Type: writer.Fake,
-							},
-							{
-								Type: writer.Fake,
-							},
+							getFakeWriter(t),
+							getFakeWriter(t),
 						},
 					},
 				},
@@ -117,7 +109,7 @@ func TestSetupIntegrations(t *testing.T) {
 					{
 						Type: "test",
 						Writers: []config.Writer{
-							{Type: writer.Fake},
+							getFakeWriter(t),
 						},
 					},
 				},
@@ -129,7 +121,7 @@ func TestSetupIntegrations(t *testing.T) {
 					{
 						Type: "unsupported",
 						Writers: []config.Writer{
-							{Type: writer.Fake},
+							getFakeWriter(t),
 						},
 					},
 				},
@@ -170,4 +162,13 @@ func getRouter(t *testing.T) *swagger.Router[fiber.Handler, fiber.Router] {
 	require.NoError(t, err)
 
 	return router
+}
+
+func getFakeWriter(t *testing.T) config.Writer {
+	t.Helper()
+
+	return config.Writer{
+		Type: writer.Fake,
+		Raw:  []byte(`{}`),
+	}
 }

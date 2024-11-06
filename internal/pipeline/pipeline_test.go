@@ -31,7 +31,9 @@ import (
 
 func TestPipeline(t *testing.T) {
 	log := logrus.New()
-	model := map[string]any{}
+	model := &fakewriter.Config{
+		OutputModel: map[string]any{},
+	}
 
 	t.Run("message pipelines is correctly managed adding messages", func(t *testing.T) {
 		w := fakewriter.New(model)

@@ -25,9 +25,10 @@ func TestLoadServiceConfiguration(t *testing.T) {
 	t.Setenv("TEST_LOAD_SERVICE_MONGO_URL", "mongodb://localhost:27017")
 
 	tests := map[string]struct {
-		path            string
-		expectedError   string
-		expectedContent *Configuration
+		path                 string
+		expectedError        string
+		expectedContent      *Configuration
+		expectedWriterConfig string
 	}{
 		"invalid configuration not match schema": {
 			path:          "./testdata/invalid-config.json",
@@ -52,20 +53,13 @@ func TestLoadServiceConfiguration(t *testing.T) {
 						},
 						Writers: []Writer{
 							{
-								Type:       "mongo",
-								URL:        SecretSource("mongodb://localhost:27017"),
-								Collection: "my-collection",
-								OutputEvent: map[string]any{
-									"key":         "{{ issue.key }}",
-									"summary":     "{{ issue.fields.summary }}",
-									"createdAt":   "{{ issue.fields.created }}",
-									"description": "{{ issue.fields.description }}",
-								},
+								Type: "mongo",
 							},
 						},
 					},
 				},
 			},
+			expectedWriterConfig: getExpectedWriterConfig(t),
 		},
 		"invalid config if integrations is empty": {
 			path:          "./testdata/empty-integrations.json",
@@ -81,8 +75,75 @@ func TestLoadServiceConfiguration(t *testing.T) {
 				require.Nil(t, config)
 			} else {
 				require.NoError(t, err)
+				rawConfig := config.Integrations[0].Writers[0].Raw
+				config.Integrations[0].Writers[0].Raw = nil
 				require.Equal(t, test.expectedContent, config)
+				require.JSONEq(t, test.expectedWriterConfig, string(rawConfig))
 			}
 		})
 	}
+}
+
+func TestWriterConfig(t *testing.T) {
+	t.Setenv("TEST_LOAD_SERVICE_MONGO_URL", "mongodb://localhost:27017")
+
+	t.Run("config is parsed correctly", func(t *testing.T) {
+		config := Writer{
+			Type: "mongo",
+			Raw: []byte(`{
+				"type": "mongo",
+				"url": {
+					"fromEnv": "TEST_LOAD_SERVICE_MONGO_URL"
+				},
+				"collection": "my-collection",
+				"outputEvent": {
+					"key": "{{ issue.key }}",
+					"summary": "{{ issue.fields.summary }}",
+					"createdAt": "{{ issue.fields.created }}",
+					"description": "{{ issue.fields.description }}"
+				}
+			}`),
+		}
+
+		cfg, err := WriterConfig[Config](config)
+		require.NoError(t, err)
+		require.Equal(t, Config{
+			URL:        "mongodb://localhost:27017",
+			Collection: "my-collection",
+			OutputEvent: map[string]any{
+				"key":         "{{ issue.key }}",
+				"summary":     "{{ issue.fields.summary }}",
+				"createdAt":   "{{ issue.fields.created }}",
+				"description": "{{ issue.fields.description }}",
+			},
+		}, cfg)
+	})
+}
+
+type Config struct {
+	URL         SecretSource `json:"url"`
+	Collection  string       `json:"collection"`
+	OutputEvent map[string]any
+}
+
+func (c Config) Validate() error {
+	return nil
+}
+
+func getExpectedWriterConfig(t *testing.T) string {
+	t.Helper()
+
+	return `{
+	"type": "mongo",
+	"url": {
+		"fromEnv": "TEST_LOAD_SERVICE_MONGO_URL"
+	},
+	"collection": "my-collection",
+	"outputEvent": {
+		"key": "{{ issue.key }}",
+		"summary": "{{ issue.fields.summary }}",
+		"createdAt": "{{ issue.fields.created }}",
+		"description": "{{ issue.fields.description }}"
+	}
+}`
 }
