@@ -16,6 +16,7 @@
 package config
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
 
@@ -25,6 +26,9 @@ import (
 var (
 	ErrConfigNotValid = fmt.Errorf("configuration not valid")
 )
+
+//go:embed config.schema.json
+var jsonSchemaFile embed.FS
 
 type Writer struct {
 	Type string `json:"type"`
@@ -58,7 +62,7 @@ func WriterConfig[T WriterConfigValidator](config Writer) (T, error) {
 	}
 
 	if err := cfg.Validate(); err != nil {
-		return cfg, err
+		return cfg, fmt.Errorf("%w: %s", ErrConfigNotValid, err)
 	}
 
 	return cfg, nil
@@ -79,7 +83,7 @@ type Configuration struct {
 }
 
 func LoadServiceConfiguration(filePath string) (*Configuration, error) {
-	jsonSchema, err := readFile("./config.schema.json")
+	jsonSchema, err := jsonSchemaFile.ReadFile("config.schema.json")
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrConfigNotValid, err)
 	}

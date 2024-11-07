@@ -29,10 +29,14 @@ test/unit:
 
 .PHONY: test/integration/setup test/integration test/integration/teardown
 test/integration/setup:
+	$(info Setup mongo...)
+	docker run --rm --name mongo -p 27017:27017 -d mongo
 test/integration:
 	$(info Running integration tests...)
 	go test $(GO_TEST_DEBUG_FLAG) -tags=integration -race ./...
 test/integration/teardown:
+	$(info Teardown integration tests...)
+	docker rm mongo --force
 
 .PHONY: test/coverage
 test/coverage:

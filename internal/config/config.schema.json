@@ -42,15 +42,15 @@
 											"type": "object"
 										},
 										"idField": {
-											"type": "string",
-											"default": "_id"
+											"type": "string"
 										}
 									},
 									"required": [
 										"type",
 										"url",
 										"outputEvent",
-										"collection"
+										"collection",
+										"idField"
 									]
 								}
 							]

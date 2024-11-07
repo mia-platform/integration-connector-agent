@@ -11,7 +11,7 @@
 				{
 					"type": "mongo",
 					"url": {
-						"fromEnv": "TEST_LOAD_SERVICE_MONGO_URL"
+						"fromEnv": "TEST_SECRET_ENV"
 					},
 					"collection": "my-collection",
 					"outputEvent": {

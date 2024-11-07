@@ -16,10 +16,10 @@
 package mongo
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/mia-platform/data-connector-agent/internal/config"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,78 +33,72 @@ func TestValidateConfig(t *testing.T) {
 		"without URI": {
 			config: Config{},
 
-			expectedError: fmt.Sprintf("%s: URI is empty", config.ErrConfigNotValid),
+			expectedError: "url is required",
 		},
 		"without collection": {
 			config: Config{
-				URI: config.SecretSource("mongodb://localhost:27017"),
+				URL: config.SecretSource("mongodb://localhost:27017"),
 			},
 
-			expectedError: fmt.Sprintf("%s: collection is empty", config.ErrConfigNotValid),
+			expectedError: "collection is required",
 		},
 		"without output event": {
 			config: Config{
-				URI:        config.SecretSource("mongodb://localhost:27017"),
+				URL:        config.SecretSource("mongodb://localhost:27017"),
 				Collection: "test",
 			},
 
-			expectedError: fmt.Sprintf("%s: output event not set", config.ErrConfigNotValid),
+			expectedError: "outputEvent is required",
 		},
-		"default ID field not found in output event": {
+		"throws if IDField not found in output event": {
 			config: Config{
-				URI:         config.SecretSource("mongodb://localhost:27017"),
-				Collection:  "test",
-				OutputEvent: map[string]any{},
-			},
-
-			expectedError: fmt.Sprintf(`%s: ID field "_id" not found in output event`, config.ErrConfigNotValid),
-		},
-		"custom ID field not found in output event": {
-			config: Config{
-				URI:         config.SecretSource("mongodb://localhost:27017"),
+				URL:         config.SecretSource("mongodb://localhost:27017"),
 				Collection:  "test",
 				OutputEvent: map[string]any{},
 				IDField:     "custom_id",
 			},
 
-			expectedError: fmt.Sprintf(`%s: ID field "custom_id" not found in output event`, config.ErrConfigNotValid),
+			expectedError: `idField "custom_id" not found in outputEvent`,
 		},
-		"set default ID field if empty": {
+		"throws if IDField not set": {
 			config: Config{
-				URI:        config.SecretSource("mongodb://localhost:27017"),
+				URL:         config.SecretSource("mongodb://localhost:27017"),
+				Collection:  "test",
+				OutputEvent: map[string]any{},
+			},
+
+			expectedError: `idField is required`,
+		},
+		"set custom IDField": {
+			config: Config{
+				URL:        config.SecretSource("mongodb://localhost:27017"),
 				Collection: "test",
 				OutputEvent: map[string]any{
-					"_id": "my-id",
+					"custom_id": "my-id",
 				},
+				IDField: "custom_id",
 			},
 
 			expectedConfig: Config{
-				URI:        config.SecretSource("mongodb://localhost:27017"),
+				URL:        config.SecretSource("mongodb://localhost:27017"),
+				Collection: "test",
+				OutputEvent: map[string]any{
+					"custom_id": "my-id",
+				},
+				IDField: "custom_id",
+			},
+		},
+		"_id not supported as IDField": {
+			config: Config{
+				URL:        config.SecretSource("mongodb://localhost:27017"),
 				Collection: "test",
 				OutputEvent: map[string]any{
 					"_id": "my-id",
 				},
 				IDField: "_id",
 			},
-		},
-		"set custom ID field if empty": {
-			config: Config{
-				URI:        config.SecretSource("mongodb://localhost:27017"),
-				Collection: "test",
-				OutputEvent: map[string]any{
-					"custom_id": "my-id",
-				},
-				IDField: "custom_id",
-			},
 
-			expectedConfig: Config{
-				URI:        config.SecretSource("mongodb://localhost:27017"),
-				Collection: "test",
-				OutputEvent: map[string]any{
-					"custom_id": "my-id",
-				},
-				IDField: "custom_id",
-			},
+			expectedError: `idField cannot be "_id"`,
 		},
 	}
 

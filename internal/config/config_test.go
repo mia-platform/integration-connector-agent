@@ -144,6 +144,7 @@ func getExpectedWriterConfig(t *testing.T) string {
 		"summary": "{{ issue.fields.summary }}",
 		"createdAt": "{{ issue.fields.created }}",
 		"description": "{{ issue.fields.description }}"
-	}
+	},
+	"idField": "key"
 }`
 }
