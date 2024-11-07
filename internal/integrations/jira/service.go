@@ -63,7 +63,7 @@ func SetupService(
 		}
 	}(p)
 
-	handler := webhookHandler(config.Secret, p)
+	handler := webhookHandler(config, p)
 	if _, err := router.AddRoute(http.MethodPost, webhookEndpoint, handler, swagger.Definitions{}); err != nil {
 		return err
 	}
@@ -71,11 +71,11 @@ func SetupService(
 	return nil
 }
 
-func webhookHandler(secret string, p pipeline.IPipeline[entities.PipelineEvent]) fiber.Handler {
+func webhookHandler(config Configuration, p pipeline.IPipeline[entities.PipelineEvent]) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		log := glogrus.FromContext(c.UserContext())
 
-		if err := ValidateWebhookRequest(c, secret); err != nil {
+		if err := ValidateWebhookRequest(c, config.Secret); err != nil {
 			log.WithError(err).Error("error validating webhook request")
 			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
 		}
@@ -86,7 +86,7 @@ func webhookHandler(secret string, p pipeline.IPipeline[entities.PipelineEvent])
 			return c.SendStatus(http.StatusOK)
 		}
 
-		event, err := getPipelineEvent(body)
+		event, err := getPipelineEvent(body, config.EventIDPath)
 		if err != nil {
 			log.WithError(err).Error("error unmarshaling event")
 			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))

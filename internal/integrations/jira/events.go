@@ -28,9 +28,9 @@ const (
 	issueDeleted = "jira:issue_deleted"
 )
 
-func getPipelineEvent(rawData []byte) (entities.PipelineEvent, error) {
+func getPipelineEvent(rawData []byte, eventIDPath string) (entities.PipelineEvent, error) {
 	parsed := gjson.ParseBytes(rawData)
-	id := parsed.Get("issue.id").String()
+	id := parsed.Get(eventIDPath).String()
 	webhookEvent := parsed.Get("webhookEvent").String()
 
 	operationType, err := getOperationType(webhookEvent)

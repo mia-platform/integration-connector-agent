@@ -76,6 +76,7 @@ type Integration struct {
 	Type           string         `json:"type"`
 	Authentication Authentication `json:"authentication"`
 	Writers        []Writer       `json:"writers"`
+	EventIDPath    string         `json:"eventIdPath"`
 }
 
 type Configuration struct {

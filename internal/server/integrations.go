@@ -46,8 +46,10 @@ func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Conf
 
 		switch cfgIntegration.Type {
 		case integration.Jira:
+			// TODO: improve management of configuration
 			config := jira.Configuration{
-				Secret: cfgIntegration.Authentication.Secret.String(),
+				Secret:      cfgIntegration.Authentication.Secret.String(),
+				EventIDPath: cfgIntegration.EventIDPath,
 			}
 
 			if err := jira.SetupService(ctx, logrus.NewEntry(log), oasRouter, config, writer); err != nil {

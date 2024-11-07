@@ -7,14 +7,14 @@
 					"fromFile": "testdata/secret"
 				}
 			},
-			"eventIdPath": "issue.id",
+			"eventIdPath": "issue.key",
 			"writers": [
 				{
 					"type": "mongo",
 					"url": {
-						"fromEnv": "TEST_SECRET_ENV"
+						"fromEnv": "INTEGRATION_TEST_MONGO_URL"
 					},
-					"collection": "my-collection",
+					"collection": "jira",
 					"outputEvent": {
 						"key": "{{ issue.key }}",
 						"summary": "{{ issue.fields.summary }}",

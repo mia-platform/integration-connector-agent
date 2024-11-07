@@ -51,6 +51,7 @@ func TestLoadServiceConfiguration(t *testing.T) {
 						Authentication: Authentication{
 							Secret: SecretSource("MY_SECRET"),
 						},
+						EventIDPath: "issue.id",
 						Writers: []Writer{
 							{
 								Type: "mongo",

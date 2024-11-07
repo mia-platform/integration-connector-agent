@@ -7,6 +7,7 @@
 					"fromFile": "testdata/secret"
 				}
 			},
+			"eventIdPath": "issue.id",
 			"writers": [
 				{
 					"type": "mongo",

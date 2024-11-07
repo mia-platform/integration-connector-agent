@@ -21,6 +21,9 @@
 							}
 						}
 					},
+					"eventIdPath": {
+						"type": "string"
+					},
 					"writers": {
 						"type": "array",
 						"items": {
@@ -59,7 +62,8 @@
 				},
 				"required": [
 					"type",
-					"writers"
+					"writers",
+					"eventIdPath"
 				]
 			},
 			"minItems": 1
