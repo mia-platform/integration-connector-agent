@@ -12,6 +12,7 @@ on:
     - "**/*.md"
     - docs/**
     - examples/**
+  workflow_dispatch:
 
 env:
   GORELEASER_VERSION: v2.4.1
