@@ -1,0 +1,14 @@
+{
+	"type": "mongo",
+	"url": {
+		"fromEnv": "TEST_LOAD_SERVICE_MONGO_URL"
+	},
+	"collection": "my-collection",
+	"outputEvent": {
+		"key": "{{ issue.key }}",
+		"summary": "{{ issue.fields.summary }}",
+		"createdAt": "{{ issue.fields.created }}",
+		"description": "{{ issue.fields.description }}"
+	},
+	"idField": "key"
+}

@@ -16,23 +16,25 @@
 package server
 
 import (
+	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/mia-platform/data-connector-agent/internal/config"
 	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
 )
 
-func New(envVars config.EnvironmentVariables, sysChannel <-chan os.Signal) error {
+func New[Signal any](ctx context.Context, envVars config.EnvironmentVariables, cfg *config.Configuration, sysChannel <-chan Signal) error {
 	// Init logger instance.
+	ctxWithCancel, cancel := context.WithCancel(ctx)
 	log, err := glogrus.InitHelper(glogrus.InitOptions{Level: envVars.LogLevel})
 	if err != nil {
 		panic(err)
 	}
 
-	app, err := NewRouter(envVars, log)
+	app, err := NewApp(ctxWithCancel, envVars, log, cfg)
 	if err != nil {
+		cancel()
 		return err
 	}
 
@@ -46,6 +48,8 @@ func New(envVars config.EnvironmentVariables, sysChannel <-chan os.Signal) error
 	<-sysChannel
 	time.Sleep(time.Duration(envVars.DelayShutdownSeconds) * time.Second)
 	log.Info("Gracefully shutting down...")
+
+	cancel() // shutting down server, cancel the context
 	if err := app.Shutdown(); err != nil {
 		return err
 	}

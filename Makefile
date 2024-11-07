@@ -47,24 +47,62 @@ ifeq ($(origin TOOLS_BIN),undefined)
 TOOLS_BIN:= $(TOOLS_DIR)/bin
 endif
 
+# Set here the name of the package you want to build
+CMDNAME:= data-connector-agent
+BUILD_PATH:= .
+CONFORMANCE_TEST_PATH:= $(PROJECT_DIR)/internal/e2e
+IS_LIBRARY:=
+
 # enable modules
 GO111MODULE:= on
 GOOS:= $(shell go env GOOS)
 GOARCH:= $(shell go env GOARCH)
 GOARM:= $(shell go env GOARM)
 
+## Build Variables
+GIT_REV:= $(shell git rev-parse --short HEAD 2>/dev/null)
+VERSION:= $(shell git describe --tags --exact-match 2>/dev/null || (echo $(GIT_REV) | cut -c1-12))
+# insert here the go module where to add the version metadata
+VERSION_MODULE_NAME:= github.com/mia-platform/data-connector-agent/internal/utils
+
+# supported platforms for container creation, these are a subset of the supported
+# platforms of the base image.
+# Or if you start from scratch the platforms you want to support in your image
+# This link contains the rules on how the strings must be formed https://github.com/containerd/containerd/blob/v1.4.3/platforms/platforms.go#L63
+SUPPORTED_PLATFORMS:= linux/386 linux/amd64 linux/arm64 linux/arm/v6 linux/arm/v7
+# Default platform for which building the docker image (darwin can run linux images for the same arch)
+# as SUPPORTED_PLATFORMS it highly depends on which platform are supported by the base image
+DEFAULT_DOCKER_PLATFORM:= linux/$(GOARCH)/$(GOARM)
+# List of one or more container registries for tagging the resulting docker images
+CONTAINER_REGISTRIES:= docker.io/miaplatform ghcr.io/mia-platform
+# The description used on the org.opencontainers.description label of the container
+DESCRIPTION:=
+# The vendor name used on the org.opencontainers.image.vendor label of the container
+VENDOR_NAME:= Mia s.r.l.
+# The license used on the org.opencontainers.image.license label of the container
+LICENSE:= Apache-2.0
+# The documentation url used on the org.opencontainers.image.documentation label of the container
+DOCUMENTATION_URL:= https://docs.mia-platform.eu
+# The source url used on the org.opencontainers.image.source label of the container
+SOURCE_URL:= https://github.com/mia-platform/data-connector-agent
+BUILDX_CONTEXT?= data-connector-agent-build-context
+
 # Add additional targets that you want to run when calling make without arguments
 .PHONY: all
-all: build
+all: lint test
 
 ## Includes
 include tools/make/clean.mk
 include tools/make/lint.mk
 include tools/make/test.mk
+include tools/make/generate.mk
 include tools/make/build.mk
+include tools/make/container.mk
+include tools/make/release.mk
 
 # Uncomment the correct test suite to run during CI
 .PHONY: ci
 ci: test-coverage
+# ci: test-integration-coverage
 
 ### Put your custom import, define or goals under here ###

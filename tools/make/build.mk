@@ -24,6 +24,28 @@ ifndef GORELEASER_PATH
 GORELEASER_PATH:= $(TOOLS_BIN)/goreleaser
 endif
 
+ifeq ($(IS_LIBRARY), 1)
+
+BUILD_DATE:= $(shell date -u "+%Y-%m-%d")
+GO_LDFLAGS+= -s -w
+
+ifdef VERSION_MODULE_NAME
+GO_LDFLAGS+= -X $(VERSION_MODULE_NAME).Version=$(VERSION)
+GO_LDFLAGS+= -X $(VERSION_MODULE_NAME).BuildDate=$(BUILD_DATE)
+endif
+
+.PHONY: go/build/%
+go/build/%:
+	$(eval OS:= $(word 1,$(subst /, ,$*)))
+	$(eval ARCH:= $(word 2,$(subst /, ,$*)))
+	$(eval ARM:= $(word 3,$(subst /, ,$*)))
+	$(info Building image for $(OS) $(ARCH) $(ARM))
+
+	GOOS=$(OS) GOARCH=$(ARCH) GOARM=$(ARM) CGO_ENABLED=0 go build -trimpath \
+		-ldflags "$(GO_LDFLAGS)" $(BUILD_PATH)
+
+else
+
 .PHONY: go/build/%
 go/build/%:
 	$(eval OS:= $(word 1,$(subst /, ,$*)))
@@ -47,6 +69,8 @@ build: build-deps
 
 .PHONY: build-multiarch
 build-multiarch: $(GORELEASER_PATH) go/build/multiarch
+
+endif
 
 .PHONY: build
 build: go/build/$(GOOS)/$(GOARCH)/$(GOARM)

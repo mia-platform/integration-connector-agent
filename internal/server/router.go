@@ -17,7 +17,9 @@ package server
 
 import (
 	"context"
+	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/mia-platform/data-connector-agent/internal/config"
 	"github.com/mia-platform/data-connector-agent/internal/utils"
@@ -32,14 +34,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func NewRouter(env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App, error) {
+func NewApp(ctx context.Context, env config.EnvironmentVariables, log *logrus.Logger, cfg *config.Configuration) (*fiber.App, error) {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 	})
 
+	cmdName := filepath.Base(os.Args[0])
 	middlewareLog := glogrus.GetLogger(logrus.NewEntry(log))
 	app.Use(middleware.RequestMiddlewareLogger(middlewareLog, []string{"/-/"}))
-	statusRoutes(app, "data-connector-agent", utils.ServiceVersionInformation())
+	statusRoutes(app, cmdName, utils.ServiceVersionInformation())
 	if env.ServicePrefix != "" && env.ServicePrefix != "/" {
 		log.WithField("servicePrefix", env.ServicePrefix).Trace("applying service prefix")
 		app.Use(pprof.New(pprof.Config{Prefix: path.Clean(env.ServicePrefix)}))
@@ -49,7 +52,7 @@ func NewRouter(env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App,
 		Context: context.Background(),
 		Openapi: &openapi3.T{
 			Info: &openapi3.Info{
-				Title:   "data-connector-agent",
+				Title:   cmdName,
 				Version: utils.Version,
 			},
 		},
@@ -57,14 +60,15 @@ func NewRouter(env config.EnvironmentVariables, log *logrus.Logger) (*fiber.App,
 		YAMLDocumentationPath: "/documentations/yaml",
 		PathPrefix:            env.ServicePrefix,
 	})
-
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: add here your routes
+	if err := setupIntegrations(ctx, log, cfg, oasRouter); err != nil {
+		return nil, err
+	}
 
-	if err = oasRouter.GenerateAndExposeOpenapi(); err != nil {
+	if err := oasRouter.GenerateAndExposeOpenapi(); err != nil {
 		return nil, err
 	}
 

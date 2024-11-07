@@ -23,4 +23,6 @@ type EnvironmentVariables struct {
 	HTTPAddress          string `env:"HTTP_ADDRESS" envDefault:"0.0.0.0"`
 	ServicePrefix        string `env:"SERVICE_PREFIX"`
 	DelayShutdownSeconds int    `env:"DELAY_SHUTDOWN_SECONDS" envDefault:"10"`
+
+	ConfigurationPath string `env:"CONFIGURATION_PATH,required"`
 }

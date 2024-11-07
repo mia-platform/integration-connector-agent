@@ -33,6 +33,7 @@ clean/bin:
 .PHONY: clean/tools
 clean/tools:
 	$(info Clean tools folder...)
+	[ -d $(TOOLS_BIN)/k8s ] && chmod +w $(TOOLS_BIN)/k8s/* || true
 	rm -fr $(TOOLS_BIN)
 
 .PHONY: clean/go

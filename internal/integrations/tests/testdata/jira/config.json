@@ -1,0 +1,29 @@
+{
+	"integrations": [
+		{
+			"type": "jira",
+			"authentication": {
+				"secret": {
+					"fromFile": "testdata/secret"
+				}
+			},
+			"eventIdPath": "issue.key",
+			"writers": [
+				{
+					"type": "mongo",
+					"url": {
+						"fromEnv": "INTEGRATION_TEST_MONGO_URL"
+					},
+					"collection": "jira",
+					"outputEvent": {
+						"key": "{{ issue.key }}",
+						"summary": "{{ issue.fields.summary }}",
+						"createdAt": "{{ issue.fields.created }}",
+						"description": "{{ issue.fields.description }}"
+					},
+					"idField": "key"
+				}
+			]
+		}
+	]
+}

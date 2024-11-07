@@ -16,6 +16,7 @@
 package server
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -32,10 +33,12 @@ func TestSetupRouter(t *testing.T) {
 	log, _ := test.NewNullLogger()
 	env := config.EnvironmentVariables{
 		HTTPPort:      "3000",
-		ServicePrefix: "my-prefix",
+		ServicePrefix: "/my-prefix",
 	}
+	cfg := &config.Configuration{}
 
-	app, err := NewRouter(env, log)
+	ctx := context.TODO()
+	app, err := NewApp(ctx, env, log, cfg)
 	require.NoError(t, err, "unexpected error")
 
 	t.Run("API documentation is correctly exposed without prefix - json", func(t *testing.T) {
