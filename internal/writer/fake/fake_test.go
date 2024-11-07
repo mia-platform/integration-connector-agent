@@ -20,8 +20,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/mia-platform/data-connector-agent/internal/entities"
-	"github.com/mia-platform/data-connector-agent/internal/writer"
+	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/writer"
+
 	"github.com/stretchr/testify/require"
 )
 

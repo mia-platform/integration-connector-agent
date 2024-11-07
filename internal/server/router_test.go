@@ -22,7 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/mia-platform/data-connector-agent/internal/config"
+	"github.com/mia-platform/integration-connector-agent/internal/config"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus/hooks/test"

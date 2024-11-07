@@ -23,8 +23,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mia-platform/data-connector-agent/internal/config"
-	"github.com/mia-platform/data-connector-agent/internal/server"
+	"github.com/mia-platform/integration-connector-agent/internal/config"
+	"github.com/mia-platform/integration-connector-agent/internal/server"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/gofiber/fiber/v2"

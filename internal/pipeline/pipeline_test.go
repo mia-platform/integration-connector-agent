@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mia-platform/data-connector-agent/internal/entities"
-	fakewriter "github.com/mia-platform/data-connector-agent/internal/writer/fake"
+	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	fakewriter "github.com/mia-platform/integration-connector-agent/internal/writer/fake"
 
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"

@@ -20,7 +20,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mia-platform/data-connector-agent/internal/config"
+	"github.com/mia-platform/integration-connector-agent/internal/config"
+
 	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
 )
 

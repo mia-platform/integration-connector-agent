@@ -19,13 +19,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/mia-platform/integration-connector-agent/internal/config"
+	integration "github.com/mia-platform/integration-connector-agent/internal/integrations"
+	"github.com/mia-platform/integration-connector-agent/internal/writer"
+
 	swagger "github.com/davidebianchi/gswagger"
 	oasfiber "github.com/davidebianchi/gswagger/support/fiber"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gofiber/fiber/v2"
-	"github.com/mia-platform/data-connector-agent/internal/config"
-	integration "github.com/mia-platform/data-connector-agent/internal/integrations"
-	"github.com/mia-platform/data-connector-agent/internal/writer"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )

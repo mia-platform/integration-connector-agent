@@ -18,7 +18,7 @@ package mongo
 import (
 	"testing"
 
-	"github.com/mia-platform/data-connector-agent/internal/config"
+	"github.com/mia-platform/integration-connector-agent/internal/config"
 
 	"github.com/stretchr/testify/require"
 )

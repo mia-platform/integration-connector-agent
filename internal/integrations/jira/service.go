@@ -21,10 +21,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/mia-platform/data-connector-agent/internal/entities"
-	"github.com/mia-platform/data-connector-agent/internal/pipeline"
-	"github.com/mia-platform/data-connector-agent/internal/utils"
-	"github.com/mia-platform/data-connector-agent/internal/writer"
+	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
+	"github.com/mia-platform/integration-connector-agent/internal/utils"
+	"github.com/mia-platform/integration-connector-agent/internal/writer"
 
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"

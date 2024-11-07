@@ -21,8 +21,8 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/mia-platform/data-connector-agent/internal/config"
-	"github.com/mia-platform/data-connector-agent/internal/utils"
+	"github.com/mia-platform/integration-connector-agent/internal/config"
+	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	swagger "github.com/davidebianchi/gswagger"
 	oasfiber "github.com/davidebianchi/gswagger/support/fiber"

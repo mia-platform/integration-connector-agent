@@ -1,4 +1,4 @@
-# data-connector-agent
+# integration-connector-agent
 
 This is a simple Go application template with a pre-configured [logger] and a
 [library] to handle configuration file and env variables.
@@ -13,7 +13,7 @@ To develop the service locally you need:
 To start the application locally
 
 ```go
-go run data-connector-agent
+go run integration-connector-agent
 ```
 
 By default the service will run on port 8080, to change the port please set `HTTP_PORT` env variable

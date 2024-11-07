@@ -18,7 +18,7 @@ package mongo
 import (
 	"fmt"
 
-	"github.com/mia-platform/data-connector-agent/internal/config"
+	"github.com/mia-platform/integration-connector-agent/internal/config"
 )
 
 // Config contains the configuration needed to connect to a remote MongoDB instance

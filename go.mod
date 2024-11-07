@@ -1,4 +1,4 @@
-module github.com/mia-platform/data-connector-agent
+module github.com/mia-platform/integration-connector-agent
 
 go 1.23.2
 

@@ -20,9 +20,10 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/mia-platform/data-connector-agent/internal/entities"
-	"github.com/mia-platform/data-connector-agent/internal/mapper"
-	"github.com/mia-platform/data-connector-agent/internal/writer"
+	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/mapper"
+	"github.com/mia-platform/integration-connector-agent/internal/writer"
+
 	"github.com/sirupsen/logrus"
 )
 

@@ -18,7 +18,8 @@ package jira
 import (
 	"fmt"
 
-	"github.com/mia-platform/data-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/entities"
+
 	"github.com/tidwall/gjson"
 )
 

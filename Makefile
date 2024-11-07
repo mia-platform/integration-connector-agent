@@ -48,7 +48,7 @@ TOOLS_BIN:= $(TOOLS_DIR)/bin
 endif
 
 # Set here the name of the package you want to build
-CMDNAME:= data-connector-agent
+CMDNAME:= integration-connector-agent
 BUILD_PATH:= .
 CONFORMANCE_TEST_PATH:= $(PROJECT_DIR)/internal/e2e
 IS_LIBRARY:=
@@ -63,7 +63,7 @@ GOARM:= $(shell go env GOARM)
 GIT_REV:= $(shell git rev-parse --short HEAD 2>/dev/null)
 VERSION:= $(shell git describe --tags --exact-match 2>/dev/null || (echo $(GIT_REV) | cut -c1-12))
 # insert here the go module where to add the version metadata
-VERSION_MODULE_NAME:= github.com/mia-platform/data-connector-agent/internal/utils
+VERSION_MODULE_NAME:= github.com/mia-platform/integration-connector-agent/internal/utils
 
 # supported platforms for container creation, these are a subset of the supported
 # platforms of the base image.
@@ -84,8 +84,8 @@ LICENSE:= Apache-2.0
 # The documentation url used on the org.opencontainers.image.documentation label of the container
 DOCUMENTATION_URL:= https://docs.mia-platform.eu
 # The source url used on the org.opencontainers.image.source label of the container
-SOURCE_URL:= https://github.com/mia-platform/data-connector-agent
-BUILDX_CONTEXT?= data-connector-agent-build-context
+SOURCE_URL:= https://github.com/mia-platform/integration-connector-agent
+BUILDX_CONTEXT?= integration-connector-agent-build-context
 
 # Add additional targets that you want to run when calling make without arguments
 .PHONY: all
