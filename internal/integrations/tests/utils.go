@@ -105,8 +105,8 @@ func mongoCollection(t *testing.T, mongoURL, collection, db string) *mongo.Colle
 	defer cancel()
 	require.NoError(t, client.Ping(ctxPing, nil))
 	t.Cleanup(func() {
-		// err := client.Database(db).Drop(ctx)
-		// require.NoError(t, err)
+		err := client.Database(db).Drop(ctx)
+		require.NoError(t, err)
 		err = client.Disconnect(ctx)
 		require.NoError(t, err)
 	})

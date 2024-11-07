@@ -20,6 +20,7 @@ package integrationtests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -38,7 +39,7 @@ func TestJiraIntegration(t *testing.T) {
 
 	t.Run("save data on mongo", func(t *testing.T) {
 		coll := mongoCollection(t, mongoURL, collName, db)
-		// defer coll.Drop(context.Background())
+		defer coll.Drop(context.Background())
 
 		events := []struct {
 			name    string
