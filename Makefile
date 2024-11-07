@@ -69,7 +69,7 @@ VERSION_MODULE_NAME:= github.com/mia-platform/integration-connector-agent/intern
 # platforms of the base image.
 # Or if you start from scratch the platforms you want to support in your image
 # This link contains the rules on how the strings must be formed https://github.com/containerd/containerd/blob/v1.4.3/platforms/platforms.go#L63
-SUPPORTED_PLATFORMS:= linux/386 linux/amd64 linux/arm64 linux/arm/v6 linux/arm/v7
+SUPPORTED_PLATFORMS:= linux/amd64 linux/arm64
 # Default platform for which building the docker image (darwin can run linux images for the same arch)
 # as SUPPORTED_PLATFORMS it highly depends on which platform are supported by the base image
 DEFAULT_DOCKER_PLATFORM:= linux/$(GOARCH)/$(GOARM)
