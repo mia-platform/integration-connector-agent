@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/mia-platform/data-connector-agent/internal/entities"
 	"github.com/mia-platform/data-connector-agent/internal/writer"
@@ -44,11 +45,14 @@ type Writer[T entities.PipelineEvent] struct {
 	database    string
 	collection  string
 	outputEvent map[string]any
+	idField     string
 }
 
 // NewMongoDBWriter will construct a new MongoDB writer and validate the connection parameters via a ping request.
 func NewMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Config) (writer.Writer[T], error) {
 	return newMongoDBWriter[T](ctx, config, func(ctx context.Context, c *mongo.Client) error {
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
 		return c.Ping(ctx, nil)
 	})
 }
@@ -73,6 +77,7 @@ func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Con
 		database:    db,
 		collection:  collection,
 		outputEvent: config.OutputEvent,
+		idField:     config.IDField,
 	}, nil
 }
 
@@ -124,13 +129,13 @@ func (w *Writer[T]) OutputModel() map[string]any {
 // mongoClientOptionsFromConfig return a ClientOptions, database and collection parameters parsed from a
 // MongoDBConfig struct.
 func mongoClientOptionsFromConfig(config *Config) (*options.ClientOptions, string, string) {
-	connectionURI := config.URI
+	connectionURI := config.URL.String()
 	options := options.Client()
-	options.ApplyURI(connectionURI.String())
+	options.ApplyURI(connectionURI)
 
 	database := config.Database
 	if len(database) == 0 {
-		if cs, err := connstring.ParseAndValidate(connectionURI.String()); err == nil {
+		if cs, err := connstring.ParseAndValidate(connectionURI); err == nil {
 			database = cs.Database
 		}
 	}
@@ -143,7 +148,7 @@ func (w Writer[T]) idFilter(data T) (bson.D, error) {
 	if id == "" {
 		return bson.D{}, fmt.Errorf("id is empty")
 	}
-	return bson.D{{Key: "identifier", Value: data.GetID()}}, nil
+	return bson.D{{Key: w.idField, Value: id}}, nil
 }
 
 func (w Writer[T]) bsonData(event T) ([]byte, error) {

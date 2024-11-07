@@ -67,12 +67,12 @@ loop:
 
 				if err := p.writer.Write(ctx, message); err != nil {
 					// TODO: manage failure in writing message. DLQ?
-					p.logger.WithError(err).WithField("message", message).Error("error writing data")
+					p.logger.WithError(err).WithField("message", string(message.RawData())).Error("error writing data")
 				}
 			case entities.Delete:
 				if err := p.writer.Delete(ctx, message); err != nil {
 					// TODO: manage failure in writing message. DLQ?
-					p.logger.WithError(err).WithField("message", message).Error("error deleting data")
+					p.logger.WithError(err).WithField("message", string(message.RawData())).Error("error deleting data")
 				}
 			}
 

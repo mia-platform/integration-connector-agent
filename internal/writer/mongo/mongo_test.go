@@ -46,7 +46,7 @@ func TestNewWriter(t *testing.T) {
 	}{
 		"invalid connection string return error": {
 			configuration: &Config{
-				URI:        "invalid://uri/for/mongo",
+				URL:        "invalid://uri/for/mongo",
 				Database:   "foo",
 				Collection: "bar",
 			},
@@ -55,7 +55,7 @@ func TestNewWriter(t *testing.T) {
 		},
 		"cannot receive ping from url return error": {
 			configuration: &Config{
-				URI:        "mongodb://localhost:27018/baz?connectTimeoutMS=200",
+				URL:        "mongodb://localhost:27018/baz?connectTimeoutMS=200",
 				Collection: "bar",
 			},
 			validateFunc:  invalid,
@@ -63,7 +63,7 @@ func TestNewWriter(t *testing.T) {
 		},
 		"valid uri return writer": {
 			configuration: &Config{
-				URI:        "mongodb://localhost:27017/baz?connectTimeoutMS=200",
+				URL:        "mongodb://localhost:27017/baz?connectTimeoutMS=200",
 				Collection: "bar",
 			},
 			validateFunc: valid,
@@ -74,7 +74,7 @@ func TestNewWriter(t *testing.T) {
 		},
 		"valid uri withtout database return writer": {
 			configuration: &Config{
-				URI:        "mongodb://localhost:27017/?connectTimeoutMS=200",
+				URL:        "mongodb://localhost:27017/?connectTimeoutMS=200",
 				Database:   "baz",
 				Collection: "bar",
 			},
@@ -117,7 +117,7 @@ func TestUpsert(t *testing.T) {
 		expectedErr bool
 	}{
 		"no error": {
-			data: &entities.Event{ID: "12345"},
+			data: getEvent(t),
 			responses: bson.D{
 				{Key: "ok", Value: 1},
 				{Key: "value", Value: bson.D{}},
@@ -155,6 +155,15 @@ func TestUpsert(t *testing.T) {
 	}
 }
 
+func getEvent(t *testing.T) entities.PipelineEvent {
+	t.Helper()
+
+	event := &entities.Event{
+		ID: "12345",
+	}
+	return event
+}
+
 func TestDelete(t *testing.T) {
 	t.Parallel()
 	tests := map[string]struct {
@@ -163,7 +172,7 @@ func TestDelete(t *testing.T) {
 		expectedErr bool
 	}{
 		"no error": {
-			data: &entities.Event{ID: "12345"},
+			data: getEvent(t),
 			responses: bson.D{
 				{Key: "ok", Value: 1},
 				{Key: "value", Value: bson.D{
@@ -208,7 +217,7 @@ func TestOutputModel(t *testing.T) {
 
 	outputModel := map[string]any{}
 	config := &Config{
-		URI:         config.SecretSource("mongodb://localhost:27017/?connectTimeoutMS=200"),
+		URL:         config.SecretSource("mongodb://localhost:27017/?connectTimeoutMS=200"),
 		Database:    "foo",
 		Collection:  "bar",
 		OutputEvent: outputModel,
