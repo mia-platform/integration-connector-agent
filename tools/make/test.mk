@@ -33,7 +33,7 @@ test/integration/setup:
 	docker run --rm --name mongo -p 27017:27017 -d mongo
 test/integration:
 	$(info Running integration tests...)
-	go test $(GO_TEST_DEBUG_FLAG) -tags=integration -race ./...
+	go test $(GO_TEST_DEBUG_FLAG) -tags=integration -cover -race ./...
 test/integration/teardown:
 	$(info Teardown integration tests...)
 	docker rm mongo --force

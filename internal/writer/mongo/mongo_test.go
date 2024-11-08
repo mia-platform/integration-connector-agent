@@ -114,18 +114,24 @@ func TestUpsert(t *testing.T) {
 	tests := map[string]struct {
 		data        entities.PipelineEvent
 		responses   primitive.D
-		expectedErr bool
+		expectedErr string
 	}{
-		"no error": {
-			data: getEvent(t),
-			responses: bson.D{
-				{Key: "ok", Value: 1},
-				{Key: "value", Value: bson.D{}},
-			},
+		"upserting element": {
+			data:      getEvent(t),
+			responses: mtest.CreateSuccessResponse(bson.E{Key: "upserted", Value: []any{bson.D{}}}),
 		},
-		"error": {
+		"update element": {
+			data:      getEvent(t),
+			responses: mtest.CreateSuccessResponse(bson.E{Key: "nModified", Value: 1}),
+		},
+		"error if event without id": {
 			data:        &entities.Event{},
-			expectedErr: true,
+			expectedErr: "id is empty",
+		},
+		"error without change": {
+			data:        getEvent(t),
+			responses:   mtest.CreateSuccessResponse(bson.E{}),
+			expectedErr: "error upserting data: 0 documents upserted",
 		},
 	}
 
@@ -145,23 +151,13 @@ func TestUpsert(t *testing.T) {
 			defer cancel()
 
 			err := writer.Write(ctx, test.data)
-			switch test.expectedErr {
-			case true:
-				assert.Error(mt, err)
-			case false:
-				assert.NoError(mt, err)
+			if test.expectedErr != "" {
+				require.EqualError(t, err, test.expectedErr)
+				return
 			}
+			require.NoError(t, err)
 		})
 	}
-}
-
-func getEvent(t *testing.T) entities.PipelineEvent {
-	t.Helper()
-
-	event := &entities.Event{
-		ID: "12345",
-	}
-	return event
 }
 
 func TestDelete(t *testing.T) {
@@ -169,20 +165,20 @@ func TestDelete(t *testing.T) {
 	tests := map[string]struct {
 		data        entities.PipelineEvent
 		responses   primitive.D
-		expectedErr bool
+		expectedErr string
 	}{
-		"no error": {
-			data: getEvent(t),
-			responses: bson.D{
-				{Key: "ok", Value: 1},
-				{Key: "value", Value: bson.D{
-					{Key: "_id", Value: "12345"},
-				}},
-			},
+		"delete element": {
+			data:      getEvent(t),
+			responses: mtest.CreateSuccessResponse(bson.E{Key: "n", Value: 1}),
 		},
-		"error": {
+		"error if event without id": {
 			data:        &entities.Event{},
-			expectedErr: true,
+			expectedErr: "id is empty",
+		},
+		"error without change": {
+			data:        getEvent(t),
+			responses:   mtest.CreateSuccessResponse(bson.E{}),
+			expectedErr: "error deleting data: 0 documents deleted",
 		},
 	}
 
@@ -202,14 +198,22 @@ func TestDelete(t *testing.T) {
 			defer cancel()
 
 			err := writer.Delete(ctx, test.data)
-			switch test.expectedErr {
-			case true:
-				assert.Error(mt, err)
-			case false:
-				assert.NoError(mt, err)
+			if test.expectedErr != "" {
+				require.EqualError(t, err, test.expectedErr)
+				return
 			}
+			require.NoError(t, err)
 		})
 	}
+}
+
+func getEvent(t *testing.T) entities.PipelineEvent {
+	t.Helper()
+
+	event := &entities.Event{
+		ID: "12345",
+	}
+	return event
 }
 
 func TestOutputModel(t *testing.T) {
