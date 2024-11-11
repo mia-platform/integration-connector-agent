@@ -13,18 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package integrationtests
+package tests
 
 import (
 	"context"
-	"crypto/rand"
-	"math/big"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/server"
+	"github.com/mia-platform/integration-connector-agent/internal/testutils"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/gofiber/fiber/v2"
@@ -32,10 +30,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-const localhostMongoDB = "localhost:27017"
 
 type setupServerConfig struct {
 	configPath string
@@ -44,7 +39,7 @@ type setupServerConfig struct {
 func setupApp(tb testing.TB, setupCfg setupServerConfig) (*fiber.App, string, string) {
 	tb.Helper()
 
-	mongoURL, db := generateMongoURL(tb)
+	mongoURL, db := testutils.GenerateMongoURL(tb)
 	tb.Setenv("INTEGRATION_TEST_MONGO_URL", mongoURL)
 
 	envVars, err := env.ParseAsWithOptions[config.EnvironmentVariables](env.Options{
@@ -67,53 +62,6 @@ func setupApp(tb testing.TB, setupCfg setupServerConfig) (*fiber.App, string, st
 	return app, mongoURL, db
 }
 
-func randomString(tb testing.TB, n int) string {
-	tb.Helper()
-
-	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	b := make([]byte, n)
-	for i := range b {
-		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
-		require.NoError(tb, err)
-		b[i] = letters[num.Int64()]
-	}
-	return string(b)
-}
-
-func generateMongoURL(tb testing.TB) (string, string) {
-	tb.Helper()
-
-	host, ok := os.LookupEnv("MONGO_HOST_CI")
-	if !ok {
-		host = localhostMongoDB
-	}
-
-	db := randomString(tb, 10)
-	tb.Logf("Generated db: %s", db)
-
-	return "mongodb://" + host + "/" + db, db
-}
-
-func mongoCollection(t *testing.T, mongoURL, collection, db string) *mongo.Collection {
-	t.Helper()
-
-	ctx := context.Background()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURL))
-	require.NoError(t, err)
-
-	ctxPing, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-	require.NoError(t, client.Ping(ctxPing, nil))
-	t.Cleanup(func() {
-		err := client.Database(db).Drop(ctx)
-		require.NoError(t, err)
-		err = client.Disconnect(ctx)
-		require.NoError(t, err)
-	})
-
-	return client.Database(db).Collection(collection)
-}
-
 func findAllDocuments(t *testing.T, coll *mongo.Collection, expectedResults []map[string]any) {
 	t.Helper()
 
@@ -131,19 +79,10 @@ func findAllDocuments(t *testing.T, coll *mongo.Collection, expectedResults []ma
 	require.NoError(t, err)
 
 	ok := assert.Eventuallyf(t, func() bool {
-		return assert.ObjectsAreEqual(expectedResults, removeMongoID(results))
+		return assert.ObjectsAreEqual(expectedResults, testutils.RemoveMongoID(results))
 	}, 1*time.Second, 10*time.Millisecond, "results not corrects")
 	// This is only needed to show the diffs in case of failure
 	if !ok {
-		require.Equal(t, expectedResults, removeMongoID(results))
+		require.Equal(t, expectedResults, testutils.RemoveMongoID(results))
 	}
-}
-
-func removeMongoID(docs []map[string]any) []map[string]any {
-	results := []map[string]any{}
-	for _, doc := range docs {
-		delete(doc, "_id")
-		results = append(results, doc)
-	}
-	return results
 }

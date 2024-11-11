@@ -30,8 +30,6 @@ import (
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
-// TODO: add integration tests
-
 var (
 	ErrMongoInitialization = errors.New("failed to start mongo writer")
 )
@@ -86,7 +84,7 @@ func (w *Writer[T]) Write(ctx context.Context, data T) error {
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	opts := options.FindOneAndReplace()
+	opts := options.Replace()
 	opts.SetUpsert(true)
 
 	queryFilter, err := w.idFilter(data)
@@ -99,10 +97,18 @@ func (w *Writer[T]) Write(ctx context.Context, data T) error {
 		return err
 	}
 
-	result := w.client.Database(w.database).
+	result, err := w.client.Database(w.database).
 		Collection(w.collection).
-		FindOneAndReplace(ctxWithCancel, queryFilter, dataToUpsert, opts)
-	return result.Err()
+		ReplaceOne(ctxWithCancel, queryFilter, dataToUpsert, opts)
+	if err != nil {
+		return err
+	}
+
+	if result.UpsertedCount != 1 && result.ModifiedCount != 1 {
+		return fmt.Errorf("error upserting data: %d documents upserted", result.UpsertedCount)
+	}
+
+	return nil
 }
 
 // Delete implement the Writer interface
@@ -115,11 +121,19 @@ func (w *Writer[T]) Delete(ctx context.Context, data T) error {
 		return err
 	}
 
-	opts := options.FindOneAndDelete()
-	result := w.client.Database(w.database).
+	opts := options.Delete()
+	result, err := w.client.Database(w.database).
 		Collection(w.collection).
-		FindOneAndDelete(ctxWithCancel, queryFilter, opts)
-	return result.Err()
+		DeleteOne(ctxWithCancel, queryFilter, opts)
+	if err != nil {
+		return err
+	}
+
+	if result.DeletedCount != 1 {
+		return fmt.Errorf("error deleting data: %d documents deleted", result.DeletedCount)
+	}
+
+	return nil
 }
 
 func (w *Writer[T]) OutputModel() map[string]any {
@@ -143,8 +157,8 @@ func mongoClientOptionsFromConfig(config *Config) (*options.ClientOptions, strin
 	return options, database, config.Collection
 }
 
-func (w Writer[T]) idFilter(data T) (bson.D, error) {
-	id := data.GetID()
+func (w Writer[T]) idFilter(event T) (bson.D, error) {
+	id := event.GetID()
 	if id == "" {
 		return bson.D{}, fmt.Errorf("id is empty")
 	}

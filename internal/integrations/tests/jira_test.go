@@ -16,7 +16,7 @@
 //go:build integration
 // +build integration
 
-package integrationtests
+package tests
 
 import (
 	"bytes"
@@ -26,6 +26,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/mia-platform/integration-connector-agent/internal/testutils"
 
 	"github.com/stretchr/testify/require"
 )
@@ -38,7 +40,7 @@ func TestJiraIntegration(t *testing.T) {
 	defer app.Shutdown()
 
 	t.Run("save data on mongo", func(t *testing.T) {
-		coll := mongoCollection(t, mongoURL, collName, db)
+		coll := testutils.MongoCollection(t, mongoURL, collName, db)
 		defer coll.Drop(context.Background())
 
 		events := []struct {
