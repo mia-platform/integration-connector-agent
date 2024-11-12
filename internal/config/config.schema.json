@@ -46,8 +46,7 @@
 										"type",
 										"url",
 										"outputEvent",
-										"collection",
-										"uniqueIdKey"
+										"collection"
 									]
 								}
 							]
