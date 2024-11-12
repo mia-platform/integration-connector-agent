@@ -61,7 +61,7 @@ func TestValidateConfig(t *testing.T) {
 
 			expectedError: `outputEvent "_id" field is reserved`,
 		},
-		"throws if uid is present in OutputEvent": {
+		"throws if eventId is present in OutputEvent": {
 			config: Config{
 				URL:        config.SecretSource("mongodb://localhost:27017"),
 				Collection: "test",
