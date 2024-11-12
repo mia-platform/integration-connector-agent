@@ -71,6 +71,7 @@ func TestJiraIntegration(t *testing.T) {
 
 				expectedResults: []map[string]any{
 					{
+						"eventId":     "12345",
 						"key":         "TEST-123",
 						"createdAt":   "2024-11-06T00:00:00.000Z",
 						"description": "This is a test issue description",
@@ -100,6 +101,7 @@ func TestJiraIntegration(t *testing.T) {
 
 				expectedResults: []map[string]any{
 					{
+						"eventId":     "12345",
 						"key":         "TEST-123",
 						"createdAt":   "2024-11-06T00:00:00.000Z",
 						"description": "This is a test issue description modified",
@@ -129,12 +131,14 @@ func TestJiraIntegration(t *testing.T) {
 
 				expectedResults: []map[string]any{
 					{
+						"eventId":     "12345",
 						"key":         "TEST-123",
 						"createdAt":   "2024-11-06T00:00:00.000Z",
 						"description": "This is a test issue description modified",
 						"summary":     "Test modified issue",
 					},
 					{
+						"eventId":     "12346",
 						"key":         "TEST-456",
 						"createdAt":   "2024-11-10T00:00:00.000Z",
 						"description": "This is the second issue",
@@ -159,10 +163,11 @@ func TestJiraIntegration(t *testing.T) {
 
 				expectedResults: []map[string]any{
 					{
-						"key":         "TEST-456",
-						"createdAt":   "2024-11-10T00:00:00.000Z",
-						"description": "This is the second issue",
-						"summary":     "Test second issue",
+						"eventId":     "12345",
+						"key":         "TEST-123",
+						"createdAt":   "2024-11-06T00:00:00.000Z",
+						"description": "This is a test issue description modified",
+						"summary":     "Test modified issue",
 					},
 				},
 			},

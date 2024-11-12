@@ -40,7 +40,6 @@ func TestMongo(t *testing.T) {
 		URL:        config.SecretSource(mongoURL),
 		Database:   db,
 		Collection: collection,
-		IDField:    "key",
 	})
 	require.NoError(t, err)
 
@@ -52,7 +51,7 @@ func TestMongo(t *testing.T) {
 		err = w.Write(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{
-			{"foo": "bar", "key": "123"},
+			{"eventId": "123", "foo": "bar", "key": "123"},
 		})
 	})
 
@@ -61,7 +60,7 @@ func TestMongo(t *testing.T) {
 		err = w.Write(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{
-			{"foo": "taz", "key": "123", "another": "field"},
+			{"eventId": "123", "foo": "taz", "key": "123", "another": "field"},
 		})
 	})
 

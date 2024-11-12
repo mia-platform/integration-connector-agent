@@ -117,19 +117,19 @@ func TestUpsert(t *testing.T) {
 		expectedErr string
 	}{
 		"upserting element": {
-			data:      getEvent(t),
+			data:      getEvent(t, nil),
 			responses: mtest.CreateSuccessResponse(bson.E{Key: "upserted", Value: []any{bson.D{}}}),
 		},
 		"update element": {
-			data:      getEvent(t),
+			data:      getEvent(t, nil),
 			responses: mtest.CreateSuccessResponse(bson.E{Key: "nModified", Value: 1}),
 		},
-		"error if event without id": {
-			data:        &entities.Event{},
-			expectedErr: "id is empty",
+		"error if event contains reserved data": {
+			data:        getEvent(t, map[string]any{idField: "reserved"}),
+			expectedErr: "event data contains reserved field eventId",
 		},
 		"error without change": {
-			data:        getEvent(t),
+			data:        getEvent(t, nil),
 			responses:   mtest.CreateSuccessResponse(bson.E{}),
 			expectedErr: "error upserting data: 0 documents upserted",
 		},
@@ -143,6 +143,7 @@ func TestUpsert(t *testing.T) {
 				client:     mt.Client,
 				collection: mt.Coll.Name(),
 				database:   mt.DB.Name(),
+				idField:    idField,
 			}
 
 			mt.AddMockResponses(test.responses)
@@ -168,15 +169,15 @@ func TestDelete(t *testing.T) {
 		expectedErr string
 	}{
 		"delete element": {
-			data:      getEvent(t),
+			data:      getEvent(t, nil),
 			responses: mtest.CreateSuccessResponse(bson.E{Key: "n", Value: 1}),
 		},
 		"error if event without id": {
 			data:        &entities.Event{},
-			expectedErr: "id is empty",
+			expectedErr: "event id is empty",
 		},
 		"error without change": {
-			data:        getEvent(t),
+			data:        getEvent(t, nil),
 			responses:   mtest.CreateSuccessResponse(bson.E{}),
 			expectedErr: "error deleting data: 0 documents deleted",
 		},
@@ -207,12 +208,17 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-func getEvent(t *testing.T) entities.PipelineEvent {
+func getEvent(t *testing.T, data map[string]any) entities.PipelineEvent {
 	t.Helper()
 
 	event := &entities.Event{
 		ID: "12345",
 	}
+
+	if data != nil {
+		event.WithData(data)
+	}
+
 	return event
 }
 

@@ -27,7 +27,6 @@ type Config struct {
 	Database    string              `json:"-"`
 	Collection  string              `json:"collection"`
 	OutputEvent map[string]any      `json:"outputEvent"`
-	IDField     string              `json:"idField"`
 }
 
 func (c *Config) Validate() error {
@@ -40,14 +39,11 @@ func (c *Config) Validate() error {
 	if c.OutputEvent == nil {
 		return fmt.Errorf("outputEvent is required")
 	}
-	if c.IDField == "" {
-		return fmt.Errorf("idField is required")
+	if _, ok := c.OutputEvent["_id"]; ok {
+		return fmt.Errorf(`outputEvent "_id" field is reserved`)
 	}
-	if c.IDField == "_id" {
-		return fmt.Errorf("idField cannot be \"_id\"")
-	}
-	if _, ok := c.OutputEvent[c.IDField]; !ok {
-		return fmt.Errorf("idField \"%s\" not found in outputEvent", c.IDField)
+	if _, ok := c.OutputEvent[idField]; ok {
+		return fmt.Errorf(`outputEvent "%s" field is reserved`, idField)
 	}
 
 	return nil

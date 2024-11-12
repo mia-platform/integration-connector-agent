@@ -86,7 +86,7 @@ func webhookHandler(config Configuration, p pipeline.IPipeline[entities.Pipeline
 			return c.SendStatus(http.StatusOK)
 		}
 
-		event, err := getPipelineEvent(body, config.EventIDPath)
+		event, err := getPipelineEvent(body)
 		if err != nil {
 			log.WithError(err).Error("error unmarshaling event")
 			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))

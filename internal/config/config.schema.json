@@ -21,9 +21,6 @@
 							}
 						}
 					},
-					"eventIdPath": {
-						"type": "string"
-					},
 					"writers": {
 						"type": "array",
 						"items": {
@@ -43,9 +40,6 @@
 										},
 										"outputEvent": {
 											"type": "object"
-										},
-										"idField": {
-											"type": "string"
 										}
 									},
 									"required": [
@@ -53,7 +47,7 @@
 										"url",
 										"outputEvent",
 										"collection",
-										"idField"
+										"uniqueIdKey"
 									]
 								}
 							]
@@ -62,8 +56,7 @@
 				},
 				"required": [
 					"type",
-					"writers",
-					"eventIdPath"
+					"writers"
 				]
 			},
 			"minItems": 1

@@ -54,7 +54,6 @@ func TestWriterConfig(t *testing.T) {
 				"createdAt":   "{{ issue.fields.created }}",
 				"description": "{{ issue.fields.description }}",
 			},
-			IDField: "key",
 		}, mongoConfig)
 	})
 }

@@ -51,7 +51,6 @@ func TestLoadServiceConfiguration(t *testing.T) {
 						Authentication: Authentication{
 							Secret: SecretSource("MY_SECRET"),
 						},
-						EventIDPath: "issue.id",
 						Writers: []Writer{
 							{
 								Type: "mongo",
@@ -145,7 +144,6 @@ func getExpectedWriterConfig(t *testing.T) string {
 		"summary": "{{ issue.fields.summary }}",
 		"createdAt": "{{ issue.fields.created }}",
 		"description": "{{ issue.fields.description }}"
-	},
-	"idField": "key"
+	}
 }`
 }

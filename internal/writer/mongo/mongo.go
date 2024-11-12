@@ -32,6 +32,8 @@ import (
 
 var (
 	ErrMongoInitialization = errors.New("failed to start mongo writer")
+
+	idField = "eventId"
 )
 
 type validateFunc func(context.Context, *mongo.Client) error
@@ -75,7 +77,7 @@ func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Con
 		database:    db,
 		collection:  collection,
 		outputEvent: config.OutputEvent,
-		idField:     config.IDField,
+		idField:     idField,
 	}, nil
 }
 
@@ -160,15 +162,26 @@ func mongoClientOptionsFromConfig(config *Config) (*options.ClientOptions, strin
 func (w Writer[T]) idFilter(event T) (bson.D, error) {
 	id := event.GetID()
 	if id == "" {
-		return bson.D{}, fmt.Errorf("id is empty")
+		return bson.D{}, fmt.Errorf("event id is empty")
 	}
 	return bson.D{{Key: w.idField, Value: id}}, nil
 }
 
 func (w Writer[T]) bsonData(event T) ([]byte, error) {
-	bsonData, err := bson.Marshal(event.Data())
+	data := event.Data()
+	if data == nil {
+		data = map[string]any{}
+	}
+
+	if _, ok := data[w.idField]; ok {
+		return nil, fmt.Errorf("event data contains reserved field %s", w.idField)
+	}
+	data[w.idField] = event.GetID()
+
+	bsonData, err := bson.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
+
 	return bsonData, nil
 }
