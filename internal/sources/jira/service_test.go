@@ -24,14 +24,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks"
+	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
+	"github.com/mia-platform/integration-connector-agent/internal/utils"
+
 	swagger "github.com/davidebianchi/gswagger"
 	oasfiber "github.com/davidebianchi/gswagger/support/fiber"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gofiber/fiber/v2"
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/utils"
-	"github.com/mia-platform/integration-connector-agent/internal/writer"
-	fakewriter "github.com/mia-platform/integration-connector-agent/internal/writer/fake"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
@@ -44,7 +45,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 	type testItem struct {
 		config Configuration
 		req    func(t *testing.T) *http.Request
-		writer writer.Writer[entities.PipelineEvent]
+		writer sinks.Sink[entities.PipelineEvent]
 
 		expectedStatusCode int
 		expectedBody       func(t *testing.T, body io.ReadCloser)

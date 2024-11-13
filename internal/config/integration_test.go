@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
-	"github.com/mia-platform/integration-connector-agent/internal/writer/mongo"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
 
 	"github.com/stretchr/testify/require"
 )

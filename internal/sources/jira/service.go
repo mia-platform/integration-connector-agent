@@ -23,8 +23,8 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 	"github.com/mia-platform/integration-connector-agent/internal/utils"
-	"github.com/mia-platform/integration-connector-agent/internal/writer"
 
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
@@ -47,7 +47,7 @@ func SetupService(
 	logger *logrus.Entry,
 	router *swagger.Router[fiber.Handler, fiber.Router],
 	config Configuration,
-	writer writer.Writer[entities.PipelineEvent],
+	writer sinks.Sink[entities.PipelineEvent],
 ) error {
 	p, err := pipeline.NewPipeline(logger, writer)
 	if err != nil {

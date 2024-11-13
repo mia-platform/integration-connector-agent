@@ -22,7 +22,7 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/mapper"
-	"github.com/mia-platform/integration-connector-agent/internal/writer"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 
 	"github.com/sirupsen/logrus"
 )
@@ -32,7 +32,7 @@ var (
 )
 
 type Pipeline[T entities.PipelineEvent] struct {
-	writer writer.Writer[T]
+	writer sinks.Sink[T]
 	mapper mapper.IMapper
 	logger *logrus.Entry
 
@@ -87,7 +87,7 @@ loop:
 	return nil
 }
 
-func NewPipeline[T entities.PipelineEvent](logger *logrus.Entry, writer writer.Writer[T]) (IPipeline[T], error) {
+func NewPipeline[T entities.PipelineEvent](logger *logrus.Entry, writer sinks.Sink[T]) (IPipeline[T], error) {
 	// TODO: here instead to use a buffer size it should be used a proper queue
 	messageChan := make(chan T, 1000000)
 

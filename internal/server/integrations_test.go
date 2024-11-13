@@ -20,8 +20,8 @@ import (
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
-	integration "github.com/mia-platform/integration-connector-agent/internal/integrations"
-	"github.com/mia-platform/integration-connector-agent/internal/writer"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks"
+	integration "github.com/mia-platform/integration-connector-agent/internal/sources"
 
 	swagger "github.com/davidebianchi/gswagger"
 	oasfiber "github.com/davidebianchi/gswagger/support/fiber"
@@ -169,7 +169,7 @@ func getFakeWriter(t *testing.T) config.Writer {
 	t.Helper()
 
 	return config.Writer{
-		Type: writer.Fake,
+		Type: sinks.Fake,
 		Raw:  []byte(`{}`),
 	}
 }

@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
-	fakewriter "github.com/mia-platform/integration-connector-agent/internal/writer/fake"
+	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"

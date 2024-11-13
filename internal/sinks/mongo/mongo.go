@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/writer"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -47,7 +47,7 @@ type Writer[T entities.PipelineEvent] struct {
 }
 
 // NewMongoDBWriter will construct a new MongoDB writer and validate the connection parameters via a ping request.
-func NewMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Config) (writer.Writer[T], error) {
+func NewMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Config) (sinks.Sink[T], error) {
 	return newMongoDBWriter[T](ctx, config, func(ctx context.Context, c *mongo.Client) error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
@@ -55,7 +55,7 @@ func NewMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Con
 	})
 }
 
-func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Config, validate validateFunc) (writer.Writer[T], error) {
+func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Config, validate validateFunc) (sinks.Sink[T], error) {
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	defer cancel()
 

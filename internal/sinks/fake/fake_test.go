@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/writer"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 
 	"github.com/stretchr/testify/require"
 )
@@ -32,7 +32,7 @@ func TestImplementWriter(t *testing.T) {
 	}
 
 	t.Run("implement writer", func(t *testing.T) {
-		require.Implements(t, (*writer.Writer[entities.PipelineEvent])(nil), New(config))
+		require.Implements(t, (*sinks.Sink[entities.PipelineEvent])(nil), New(config))
 	})
 
 	t.Run("stub write", func(t *testing.T) {

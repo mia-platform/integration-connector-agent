@@ -21,11 +21,11 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
-	integration "github.com/mia-platform/integration-connector-agent/internal/integrations"
-	"github.com/mia-platform/integration-connector-agent/internal/integrations/jira"
-	"github.com/mia-platform/integration-connector-agent/internal/writer"
-	fakewriter "github.com/mia-platform/integration-connector-agent/internal/writer/fake"
-	"github.com/mia-platform/integration-connector-agent/internal/writer/mongo"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks"
+	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
+	"github.com/mia-platform/integration-connector-agent/internal/sources"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
 
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
@@ -45,7 +45,7 @@ func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Conf
 		writer := writers[0]
 
 		switch cfgIntegration.Type {
-		case integration.Jira:
+		case sources.Jira:
 			// TODO: improve management of configuration
 			config := jira.Configuration{
 				Secret:      cfgIntegration.Authentication.Secret.String(),
@@ -66,11 +66,11 @@ func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Conf
 	return nil
 }
 
-func setupWriters(ctx context.Context, writers []config.Writer) ([]writer.Writer[entities.PipelineEvent], error) {
-	var w []writer.Writer[entities.PipelineEvent]
+func setupWriters(ctx context.Context, writers []config.Writer) ([]sinks.Sink[entities.PipelineEvent], error) {
+	var w []sinks.Sink[entities.PipelineEvent]
 	for _, configuredWriter := range writers {
 		switch configuredWriter.Type {
-		case writer.Mongo:
+		case sinks.Mongo:
 			config, err := config.WriterConfig[*mongo.Config](configuredWriter)
 			if err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
@@ -80,7 +80,7 @@ func setupWriters(ctx context.Context, writers []config.Writer) ([]writer.Writer
 				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
 			}
 			w = append(w, mongoWriter)
-		case writer.Fake:
+		case sinks.Fake:
 			config, err := config.WriterConfig[*fakewriter.Config](configuredWriter)
 			if err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
