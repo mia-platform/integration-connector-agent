@@ -24,7 +24,7 @@ import (
 )
 
 type Config struct {
-	OutputModel map[string]any
+	Mocks Mocks
 }
 
 func (c *Config) Validate() error {
@@ -68,12 +68,20 @@ type Writer struct {
 }
 
 func New(config *Config) *Writer {
-	return &Writer{
-		stub:  Calls{},
-		mocks: Mocks{},
-
-		outputModel: config.OutputModel,
+	if config == nil {
+		config = &Config{}
 	}
+
+	w := &Writer{
+		stub:  Calls{},
+		mocks: config.Mocks,
+	}
+
+	if w.mocks == nil {
+		w.mocks = Mocks{}
+	}
+
+	return w
 }
 
 func (f *Writer) Calls() Calls {

@@ -27,12 +27,15 @@ const (
 	issueCreated = "jira:issue_created"
 	issueUpdated = "jira:issue_updated"
 	issueDeleted = "jira:issue_deleted"
+
+	eventIDPath      = "issue.id"
+	webhookEventPath = "webhookEvent"
 )
 
-func getPipelineEvent(rawData []byte, eventIDPath string) (entities.PipelineEvent, error) {
+func getPipelineEvent(rawData []byte) (entities.PipelineEvent, error) {
 	parsed := gjson.ParseBytes(rawData)
 	id := parsed.Get(eventIDPath).String()
-	webhookEvent := parsed.Get("webhookEvent").String()
+	webhookEvent := parsed.Get(webhookEventPath).String()
 
 	operationType, err := getOperationType(webhookEvent)
 	if err != nil {

@@ -35,12 +35,12 @@ func TestSetupWriters(t *testing.T) {
 	ctx := context.Background()
 
 	testCases := map[string]struct {
-		writers []config.Writer
+		writers config.Sinks
 
 		expectError string
 	}{
 		"unsupported writer type": {
-			writers: []config.Writer{
+			writers: config.Sinks{
 				{
 					Type: "unsupported",
 				},
@@ -48,7 +48,7 @@ func TestSetupWriters(t *testing.T) {
 			expectError: "unsupported writer type: unsupported",
 		},
 		"multiple writers": {
-			writers: []config.Writer{
+			writers: config.Sinks{
 				getFakeWriter(t),
 				getFakeWriter(t),
 			},
@@ -57,7 +57,7 @@ func TestSetupWriters(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			w, err := setupWriters(ctx, tc.writers)
+			w, err := setupSinks(ctx, tc.writers)
 
 			if tc.expectError != "" {
 				require.EqualError(t, err, tc.expectError)
@@ -80,7 +80,7 @@ func TestSetupIntegrations(t *testing.T) {
 				Integrations: []config.Integration{
 					{
 						Type: integration.Jira,
-						Writers: []config.Writer{
+						Sinks: config.Sinks{
 							getFakeWriter(t),
 							getFakeWriter(t),
 						},
@@ -94,7 +94,7 @@ func TestSetupIntegrations(t *testing.T) {
 				Integrations: []config.Integration{
 					{
 						Type: integration.Jira,
-						Writers: []config.Writer{
+						Sinks: config.Sinks{
 							{
 								Type: "unsupported",
 							},
@@ -109,7 +109,7 @@ func TestSetupIntegrations(t *testing.T) {
 				Integrations: []config.Integration{
 					{
 						Type: "test",
-						Writers: []config.Writer{
+						Sinks: config.Sinks{
 							getFakeWriter(t),
 						},
 					},
@@ -121,7 +121,7 @@ func TestSetupIntegrations(t *testing.T) {
 				Integrations: []config.Integration{
 					{
 						Type: "unsupported",
-						Writers: []config.Writer{
+						Sinks: config.Sinks{
 							getFakeWriter(t),
 						},
 					},
@@ -137,7 +137,7 @@ func TestSetupIntegrations(t *testing.T) {
 			log, _ := test.NewNullLogger()
 			router := getRouter(t)
 
-			err := setupIntegrations(ctx, log, &tc.cfg, router)
+			err := setupPipelines(ctx, log, &tc.cfg, router)
 			if tc.expectError != "" {
 				require.EqualError(t, err, tc.expectError)
 			} else {
@@ -165,10 +165,10 @@ func getRouter(t *testing.T) *swagger.Router[fiber.Handler, fiber.Router] {
 	return router
 }
 
-func getFakeWriter(t *testing.T) config.Writer {
+func getFakeWriter(t *testing.T) config.GenericConfig {
 	t.Helper()
 
-	return config.Writer{
+	return config.GenericConfig{
 		Type: sinks.Fake,
 		Raw:  []byte(`{}`),
 	}

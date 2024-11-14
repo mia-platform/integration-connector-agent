@@ -21,9 +21,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
-	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	swagger "github.com/davidebianchi/gswagger"
@@ -44,17 +42,12 @@ var (
 
 func SetupService(
 	ctx context.Context,
-	logger *logrus.Entry,
+	logger *logrus.Logger,
 	router *swagger.Router[fiber.Handler, fiber.Router],
 	config Configuration,
-	writer sinks.Sink[entities.PipelineEvent],
+	p pipeline.IPipeline,
 ) error {
-	p, err := pipeline.NewPipeline(logger, writer)
-	if err != nil {
-		return err
-	}
-
-	go func(p pipeline.IPipeline[entities.PipelineEvent]) {
+	go func(p pipeline.IPipeline) {
 		err := p.Start(ctx)
 		if err != nil {
 			logger.WithError(err).Error("error starting pipeline")
@@ -71,7 +64,7 @@ func SetupService(
 	return nil
 }
 
-func webhookHandler(config Configuration, p pipeline.IPipeline[entities.PipelineEvent]) fiber.Handler {
+func webhookHandler(config Configuration, p pipeline.IPipeline) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		log := glogrus.FromContext(c.UserContext())
 
@@ -86,7 +79,7 @@ func webhookHandler(config Configuration, p pipeline.IPipeline[entities.Pipeline
 			return c.SendStatus(http.StatusOK)
 		}
 
-		event, err := getPipelineEvent(body, config.EventIDPath)
+		event, err := getPipelineEvent(body)
 		if err != nil {
 			log.WithError(err).Error("error unmarshaling event")
 			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))

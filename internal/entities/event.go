@@ -15,6 +15,8 @@
 
 package entities
 
+import "encoding/json"
+
 type Operation int
 
 const (
@@ -24,10 +26,10 @@ const (
 
 type PipelineEvent interface {
 	GetID() string
-	RawData() []byte
+	Data() []byte
 	Type() Operation
-	WithData(map[string]any)
-	Data() map[string]any
+	WithData([]byte)
+	ParsedData() (map[string]any, error)
 }
 
 type Event struct {
@@ -35,14 +37,13 @@ type Event struct {
 	OperationType Operation
 
 	OriginalRaw []byte
-	data        map[string]any
 }
 
 func (e Event) GetID() string {
 	return e.ID
 }
 
-func (e Event) RawData() []byte {
+func (e Event) Data() []byte {
 	return e.OriginalRaw
 }
 
@@ -50,10 +51,15 @@ func (e Event) Type() Operation {
 	return e.OperationType
 }
 
-func (e *Event) WithData(data map[string]any) {
-	e.data = data
+func (e Event) ParsedData() (map[string]any, error) {
+	parsed := map[string]any{}
+
+	if err := json.Unmarshal(e.OriginalRaw, &parsed); err != nil {
+		return nil, err
+	}
+	return parsed, nil
 }
 
-func (e Event) Data() map[string]any {
-	return e.data
+func (e *Event) WithData(raw []byte) {
+	e.OriginalRaw = raw
 }

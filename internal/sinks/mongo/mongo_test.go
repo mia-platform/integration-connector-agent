@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
 
 	"github.com/stretchr/testify/assert"
@@ -128,10 +127,23 @@ func TestUpsert(t *testing.T) {
 			data:        &entities.Event{},
 			expectedErr: "id is empty",
 		},
+		"error if data is not a JSON": {
+			data: &entities.Event{
+				ID:          "12345",
+				OriginalRaw: []byte(`{`),
+			},
+			responses:   mtest.CreateSuccessResponse(bson.E{}),
+			expectedErr: "unexpected end of JSON input",
+		},
 		"error without change": {
 			data:        getEvent(t),
 			responses:   mtest.CreateSuccessResponse(bson.E{}),
 			expectedErr: "error upserting data: 0 documents upserted",
+		},
+		"mongo returns error": {
+			data:        getEvent(t),
+			responses:   mtest.CreateCommandErrorResponse(mtest.CommandError{Message: "some error"}),
+			expectedErr: "some error",
 		},
 	}
 
@@ -180,6 +192,11 @@ func TestDelete(t *testing.T) {
 			responses:   mtest.CreateSuccessResponse(bson.E{}),
 			expectedErr: "error deleting data: 0 documents deleted",
 		},
+		"mongo returns error": {
+			data:        getEvent(t),
+			responses:   mtest.CreateCommandErrorResponse(mtest.CommandError{Message: "some error"}),
+			expectedErr: "some error",
+		},
 	}
 
 	for testName, test := range tests {
@@ -212,23 +229,8 @@ func getEvent(t *testing.T) entities.PipelineEvent {
 
 	event := &entities.Event{
 		ID: "12345",
+
+		OriginalRaw: []byte(`{"event": "test"}`),
 	}
 	return event
-}
-
-func TestOutputModel(t *testing.T) {
-	t.Parallel()
-
-	outputModel := map[string]any{}
-	config := &Config{
-		URL:         config.SecretSource("mongodb://localhost:27017/?connectTimeoutMS=200"),
-		Database:    "foo",
-		Collection:  "bar",
-		OutputEvent: outputModel,
-	}
-	valid := validateFunc(func(context.Context, *mongo.Client) error { return nil })
-
-	writer, err := newMongoDBWriter[entities.PipelineEvent](context.Background(), config, valid)
-	require.NoError(t, err)
-	require.Equal(t, outputModel, writer.OutputModel())
 }

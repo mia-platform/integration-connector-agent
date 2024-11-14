@@ -24,28 +24,26 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/sinks"
-	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
+	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
+	"github.com/mia-platform/integration-connector-agent/internal/processors"
+	fakesink "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	swagger "github.com/davidebianchi/gswagger"
 	oasfiber "github.com/davidebianchi/gswagger/support/fiber"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gofiber/fiber/v2"
-	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSetupServiceWithConfig(t *testing.T) {
-	log, _ := test.NewNullLogger()
-	logger := logrus.NewEntry(log)
+	logger, _ := test.NewNullLogger()
 
 	type testItem struct {
-		config Configuration
-		req    func(t *testing.T) *http.Request
-		writer sinks.Sink[entities.PipelineEvent]
+		config   Configuration
+		req      func(t *testing.T) *http.Request
+		pipeline pipeline.IPipeline
 
 		expectedStatusCode int
 		expectedBody       func(t *testing.T, body io.ReadCloser)
@@ -102,13 +100,15 @@ func TestSetupServiceWithConfig(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			app, router := getRouter(t)
 
-			if test.writer == nil {
-				test.writer = fakewriter.New(&fakewriter.Config{
-					OutputModel: map[string]any{},
-				})
+			if test.pipeline == nil {
+				proc := &processors.Processors{}
+				s := fakesink.New(nil)
+				var err error
+				test.pipeline, err = pipeline.New(logger, proc, s)
+				require.NoError(t, err)
 			}
 
-			err := SetupService(context.TODO(), logger, router, test.config, test.writer)
+			err := SetupService(context.TODO(), logger, router, test.config, test.pipeline)
 			require.NoError(t, err)
 
 			res, err := app.Test(test.req(t))

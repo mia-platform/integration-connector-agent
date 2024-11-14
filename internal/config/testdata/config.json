@@ -7,21 +7,24 @@
 					"fromFile": "testdata/secret"
 				}
 			},
-			"eventIdPath": "issue.id",
-			"writers": [
+			"processors": [
 				{
-					"type": "mongo",
-					"url": {
-						"fromEnv": "TEST_LOAD_SERVICE_MONGO_URL"
-					},
-					"collection": "my-collection",
+					"type": "mapper",
 					"outputEvent": {
 						"key": "{{ issue.key }}",
 						"summary": "{{ issue.fields.summary }}",
 						"createdAt": "{{ issue.fields.created }}",
 						"description": "{{ issue.fields.description }}"
+					}
+				}
+			],
+			"sinks": [
+				{
+					"type": "mongo",
+					"url": {
+						"fromEnv": "TEST_LOAD_SERVICE_MONGO_URL"
 					},
-					"idField": "key"
+					"collection": "my-collection"
 				}
 			]
 		}

@@ -18,6 +18,5 @@ package jira
 // Configuration is the representation of the configuration for a Jira Cloud webhook
 type Configuration struct {
 	// Secret the webhook secret configuration for validating the data received
-	Secret      string
-	EventIDPath string
+	Secret string
 }

@@ -27,9 +27,7 @@ import (
 )
 
 func TestImplementWriter(t *testing.T) {
-	config := &Config{
-		OutputModel: map[string]any{},
-	}
+	config := &Config{}
 
 	t.Run("implement writer", func(t *testing.T) {
 		require.Implements(t, (*sinks.Sink[entities.PipelineEvent])(nil), New(config))
@@ -103,11 +101,5 @@ func TestImplementWriter(t *testing.T) {
 			Data:      event,
 			Operation: entities.Delete,
 		}, f.Calls().LastCall())
-	})
-
-	t.Run("output model", func(t *testing.T) {
-		f := New(config)
-
-		require.Equal(t, config.OutputModel, f.OutputModel())
 	})
 }

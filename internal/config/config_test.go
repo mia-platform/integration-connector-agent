@@ -25,10 +25,12 @@ func TestLoadServiceConfiguration(t *testing.T) {
 	t.Setenv("TEST_LOAD_SERVICE_MONGO_URL", "mongodb://localhost:27017")
 
 	tests := map[string]struct {
-		path                 string
-		expectedError        string
-		expectedContent      *Configuration
-		expectedWriterConfig string
+		path string
+
+		expectedError           string
+		expectedContent         *Configuration
+		expectedSinkConfig      string
+		expectedProcessorConfig string
 	}{
 		"invalid configuration not match schema": {
 			path:          "./testdata/invalid-config.json",
@@ -51,8 +53,12 @@ func TestLoadServiceConfiguration(t *testing.T) {
 						Authentication: Authentication{
 							Secret: SecretSource("MY_SECRET"),
 						},
-						EventIDPath: "issue.id",
-						Writers: []Writer{
+						Processors: Processors{
+							{
+								Type: "mapper",
+							},
+						},
+						Sinks: Sinks{
 							{
 								Type: "mongo",
 							},
@@ -60,7 +66,8 @@ func TestLoadServiceConfiguration(t *testing.T) {
 					},
 				},
 			},
-			expectedWriterConfig: getExpectedWriterConfig(t),
+			expectedSinkConfig:      getExpectedSinkConfig(t),
+			expectedProcessorConfig: getExpectedProcessorConfig(t),
 		},
 		"invalid config if integrations is empty": {
 			path:          "./testdata/empty-integrations.json",
@@ -76,10 +83,15 @@ func TestLoadServiceConfiguration(t *testing.T) {
 				require.Nil(t, config)
 			} else {
 				require.NoError(t, err)
-				rawConfig := config.Integrations[0].Writers[0].Raw
-				config.Integrations[0].Writers[0].Raw = nil
+				rawSinkConfig := config.Integrations[0].Sinks[0].Raw
+				config.Integrations[0].Sinks[0].Raw = nil
+
+				rawProcessorConfig := config.Integrations[0].Processors[0].Raw
+				config.Integrations[0].Processors[0].Raw = nil
+
 				require.Equal(t, test.expectedContent, config)
-				require.JSONEq(t, test.expectedWriterConfig, string(rawConfig))
+				require.JSONEq(t, test.expectedSinkConfig, string(rawSinkConfig))
+				require.JSONEq(t, test.expectedProcessorConfig, string(rawProcessorConfig))
 			}
 		})
 	}
@@ -89,7 +101,7 @@ func TestWriterConfig(t *testing.T) {
 	t.Setenv("TEST_LOAD_SERVICE_MONGO_URL", "mongodb://localhost:27017")
 
 	t.Run("config is parsed correctly", func(t *testing.T) {
-		config := Writer{
+		config := GenericConfig{
 			Type: "mongo",
 			Raw: []byte(`{
 				"type": "mongo",
@@ -106,9 +118,9 @@ func TestWriterConfig(t *testing.T) {
 			}`),
 		}
 
-		cfg, err := WriterConfig[Config](config)
+		cfg, err := GetConfig[testConfig](config)
 		require.NoError(t, err)
-		require.Equal(t, Config{
+		require.Equal(t, testConfig{
 			URL:        "mongodb://localhost:27017",
 			Collection: "my-collection",
 			OutputEvent: map[string]any{
@@ -121,17 +133,17 @@ func TestWriterConfig(t *testing.T) {
 	})
 }
 
-type Config struct {
+type testConfig struct {
 	URL         SecretSource `json:"url"`
 	Collection  string       `json:"collection"`
 	OutputEvent map[string]any
 }
 
-func (c Config) Validate() error {
+func (c testConfig) Validate() error {
 	return nil
 }
 
-func getExpectedWriterConfig(t *testing.T) string {
+func getExpectedSinkConfig(t *testing.T) string {
 	t.Helper()
 
 	return `{
@@ -139,13 +151,20 @@ func getExpectedWriterConfig(t *testing.T) string {
 	"url": {
 		"fromEnv": "TEST_LOAD_SERVICE_MONGO_URL"
 	},
-	"collection": "my-collection",
+	"collection": "my-collection"
+}`
+}
+
+func getExpectedProcessorConfig(t *testing.T) string {
+	t.Helper()
+
+	return `{
+	"type": "mapper",
 	"outputEvent": {
 		"key": "{{ issue.key }}",
 		"summary": "{{ issue.fields.summary }}",
 		"createdAt": "{{ issue.fields.created }}",
 		"description": "{{ issue.fields.description }}"
-	},
-	"idField": "key"
+	}
 }`
 }

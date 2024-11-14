@@ -21,10 +21,28 @@
 							}
 						}
 					},
-					"eventIdPath": {
-						"type": "string"
+					"processors": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"type": {
+									"type": "string",
+									"enum": [
+										"mapper"
+									]
+								},
+								"outputEvent": {
+									"type": "object"
+								}
+							},
+							"required": [
+								"type",
+								"outputEvent"
+							]
+						}
 					},
-					"writers": {
+					"sinks": {
 						"type": "array",
 						"items": {
 							"oneOf": [
@@ -40,20 +58,12 @@
 										},
 										"collection": {
 											"type": "string"
-										},
-										"outputEvent": {
-											"type": "object"
-										},
-										"idField": {
-											"type": "string"
 										}
 									},
 									"required": [
 										"type",
 										"url",
-										"outputEvent",
-										"collection",
-										"idField"
+										"collection"
 									]
 								}
 							]
@@ -62,9 +72,9 @@
 				},
 				"required": [
 					"type",
-					"writers",
-					"eventIdPath"
-				]
+					"sinks"
+				],
+				"additionalProperties": false
 			},
 			"minItems": 1
 		}
@@ -72,6 +82,7 @@
 	"required": [
 		"integrations"
 	],
+	"additionalProperties": false,
 	"definitions": {
 		"secret": {
 			"type": "object",

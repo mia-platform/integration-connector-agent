@@ -13,15 +13,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+package mapper
 
 import (
-	"context"
+	"encoding/json"
+	"testing"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/stretchr/testify/require"
 )
 
-type IPipeline interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context) error
+func TestConfig(t *testing.T) {
+	t.Run("unmarshal json", func(t *testing.T) {
+		cfg := Config{}
+		err := json.Unmarshal([]byte(`{"outputEvent":{"foo": "{{ .bar.taz }}"}}`), &cfg)
+		require.NoError(t, err)
+		require.Equal(t, Config{
+			OutputEvent: []byte(`{"foo": "{{ .bar.taz }}"}`),
+		}, cfg)
+	})
+
+	t.Run("validate", func(t *testing.T) {
+		cfg := Config{}
+		require.NoError(t, cfg.Validate())
+	})
 }

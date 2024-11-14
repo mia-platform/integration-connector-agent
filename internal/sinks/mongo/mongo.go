@@ -71,11 +71,10 @@ func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Con
 	}
 
 	return &Writer[T]{
-		client:      client,
-		database:    db,
-		collection:  collection,
-		outputEvent: config.OutputEvent,
-		idField:     config.IDField,
+		client:     client,
+		database:   db,
+		collection: collection,
+		idField:    "_eventId",
 	}, nil
 }
 
@@ -166,7 +165,14 @@ func (w Writer[T]) idFilter(event T) (bson.D, error) {
 }
 
 func (w Writer[T]) bsonData(event T) ([]byte, error) {
-	bsonData, err := bson.Marshal(event.Data())
+	data, err := event.ParsedData()
+	if err != nil {
+		return nil, err
+	}
+
+	data[w.idField] = event.GetID()
+
+	bsonData, err := bson.Marshal(data)
 	if err != nil {
 		return nil, err
 	}

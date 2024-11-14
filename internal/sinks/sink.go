@@ -37,8 +37,6 @@ type Sink[Data DataWithIdentifier] interface {
 
 	// Delete will delete the Data from the destination configured in the Writer.
 	Delete(ctx context.Context, data Data) error
-
-	OutputModel() map[string]any
 }
 
 const (

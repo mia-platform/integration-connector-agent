@@ -30,53 +30,18 @@ var (
 //go:embed config.schema.json
 var jsonSchemaFile embed.FS
 
-type Writer struct {
-	Type string `json:"type"`
-
-	Raw []byte `json:"-"`
-}
-
-func (w *Writer) UnmarshalJSON(data []byte) error {
-	var writerConfig struct {
-		Type string `json:"type"`
-	}
-
-	if err := json.Unmarshal(data, &writerConfig); err != nil {
-		return err
-	}
-
-	w.Type = writerConfig.Type
-	w.Raw = data
-
-	return nil
-}
-
-type WriterConfigValidator interface {
-	Validate() error
-}
-
-func WriterConfig[T WriterConfigValidator](config Writer) (T, error) {
-	var cfg T
-	if err := json.Unmarshal(config.Raw, &cfg); err != nil {
-		return cfg, err
-	}
-
-	if err := cfg.Validate(); err != nil {
-		return cfg, fmt.Errorf("%w: %s", ErrConfigNotValid, err)
-	}
-
-	return cfg, nil
-}
-
 type Authentication struct {
 	Secret SecretSource `json:"secret"`
 }
 
+type Processors []GenericConfig
+type Sinks []GenericConfig
+
 type Integration struct {
 	Type           string         `json:"type"`
 	Authentication Authentication `json:"authentication"`
-	Writers        []Writer       `json:"writers"`
-	EventIDPath    string         `json:"eventIdPath"`
+	Processors     Processors     `json:"processors"`
+	Sinks          Sinks          `json:"sinks"`
 }
 
 type Configuration struct {

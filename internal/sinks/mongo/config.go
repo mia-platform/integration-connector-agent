@@ -23,11 +23,10 @@ import (
 
 // Config contains the configuration needed to connect to a remote MongoDB instance
 type Config struct {
-	URL         config.SecretSource `json:"url"`
-	Database    string              `json:"-"`
-	Collection  string              `json:"collection"`
-	OutputEvent map[string]any      `json:"outputEvent"`
-	IDField     string              `json:"idField"`
+	URL        config.SecretSource `json:"url"`
+	Collection string              `json:"collection"`
+
+	Database string `json:"-"`
 }
 
 func (c *Config) Validate() error {
@@ -36,18 +35,6 @@ func (c *Config) Validate() error {
 	}
 	if c.Collection == "" {
 		return fmt.Errorf("collection is required")
-	}
-	if c.OutputEvent == nil {
-		return fmt.Errorf("outputEvent is required")
-	}
-	if c.IDField == "" {
-		return fmt.Errorf("idField is required")
-	}
-	if c.IDField == "_id" {
-		return fmt.Errorf("idField cannot be \"_id\"")
-	}
-	if _, ok := c.OutputEvent[c.IDField]; !ok {
-		return fmt.Errorf("idField \"%s\" not found in outputEvent", c.IDField)
 	}
 
 	return nil

@@ -20,7 +20,6 @@ package tests
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -41,7 +40,6 @@ func TestJiraIntegration(t *testing.T) {
 
 	t.Run("save data on mongo", func(t *testing.T) {
 		coll := testutils.MongoCollection(t, mongoURL, collName, db)
-		defer coll.Drop(context.Background())
 
 		events := []struct {
 			name    string
@@ -71,6 +69,7 @@ func TestJiraIntegration(t *testing.T) {
 
 				expectedResults: []map[string]any{
 					{
+						"_eventId":    "12345",
 						"key":         "TEST-123",
 						"createdAt":   "2024-11-06T00:00:00.000Z",
 						"description": "This is a test issue description",
@@ -100,6 +99,7 @@ func TestJiraIntegration(t *testing.T) {
 
 				expectedResults: []map[string]any{
 					{
+						"_eventId":    "12345",
 						"key":         "TEST-123",
 						"createdAt":   "2024-11-06T00:00:00.000Z",
 						"description": "This is a test issue description modified",
@@ -129,12 +129,14 @@ func TestJiraIntegration(t *testing.T) {
 
 				expectedResults: []map[string]any{
 					{
+						"_eventId":    "12345",
 						"key":         "TEST-123",
 						"createdAt":   "2024-11-06T00:00:00.000Z",
 						"description": "This is a test issue description modified",
 						"summary":     "Test modified issue",
 					},
 					{
+						"_eventId":    "12346",
 						"key":         "TEST-456",
 						"createdAt":   "2024-11-10T00:00:00.000Z",
 						"description": "This is the second issue",
@@ -159,10 +161,11 @@ func TestJiraIntegration(t *testing.T) {
 
 				expectedResults: []map[string]any{
 					{
-						"key":         "TEST-456",
-						"createdAt":   "2024-11-10T00:00:00.000Z",
-						"description": "This is the second issue",
-						"summary":     "Test second issue",
+						"_eventId":    "12345",
+						"key":         "TEST-123",
+						"createdAt":   "2024-11-06T00:00:00.000Z",
+						"description": "This is a test issue description modified",
+						"summary":     "Test modified issue",
 					},
 				},
 			},
