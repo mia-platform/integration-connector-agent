@@ -33,7 +33,7 @@ func TestEvent(t *testing.T) {
 	require.Equal(t, []byte(`{"test": "test"}`), e.Data())
 	require.Equal(t, Write, e.Type())
 	expectedParsedData := map[string]any{"test": "test"}
-	parsed, err := e.ParsedData()
+	parsed, err := e.JSON()
 	require.Equal(t, expectedParsedData, parsed)
 	require.NoError(t, err)
 	e.WithData([]byte(`{"test": "test2"}`))

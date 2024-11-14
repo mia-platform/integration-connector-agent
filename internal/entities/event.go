@@ -29,7 +29,7 @@ type PipelineEvent interface {
 	Data() []byte
 	Type() Operation
 	WithData([]byte)
-	ParsedData() (map[string]any, error)
+	JSON() (map[string]any, error)
 }
 
 type Event struct {
@@ -51,7 +51,7 @@ func (e Event) Type() Operation {
 	return e.OperationType
 }
 
-func (e Event) ParsedData() (map[string]any, error) {
+func (e Event) JSON() (map[string]any, error) {
 	parsed := map[string]any{}
 
 	if err := json.Unmarshal(e.OriginalRaw, &parsed); err != nil {

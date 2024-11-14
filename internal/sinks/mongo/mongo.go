@@ -165,7 +165,7 @@ func (w Writer[T]) idFilter(event T) (bson.D, error) {
 }
 
 func (w Writer[T]) bsonData(event T) ([]byte, error) {
-	data, err := event.ParsedData()
+	data, err := event.JSON()
 	if err != nil {
 		return nil, err
 	}
