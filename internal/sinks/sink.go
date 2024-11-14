@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package writer
+package sinks
 
 import (
 	"context"
@@ -28,17 +28,15 @@ type DataWithIdentifier interface {
 	GetID() string
 }
 
-// Writer interface abstract the implementation of an integration pipeline target. The concrete implementation has
+// Sink interface abstract the implementation of an integration pipeline target. The concrete implementation has
 // to know how to write and delete a Data.
-type Writer[Data DataWithIdentifier] interface {
+type Sink[Data DataWithIdentifier] interface {
 	// Write will save the Data to the destination configured in the Writer. Writer implementation can choose to
 	// implement this function as a single write or to update data based on an identifier
 	Write(ctx context.Context, data Data) error
 
 	// Delete will delete the Data from the destination configured in the Writer.
 	Delete(ctx context.Context, data Data) error
-
-	OutputModel() map[string]any
 }
 
 const (

@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/writer"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -47,7 +47,7 @@ type Writer[T entities.PipelineEvent] struct {
 }
 
 // NewMongoDBWriter will construct a new MongoDB writer and validate the connection parameters via a ping request.
-func NewMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Config) (writer.Writer[T], error) {
+func NewMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Config) (sinks.Sink[T], error) {
 	return newMongoDBWriter[T](ctx, config, func(ctx context.Context, c *mongo.Client) error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
@@ -55,7 +55,7 @@ func NewMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Con
 	})
 }
 
-func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Config, validate validateFunc) (writer.Writer[T], error) {
+func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Config, validate validateFunc) (sinks.Sink[T], error) {
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -71,11 +71,10 @@ func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Con
 	}
 
 	return &Writer[T]{
-		client:      client,
-		database:    db,
-		collection:  collection,
-		outputEvent: config.OutputEvent,
-		idField:     config.IDField,
+		client:     client,
+		database:   db,
+		collection: collection,
+		idField:    "_eventId",
 	}, nil
 }
 
@@ -166,7 +165,14 @@ func (w Writer[T]) idFilter(event T) (bson.D, error) {
 }
 
 func (w Writer[T]) bsonData(event T) ([]byte, error) {
-	bsonData, err := bson.Marshal(event.Data())
+	data, err := event.ParsedData()
+	if err != nil {
+		return nil, err
+	}
+
+	data[w.idField] = event.GetID()
+
+	bsonData, err := bson.Marshal(data)
 	if err != nil {
 		return nil, err
 	}

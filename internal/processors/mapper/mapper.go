@@ -22,15 +22,11 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-type IMapper interface {
-	Transform(data []byte) (map[string]any, error)
-}
-
 type Mapper struct {
 	operations []operation
 }
 
-func (m Mapper) Transform(input []byte) (map[string]any, error) {
+func (m Mapper) Process(input []byte) ([]byte, error) {
 	output := []byte("{}")
 	var err error
 	for _, operation := range m.operations {
@@ -40,16 +36,11 @@ func (m Mapper) Transform(input []byte) (map[string]any, error) {
 		}
 	}
 
-	var outputMap map[string]any
-	if err := json.Unmarshal(output, &outputMap); err != nil {
-		return nil, err
-	}
-
-	return outputMap, nil
+	return output, nil
 }
 
-func New(outEventModel map[string]any) (IMapper, error) {
-	model, err := json.Marshal(outEventModel)
+func New(cfg Config) (*Mapper, error) {
+	model, err := json.Marshal(cfg.OutputEvent)
 	if err != nil {
 		return nil, err
 	}

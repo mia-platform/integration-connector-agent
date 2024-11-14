@@ -21,11 +21,13 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
-	integration "github.com/mia-platform/integration-connector-agent/internal/integrations"
-	"github.com/mia-platform/integration-connector-agent/internal/integrations/jira"
-	"github.com/mia-platform/integration-connector-agent/internal/writer"
-	fakewriter "github.com/mia-platform/integration-connector-agent/internal/writer/fake"
-	"github.com/mia-platform/integration-connector-agent/internal/writer/mongo"
+	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
+	"github.com/mia-platform/integration-connector-agent/internal/processors"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks"
+	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
+	"github.com/mia-platform/integration-connector-agent/internal/sources"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
 
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
@@ -33,26 +35,35 @@ import (
 )
 
 // TODO: write an integration test to test this setup
-func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) error {
+func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) error {
 	for _, cfgIntegration := range cfg.Integrations {
-		writers, err := setupWriters(ctx, cfgIntegration.Writers)
+		sinks, err := setupSinks(ctx, cfgIntegration.Sinks)
 		if err != nil {
 			return err
 		}
-		if len(writers) != 1 {
-			return fmt.Errorf("only 1 writer is supported, now there are %d for integration %s", len(writers), cfgIntegration.Type)
+		if len(sinks) != 1 {
+			return fmt.Errorf("only 1 writer is supported, now there are %d for integration %s", len(sinks), cfgIntegration.Type)
 		}
-		writer := writers[0]
+		writer := sinks[0]
+
+		proc, err := processors.New(cfgIntegration.Processors)
+		if err != nil {
+			return err
+		}
+
+		pip, err := pipeline.New(log, proc, writer)
+		if err != nil {
+			return err
+		}
 
 		switch cfgIntegration.Type {
-		case integration.Jira:
+		case sources.Jira:
 			// TODO: improve management of configuration
 			config := jira.Configuration{
-				Secret:      cfgIntegration.Authentication.Secret.String(),
-				EventIDPath: cfgIntegration.EventIDPath,
+				Secret: cfgIntegration.Authentication.Secret.String(),
 			}
 
-			if err := jira.SetupService(ctx, logrus.NewEntry(log), oasRouter, config, writer); err != nil {
+			if err := jira.SetupService(ctx, log, oasRouter, config, pip); err != nil {
 				return err
 			}
 		case "test":
@@ -66,12 +77,12 @@ func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Conf
 	return nil
 }
 
-func setupWriters(ctx context.Context, writers []config.Writer) ([]writer.Writer[entities.PipelineEvent], error) {
-	var w []writer.Writer[entities.PipelineEvent]
+func setupSinks(ctx context.Context, writers config.Sinks) ([]sinks.Sink[entities.PipelineEvent], error) {
+	var w []sinks.Sink[entities.PipelineEvent]
 	for _, configuredWriter := range writers {
 		switch configuredWriter.Type {
-		case writer.Mongo:
-			config, err := config.WriterConfig[*mongo.Config](configuredWriter)
+		case sinks.Mongo:
+			config, err := config.GetConfig[*mongo.Config](configuredWriter)
 			if err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
 			}
@@ -80,8 +91,8 @@ func setupWriters(ctx context.Context, writers []config.Writer) ([]writer.Writer
 				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
 			}
 			w = append(w, mongoWriter)
-		case writer.Fake:
-			config, err := config.WriterConfig[*fakewriter.Config](configuredWriter)
+		case sinks.Fake:
+			config, err := config.GetConfig[*fakewriter.Config](configuredWriter)
 			if err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
 			}

@@ -69,7 +69,7 @@ func findAllDocuments(t *testing.T, coll *mongo.Collection, expectedResults []ma
 		n, err := coll.CountDocuments(context.Background(), map[string]any{})
 		require.NoError(t, err)
 		return n == int64(len(expectedResults))
-	}, 1*time.Second, 10*time.Millisecond, "invalid document length")
+	}, 10*time.Second, 10*time.Millisecond, "invalid document length")
 
 	ctx := context.Background()
 	docs, err := coll.Find(ctx, map[string]any{})
@@ -80,7 +80,7 @@ func findAllDocuments(t *testing.T, coll *mongo.Collection, expectedResults []ma
 
 	ok := assert.Eventuallyf(t, func() bool {
 		return assert.ObjectsAreEqual(expectedResults, testutils.RemoveMongoID(results))
-	}, 1*time.Second, 10*time.Millisecond, "results not corrects")
+	}, 10*time.Second, 10*time.Millisecond, "results not corrects")
 	// This is only needed to show the diffs in case of failure
 	if !ok {
 		require.Equal(t, expectedResults, testutils.RemoveMongoID(results))

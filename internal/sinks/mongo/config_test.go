@@ -27,8 +27,7 @@ func TestValidateConfig(t *testing.T) {
 	testCases := map[string]struct {
 		config Config
 
-		expectedError  string
-		expectedConfig Config
+		expectedError string
 	}{
 		"without URI": {
 			config: Config{},
@@ -42,63 +41,11 @@ func TestValidateConfig(t *testing.T) {
 
 			expectedError: "collection is required",
 		},
-		"without output event": {
+		"valid config": {
 			config: Config{
 				URL:        config.SecretSource("mongodb://localhost:27017"),
 				Collection: "test",
 			},
-
-			expectedError: "outputEvent is required",
-		},
-		"throws if IDField not found in output event": {
-			config: Config{
-				URL:         config.SecretSource("mongodb://localhost:27017"),
-				Collection:  "test",
-				OutputEvent: map[string]any{},
-				IDField:     "custom_id",
-			},
-
-			expectedError: `idField "custom_id" not found in outputEvent`,
-		},
-		"throws if IDField not set": {
-			config: Config{
-				URL:         config.SecretSource("mongodb://localhost:27017"),
-				Collection:  "test",
-				OutputEvent: map[string]any{},
-			},
-
-			expectedError: `idField is required`,
-		},
-		"set custom IDField": {
-			config: Config{
-				URL:        config.SecretSource("mongodb://localhost:27017"),
-				Collection: "test",
-				OutputEvent: map[string]any{
-					"custom_id": "my-id",
-				},
-				IDField: "custom_id",
-			},
-
-			expectedConfig: Config{
-				URL:        config.SecretSource("mongodb://localhost:27017"),
-				Collection: "test",
-				OutputEvent: map[string]any{
-					"custom_id": "my-id",
-				},
-				IDField: "custom_id",
-			},
-		},
-		"_id not supported as IDField": {
-			config: Config{
-				URL:        config.SecretSource("mongodb://localhost:27017"),
-				Collection: "test",
-				OutputEvent: map[string]any{
-					"_id": "my-id",
-				},
-				IDField: "_id",
-			},
-
-			expectedError: `idField cannot be "_id"`,
 		},
 	}
 
@@ -110,7 +57,6 @@ func TestValidateConfig(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			require.Equal(t, tc.expectedConfig, tc.config)
 		})
 	}
 }

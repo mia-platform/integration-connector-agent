@@ -52,14 +52,19 @@ func MongoCollection(t *testing.T, mongoURL, collection, db string) *mongo.Colle
 	ctxPing, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	require.NoError(t, client.Ping(ctxPing, nil))
+
+	coll := client.Database(db).Collection(collection)
+
 	t.Cleanup(func() {
-		err := client.Database(db).Drop(ctx)
-		require.NoError(t, err)
+		// err := coll.Drop(context.Background())
+		// require.NoError(t, err)
+		// err = client.Database(db).Drop(ctx)
+		// require.NoError(t, err)
 		err = client.Disconnect(ctx)
 		require.NoError(t, err)
 	})
 
-	return client.Database(db).Collection(collection)
+	return coll
 }
 
 func RemoveMongoID(docs []map[string]any) []map[string]any {

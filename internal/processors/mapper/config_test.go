@@ -13,11 +13,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jira
+package mapper
 
-// Configuration is the representation of the configuration for a Jira Cloud webhook
-type Configuration struct {
-	// Secret the webhook secret configuration for validating the data received
-	Secret      string
-	EventIDPath string
+import (
+	"encoding/json"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestConfig(t *testing.T) {
+	t.Run("unmarshal json", func(t *testing.T) {
+		cfg := Config{}
+		err := json.Unmarshal([]byte(`{"outputEvent":{"foo": "{{ .bar.taz }}"}}`), &cfg)
+		require.NoError(t, err)
+		require.Equal(t, Config{
+			OutputEvent: []byte(`{"foo": "{{ .bar.taz }}"}`),
+		}, cfg)
+	})
+
+	t.Run("validate", func(t *testing.T) {
+		cfg := Config{}
+		require.NoError(t, cfg.Validate())
+	})
 }

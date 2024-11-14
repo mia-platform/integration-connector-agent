@@ -112,11 +112,11 @@ func TestMapper(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			var model map[string]any
-			err := json.Unmarshal([]byte(tc.model), &model)
-			require.NoError(t, err)
+			cfg := Config{
+				OutputEvent: []byte(tc.model),
+			}
 
-			mapper, err := New(model)
+			mapper, err := New(cfg)
 			if tc.expectNewError != "" {
 				require.EqualError(t, err, tc.expectNewError)
 				require.Nil(t, mapper)
@@ -124,14 +124,17 @@ func TestMapper(t *testing.T) {
 			}
 			require.NoError(t, err)
 
-			actual, err := mapper.Transform([]byte(tc.dataToTransform))
+			actual, err := mapper.Process([]byte(tc.dataToTransform))
 			if tc.expectTransformError != "" {
 				require.EqualError(t, err, tc.expectTransformError)
 				require.Nil(t, actual)
 				return
 			}
 			require.NoError(t, err)
-			require.Equal(t, tc.expectedTransformedData, actual)
+
+			out, err := json.Marshal(tc.expectedTransformedData)
+			require.NoError(t, err)
+			require.JSONEq(t, string(out), string(actual))
 		})
 	}
 }

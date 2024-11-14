@@ -13,15 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+package mapper
 
-import (
-	"context"
+import "encoding/json"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
-)
+type Config struct {
+	OutputEvent json.RawMessage `json:"outputEvent"`
+}
 
-type IPipeline interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context) error
+func (c Config) Validate() error {
+	return nil
 }

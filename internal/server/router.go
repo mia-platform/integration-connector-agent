@@ -64,7 +64,7 @@ func NewApp(ctx context.Context, env config.EnvironmentVariables, log *logrus.Lo
 		return nil, err
 	}
 
-	if err := setupIntegrations(ctx, log, cfg, oasRouter); err != nil {
+	if err := setupPipelines(ctx, log, cfg, oasRouter); err != nil {
 		return nil, err
 	}
 

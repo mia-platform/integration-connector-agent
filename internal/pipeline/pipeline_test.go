@@ -22,22 +22,21 @@ import (
 	"time"
 
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
-	fakewriter "github.com/mia-platform/integration-connector-agent/internal/writer/fake"
+	"github.com/mia-platform/integration-connector-agent/internal/processors"
+	fakesink "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 
-	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
 
 func TestPipeline(t *testing.T) {
-	log := logrus.New()
-	model := &fakewriter.Config{
-		OutputModel: map[string]any{},
-	}
+	log, _ := test.NewNullLogger()
+	model := &fakesink.Config{}
+	proc := &processors.Processors{}
 
 	t.Run("message pipelines is correctly managed adding messages", func(t *testing.T) {
-		w := fakewriter.New(model)
-		p, err := NewPipeline(logrus.NewEntry(log), w)
+		w := fakesink.New(model)
+		p, err := New(log, proc, w)
 		require.NoError(t, err)
 
 		runPipeline(t, p)
@@ -83,11 +82,8 @@ func TestPipeline(t *testing.T) {
 						OperationType: tc.expectedOperation,
 						OriginalRaw:   []byte(`{}`),
 					}
-					if tc.expectedOperation == entities.Write {
-						data.WithData(map[string]any{})
-					}
 
-					require.Equal(t, fakewriter.Call{
+					require.Equal(t, fakesink.Call{
 						Operation: tc.expectedOperation,
 						Data:      data,
 					}, w.Calls().LastCall())
@@ -99,8 +95,8 @@ func TestPipeline(t *testing.T) {
 
 	t.Run("on channel closed, the pipeline stops", func(t *testing.T) {
 		ctx := context.Background()
-		w := fakewriter.New(model)
-		p, err := NewPipeline(logrus.NewEntry(log), w)
+		w := fakesink.New(model)
+		p, err := New(log, proc, w)
 		require.NoError(t, err)
 
 		go func(t *testing.T) {
@@ -117,8 +113,8 @@ func TestPipeline(t *testing.T) {
 
 	t.Run("on context done, close channel", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		w := fakewriter.New(model)
-		p, err := NewPipeline(logrus.NewEntry(log), w)
+		w := fakesink.New(model)
+		p, err := New(log, proc, w)
 		require.NoError(t, err)
 
 		go func(t *testing.T, cancel context.CancelFunc) {
@@ -131,15 +127,16 @@ func TestPipeline(t *testing.T) {
 		require.EqualError(t, err, "context canceled")
 	})
 
-	t.Run("on error, the pipeline skips the element and logs - write", func(t *testing.T) {
-		w := fakewriter.New(model)
-		w.AddMock(fakewriter.Mock{
-			Error: errors.New("fake error"),
+	t.Run("on sink error, the pipeline skips the element and logs - write", func(t *testing.T) {
+		w := fakesink.New(&fakesink.Config{
+			Mocks: []fakesink.Mock{
+				{Error: errors.New("fake error")},
+			},
 		})
 
 		log, hook := test.NewNullLogger()
 
-		p, err := NewPipeline(logrus.NewEntry(log), w)
+		p, err := New(log, proc, w)
 		require.NoError(t, err)
 
 		runPipeline(t, p)
@@ -157,8 +154,7 @@ func TestPipeline(t *testing.T) {
 				OperationType: entities.Write,
 				OriginalRaw:   []byte(`{}`),
 			}
-			event.WithData(map[string]any{})
-			require.Equal(t, fakewriter.Call{
+			require.Equal(t, fakesink.Call{
 				Operation: entities.Write,
 				Data:      event,
 			}, w.Calls().LastCall())
@@ -168,14 +164,15 @@ func TestPipeline(t *testing.T) {
 	})
 
 	t.Run("on error, the pipeline skips the element and logs - delete", func(t *testing.T) {
-		w := fakewriter.New(model)
-		w.AddMock(fakewriter.Mock{
-			Error: errors.New("fake error"),
+		w := fakesink.New(&fakesink.Config{
+			Mocks: []fakesink.Mock{
+				{Error: errors.New("fake error")},
+			},
 		})
 
 		log, hook := test.NewNullLogger()
 
-		p, err := NewPipeline(logrus.NewEntry(log), w)
+		p, err := New(log, proc, w)
 		require.NoError(t, err)
 
 		runPipeline(t, p)
@@ -187,7 +184,7 @@ func TestPipeline(t *testing.T) {
 		})
 
 		require.Eventually(t, func() bool {
-			require.Equal(t, fakewriter.Call{
+			require.Equal(t, fakesink.Call{
 				Operation: entities.Delete,
 				Data: &entities.Event{
 					ID:            id,
@@ -200,16 +197,16 @@ func TestPipeline(t *testing.T) {
 	})
 }
 
-func getPipeline[T entities.PipelineEvent](t *testing.T, p IPipeline[T]) *Pipeline[T] {
+func getPipeline(t *testing.T, p IPipeline) *Pipeline {
 	t.Helper()
 
-	pipeline, ok := p.(*Pipeline[T])
+	pipeline, ok := p.(*Pipeline)
 	require.True(t, ok)
 
 	return pipeline
 }
 
-func runPipeline(t *testing.T, p IPipeline[entities.PipelineEvent]) {
+func runPipeline(t *testing.T, p IPipeline) {
 	t.Helper()
 
 	ctx := context.Background()

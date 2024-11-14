@@ -13,8 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package integration
+package jira
 
-const (
-	Jira = "jira"
-)
+// Configuration is the representation of the configuration for a Jira Cloud webhook
+type Configuration struct {
+	// Secret the webhook secret configuration for validating the data received
+	Secret string
+}

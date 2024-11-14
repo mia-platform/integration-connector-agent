@@ -13,15 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+package sources
 
-import (
-	"context"
-
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+const (
+	Jira = "jira"
 )
-
-type IPipeline interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context) error
-}

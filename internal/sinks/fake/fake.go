@@ -20,11 +20,11 @@ import (
 	"sync"
 
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/writer"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 )
 
 type Config struct {
-	OutputModel map[string]any
+	Mocks Mocks
 }
 
 func (c *Config) Validate() error {
@@ -32,7 +32,7 @@ func (c *Config) Validate() error {
 }
 
 type Call struct {
-	Data      writer.DataWithIdentifier
+	Data      sinks.DataWithIdentifier
 	Operation entities.Operation
 }
 
@@ -68,12 +68,20 @@ type Writer struct {
 }
 
 func New(config *Config) *Writer {
-	return &Writer{
-		stub:  Calls{},
-		mocks: Mocks{},
-
-		outputModel: config.OutputModel,
+	if config == nil {
+		config = &Config{}
 	}
+
+	w := &Writer{
+		stub:  Calls{},
+		mocks: config.Mocks,
+	}
+
+	if w.mocks == nil {
+		w.mocks = Mocks{}
+	}
+
+	return w
 }
 
 func (f *Writer) Calls() Calls {

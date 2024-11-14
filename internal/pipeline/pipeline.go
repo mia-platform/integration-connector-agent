@@ -21,8 +21,8 @@ import (
 	"reflect"
 
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/mapper"
-	"github.com/mia-platform/integration-connector-agent/internal/writer"
+	"github.com/mia-platform/integration-connector-agent/internal/processors"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 
 	"github.com/sirupsen/logrus"
 )
@@ -31,23 +31,33 @@ var (
 	ErrWriterNotDefined = errors.New("writer not defined")
 )
 
-type Pipeline[T entities.PipelineEvent] struct {
-	writer writer.Writer[T]
-	mapper mapper.IMapper
-	logger *logrus.Entry
+type Pipeline struct {
+	sinks      sinks.Sink[entities.PipelineEvent]
+	processors *processors.Processors
+	logger     *logrus.Logger
 
-	eventChan chan T
+	eventChan chan entities.PipelineEvent
 }
 
-func (p Pipeline[T]) AddMessage(data T) {
+func (p Pipeline) AddMessage(data entities.PipelineEvent) {
 	p.eventChan <- data
 }
 
-func (p Pipeline[T]) Start(ctx context.Context) error {
-	if isNil(p.writer) {
+func (p Pipeline) Start(ctx context.Context) error {
+	if isNil(p.sinks) {
 		return ErrWriterNotDefined
 	}
 
+	err := p.runPipeline(ctx)
+	if err != nil {
+		p.logger.WithError(err).Error("error starting pipeline")
+		return err
+	}
+
+	return nil
+}
+
+func (p Pipeline) runPipeline(ctx context.Context) error {
 loop:
 	for {
 		select {
@@ -57,23 +67,28 @@ loop:
 				break loop
 			}
 
+			message, err := p.processors.Process(ctx, message)
+			if err != nil {
+				p.logger.WithError(err).WithField("message", message.Data()).Error("error processing data")
+				continue
+			}
+
 			switch message.Type() {
 			case entities.Write:
-				mappedData, err := p.mapper.Transform(message.RawData())
-				if err != nil {
-					p.logger.WithError(err).WithField("message", message).Error("error mapping data")
-					continue
-				}
-				message.WithData(mappedData)
-
-				if err := p.writer.Write(ctx, message); err != nil {
+				if err := p.sinks.Write(ctx, message); err != nil {
 					// TODO: manage failure in writing message. DLQ?
-					p.logger.WithError(err).WithField("data", message.Data()).Error("error writing data")
+					p.logger.WithError(err).WithFields(logrus.Fields{
+						"id":   message.GetID(),
+						"data": string(message.Data()),
+					}).Error("error writing data")
 				}
 			case entities.Delete:
-				if err := p.writer.Delete(ctx, message); err != nil {
+				if err := p.sinks.Delete(ctx, message); err != nil {
 					// TODO: manage failure in writing message. DLQ?
-					p.logger.WithError(err).WithField("data", message.Data()).Error("error deleting data")
+					p.logger.WithError(err).WithFields(logrus.Fields{
+						"id":   message.GetID(),
+						"data": string(message.Data()),
+					}).Error("error deleting data")
 				}
 			}
 
@@ -87,23 +102,19 @@ loop:
 	return nil
 }
 
-func NewPipeline[T entities.PipelineEvent](logger *logrus.Entry, writer writer.Writer[T]) (IPipeline[T], error) {
+func New(logger *logrus.Logger, p *processors.Processors, sinks sinks.Sink[entities.PipelineEvent]) (IPipeline, error) {
 	// TODO: here instead to use a buffer size it should be used a proper queue
-	messageChan := make(chan T, 1000000)
+	messageChan := make(chan entities.PipelineEvent, 1000000)
 
-	m, err := mapper.New(writer.OutputModel())
-	if err != nil {
-		return nil, err
-	}
-
-	return &Pipeline[T]{
-		writer: writer,
-		mapper: m,
+	pipeline := &Pipeline{
+		sinks:      sinks,
+		processors: p,
 
 		eventChan: messageChan,
+		logger:    logger,
+	}
 
-		logger: logger,
-	}, nil
+	return pipeline, nil
 }
 
 func isNil(i any) bool {
