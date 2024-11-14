@@ -52,6 +52,9 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 		}
 
 		pip, err := pipeline.New(log, proc, writer)
+		if err != nil {
+			return err
+		}
 
 		switch cfgIntegration.Type {
 		case sources.Jira:
