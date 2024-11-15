@@ -51,7 +51,7 @@ func TestLoadServiceConfiguration(t *testing.T) {
 					{
 						Source: Source{
 							Type:        "jira",
-							WebhookPath: "/custom-webhook-path",
+							WebhookPath: "/custom-webhook",
 							Authentication: Authentication{
 								Secret: SecretSource("MY_SECRET"),
 							},

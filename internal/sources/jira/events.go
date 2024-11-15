@@ -69,5 +69,4 @@ func (e Events) getPipelineEvent(rawData []byte) (entities.PipelineEvent, error)
 
 		OriginalRaw: rawData,
 	}, nil
-
 }
