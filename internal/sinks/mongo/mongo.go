@@ -40,10 +40,9 @@ type validateFunc func(context.Context, *mongo.Client) error
 type Writer[T entities.PipelineEvent] struct {
 	client *mongo.Client
 
-	database    string
-	collection  string
-	outputEvent map[string]any
-	idField     string
+	database   string
+	collection string
+	idField    string
 }
 
 // NewMongoDBWriter will construct a new MongoDB writer and validate the connection parameters via a ping request.

@@ -63,8 +63,6 @@ type Writer struct {
 
 	stub  Calls
 	mocks Mocks
-
-	outputModel map[string]any
 }
 
 func New(config *Config) *Writer {
