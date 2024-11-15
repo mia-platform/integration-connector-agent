@@ -16,9 +16,9 @@
                   "jira"
                 ]
               },
-							"webhookPath": {
-								"type": "string"
-							},
+              "webhookPath": {
+                "type": "string"
+              },
               "authentication": {
                 "type": "object",
                 "properties": {
