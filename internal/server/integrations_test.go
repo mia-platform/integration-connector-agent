@@ -21,7 +21,7 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"
-	integration "github.com/mia-platform/integration-connector-agent/internal/sources"
+	"github.com/mia-platform/integration-connector-agent/internal/sources"
 
 	swagger "github.com/davidebianchi/gswagger"
 	oasfiber "github.com/davidebianchi/gswagger/support/fiber"
@@ -79,7 +79,9 @@ func TestSetupIntegrations(t *testing.T) {
 			cfg: config.Configuration{
 				Integrations: []config.Integration{
 					{
-						Type: integration.Jira,
+						Source: config.Source{
+							Type: sources.Jira,
+						},
 						Sinks: config.Sinks{
 							getFakeWriter(t),
 							getFakeWriter(t),
@@ -93,7 +95,9 @@ func TestSetupIntegrations(t *testing.T) {
 			cfg: config.Configuration{
 				Integrations: []config.Integration{
 					{
-						Type: integration.Jira,
+						Source: config.Source{
+							Type: sources.Jira,
+						},
 						Sinks: config.Sinks{
 							{
 								Type: "unsupported",
@@ -108,7 +112,9 @@ func TestSetupIntegrations(t *testing.T) {
 			cfg: config.Configuration{
 				Integrations: []config.Integration{
 					{
-						Type: "test",
+						Source: config.Source{
+							Type: "test",
+						},
 						Sinks: config.Sinks{
 							getFakeWriter(t),
 						},
@@ -120,7 +126,9 @@ func TestSetupIntegrations(t *testing.T) {
 			cfg: config.Configuration{
 				Integrations: []config.Integration{
 					{
-						Type: "unsupported",
+						Source: config.Source{
+							Type: "unsupported",
+						},
 						Sinks: config.Sinks{
 							getFakeWriter(t),
 						},

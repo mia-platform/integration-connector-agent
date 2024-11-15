@@ -1,7 +1,7 @@
 default: true
 MD003:
   style: atx
-MD010: false
+MD010: true
 MD013:
   line_length: 120
   heading_line_length: 80

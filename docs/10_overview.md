@@ -43,36 +43,38 @@ to save data into the collection `jira-issues`.
 
 ```json
 {
-	"integrations": [
-		{
-			"type": "jira",
-			"authentication": {
-				"secret": {
-					"fromEnv": "JIRA_SECRET"
-				}
-			},
-			"processors": [
-				{
-					"type": "mapper",
-					"outputEvent": {
-						"key": "{{ issue.key }}",
-						"summary": "{{ issue.fields.summary }}",
-						"createdAt": "{{ issue.fields.created }}",
-						"description": "{{ issue.fields.description }}"
-					}
-				}
-			],
-			"sinks": [
-				{
-					"type": "mongo",
-					"url": {
-						"fromEnv": "MONGO_URL"
-					},
-					"collection": "jira-issues"
-				}
-			]
-		}
-	]
+  "integrations": [
+    {
+      "source": {
+        "type": "jira",
+        "authentication": {
+          "secret": {
+            "fromEnv": "JIRA_SECRET"
+          }
+        }
+      },
+      "processors": [
+        {
+          "type": "mapper",
+          "outputEvent": {
+            "key": "{{ issue.key }}",
+            "summary": "{{ issue.fields.summary }}",
+            "createdAt": "{{ issue.fields.created }}",
+            "description": "{{ issue.fields.description }}"
+          }
+        }
+      ],
+      "sinks": [
+        {
+          "type": "mongo",
+          "url": {
+            "fromEnv": "MONGO_URL"
+          },
+          "collection": "jira-issues"
+        }
+      ]
+    }
+  ]
 }
 </details>
 ```

@@ -1,32 +1,34 @@
 {
-	"integrations": [
-		{
-			"type": "jira",
-			"authentication": {
-				"secret": {
-					"fromFile": "testdata/secret"
-				}
-			},
-			"processors": [
-				{
-					"type": "mapper",
-					"outputEvent": {
-						"key": "{{ issue.key }}",
-						"summary": "{{ issue.fields.summary }}",
-						"createdAt": "{{ issue.fields.created }}",
-						"description": "{{ issue.fields.description }}"
-					}
-				}
-			],
-			"sinks": [
-				{
-					"type": "mongo",
-					"url": {
-						"fromEnv": "INTEGRATION_TEST_MONGO_URL"
-					},
-					"collection": "jira"
-				}
-			]
-		}
-	]
+  "integrations": [
+    {
+      "source": {
+        "type": "jira",
+        "authentication": {
+          "secret": {
+            "fromFile": "testdata/secret"
+          }
+        }
+      },
+      "processors": [
+        {
+          "type": "mapper",
+          "outputEvent": {
+            "key": "{{ issue.key }}",
+            "summary": "{{ issue.fields.summary }}",
+            "createdAt": "{{ issue.fields.created }}",
+            "description": "{{ issue.fields.description }}"
+          }
+        }
+      ],
+      "sinks": [
+        {
+          "type": "mongo",
+          "url": {
+            "fromEnv": "INTEGRATION_TEST_MONGO_URL"
+          },
+          "collection": "jira"
+        }
+      ]
+    }
+  ]
 }

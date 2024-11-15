@@ -34,11 +34,13 @@ The following is an example of a configuration for integrate source `Jira` with 
 {
   "integrations": [
     {
-      "type": "jira",
-      "authentication": {
-        "secret": {
-          "fromFile": "testdata/secret"
-        }
+      "source": {
+        "type": "jira",
+        "authentication": {
+          "secret": {
+            "fromFile": "testdata/secret"
+          }
+        },
       },
       "processors": [
         {
