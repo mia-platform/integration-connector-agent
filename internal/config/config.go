@@ -37,11 +37,15 @@ type Authentication struct {
 type Processors []GenericConfig
 type Sinks []GenericConfig
 
-type Integration struct {
+type Source struct {
 	Type           string         `json:"type"`
 	Authentication Authentication `json:"authentication"`
-	Processors     Processors     `json:"processors"`
-	Sinks          Sinks          `json:"sinks"`
+}
+
+type Integration struct {
+	Source     Source     `json:"source"`
+	Processors Processors `json:"processors"`
+	Sinks      Sinks      `json:"sinks"`
 }
 
 type Configuration struct {

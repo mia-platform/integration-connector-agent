@@ -1,12 +1,14 @@
 {
 	"integrations": [
 		{
-			"type": "jira",
-			"authentication": {
-				"secret": {
-					"fromFile": "testdata/secret"
-				}
-			},
+      "source": {
+        "type": "jira",
+        "authentication": {
+          "secret": {
+            "fromFile": "testdata/secret"
+          }
+        }
+      },
 			"processors": [
 				{
 					"type": "mapper",

@@ -37,12 +37,14 @@ import (
 // TODO: write an integration test to test this setup
 func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) error {
 	for _, cfgIntegration := range cfg.Integrations {
+		source := cfgIntegration.Source
+
 		sinks, err := setupSinks(ctx, cfgIntegration.Sinks)
 		if err != nil {
 			return err
 		}
 		if len(sinks) != 1 {
-			return fmt.Errorf("only 1 writer is supported, now there are %d for integration %s", len(sinks), cfgIntegration.Type)
+			return fmt.Errorf("only 1 writer is supported, now there are %d for integration %s", len(sinks), source.Type)
 		}
 		writer := sinks[0]
 
@@ -56,11 +58,11 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 			return err
 		}
 
-		switch cfgIntegration.Type {
+		switch source.Type {
 		case sources.Jira:
 			// TODO: improve management of configuration
 			config := jira.Configuration{
-				Secret: cfgIntegration.Authentication.Secret.String(),
+				Secret: source.Authentication.Secret.String(),
 			}
 
 			if err := jira.SetupService(ctx, log, oasRouter, config, pip); err != nil {

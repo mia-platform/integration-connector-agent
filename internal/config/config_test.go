@@ -49,9 +49,11 @@ func TestLoadServiceConfiguration(t *testing.T) {
 			expectedContent: &Configuration{
 				Integrations: []Integration{
 					{
-						Type: "jira",
-						Authentication: Authentication{
-							Secret: SecretSource("MY_SECRET"),
+						Source: Source{
+							Type: "jira",
+							Authentication: Authentication{
+								Secret: SecretSource("MY_SECRET"),
+							},
 						},
 						Processors: Processors{
 							{

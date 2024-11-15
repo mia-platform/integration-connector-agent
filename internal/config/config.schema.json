@@ -7,38 +7,50 @@
 			"items": {
 				"type": "object",
 				"properties": {
-					"type": {
-						"type": "string",
-						"enum": [
-							"jira"
-						]
-					},
-					"authentication": {
+					"source": {
 						"type": "object",
 						"properties": {
-							"secret": {
-								"$ref": "#/definitions/secret"
+							"type": {
+								"type": "string",
+								"enum": [
+									"jira"
+								]
+							},
+							"authentication": {
+								"type": "object",
+								"properties": {
+									"secret": {
+										"$ref": "#/definitions/secret"
+									}
+								}
 							}
-						}
+						},
+						"required": [
+							"type"
+						]
 					},
 					"processors": {
 						"type": "array",
 						"items": {
-							"type": "object",
-							"properties": {
-								"type": {
-									"type": "string",
-									"enum": [
-										"mapper"
+							"oneOf": [
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": [
+												"mapper"
+											]
+										},
+										"outputEvent": {
+											"type": "object"
+										}
+									},
+									"required": [
+										"type",
+										"outputEvent"
 									]
-								},
-								"outputEvent": {
-									"type": "object"
 								}
-							},
-							"required": [
-								"type",
-								"outputEvent"
 							]
 						}
 					},
@@ -67,11 +79,12 @@
 									]
 								}
 							]
-						}
+						},
+						"minItems": 1
 					}
 				},
 				"required": [
-					"type",
+					"source",
 					"sinks"
 				],
 				"additionalProperties": false
