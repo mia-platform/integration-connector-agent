@@ -135,10 +135,6 @@ func (w *Writer[T]) Delete(ctx context.Context, data T) error {
 	return nil
 }
 
-func (w *Writer[T]) OutputModel() map[string]any {
-	return w.outputEvent
-}
-
 // mongoClientOptionsFromConfig return a ClientOptions, database and collection parameters parsed from a
 // MongoDBConfig struct.
 func mongoClientOptionsFromConfig(config *Config) (*options.ClientOptions, string, string) {

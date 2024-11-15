@@ -129,7 +129,3 @@ func (f *Writer) Delete(_ context.Context, data entities.PipelineEvent) error {
 	}
 	return nil
 }
-
-func (f *Writer) OutputModel() map[string]any {
-	return f.outputModel
-}
