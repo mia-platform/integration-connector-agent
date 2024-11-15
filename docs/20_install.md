@@ -34,14 +34,14 @@ The following is an example of a configuration for integrate source `Jira` with 
 {
   "integrations": [
     {
-			"source": {
-				"type": "jira",
-				"authentication": {
-					"secret": {
-						"fromFile": "testdata/secret"
-					}
-				},
-			},
+      "source": {
+        "type": "jira",
+        "authentication": {
+          "secret": {
+            "fromFile": "testdata/secret"
+          }
+        },
+      },
       "processors": [
         {
           "type": "mapper",
