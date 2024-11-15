@@ -39,6 +39,7 @@ type Sinks []GenericConfig
 
 type Source struct {
 	Type           string         `json:"type"`
+	WebhookPath    string         `json:"webhookPath"`
 	Authentication Authentication `json:"authentication"`
 }
 

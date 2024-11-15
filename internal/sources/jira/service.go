@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	webhookEndpoint = "/jira/webhook"
+	defaultWebhookEndpoint = "/jira/webhook"
 )
 
 var (
@@ -56,8 +56,13 @@ func SetupService(
 		}
 	}(p)
 
+	path := config.WebhookPath
+	if path == "" {
+		path = defaultWebhookEndpoint
+	}
+
 	handler := webhookHandler(config, p)
-	if _, err := router.AddRoute(http.MethodPost, webhookEndpoint, handler, swagger.Definitions{}); err != nil {
+	if _, err := router.AddRoute(http.MethodPost, path, handler, swagger.Definitions{}); err != nil {
 		return err
 	}
 
