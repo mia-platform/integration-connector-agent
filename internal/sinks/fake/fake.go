@@ -63,8 +63,6 @@ type Writer struct {
 
 	stub  Calls
 	mocks Mocks
-
-	outputModel map[string]any
 }
 
 func New(config *Config) *Writer {
@@ -128,8 +126,4 @@ func (f *Writer) Delete(_ context.Context, data entities.PipelineEvent) error {
 		return mock.Error
 	}
 	return nil
-}
-
-func (f *Writer) OutputModel() map[string]any {
-	return f.outputModel
 }

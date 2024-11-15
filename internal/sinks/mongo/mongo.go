@@ -40,10 +40,9 @@ type validateFunc func(context.Context, *mongo.Client) error
 type Writer[T entities.PipelineEvent] struct {
 	client *mongo.Client
 
-	database    string
-	collection  string
-	outputEvent map[string]any
-	idField     string
+	database   string
+	collection string
+	idField    string
 }
 
 // NewMongoDBWriter will construct a new MongoDB writer and validate the connection parameters via a ping request.
@@ -133,10 +132,6 @@ func (w *Writer[T]) Delete(ctx context.Context, data T) error {
 	}
 
 	return nil
-}
-
-func (w *Writer[T]) OutputModel() map[string]any {
-	return w.outputEvent
 }
 
 // mongoClientOptionsFromConfig return a ClientOptions, database and collection parameters parsed from a
