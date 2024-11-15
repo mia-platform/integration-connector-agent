@@ -20,4 +20,6 @@ type Configuration struct {
 	// Secret the webhook secret configuration for validating the data received
 	Secret      string
 	WebhookPath string
+
+	Events Events
 }

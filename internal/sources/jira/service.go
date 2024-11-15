@@ -60,6 +60,9 @@ func SetupService(
 	if path == "" {
 		path = defaultWebhookEndpoint
 	}
+	if config.Events == nil {
+		config.Events = DefaultSupportedEvents
+	}
 
 	handler := webhookHandler(config, p)
 	if _, err := router.AddRoute(http.MethodPost, path, handler, swagger.Definitions{}); err != nil {
@@ -84,7 +87,7 @@ func webhookHandler(config Configuration, p pipeline.IPipeline) fiber.Handler {
 			return c.SendStatus(http.StatusOK)
 		}
 
-		event, err := getPipelineEvent(body)
+		event, err := config.Events.getPipelineEvent(body)
 		if err != nil {
 			log.WithError(err).Error("error unmarshaling event")
 			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
