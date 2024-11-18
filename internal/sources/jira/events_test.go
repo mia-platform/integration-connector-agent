@@ -59,7 +59,7 @@ func TestEvent(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			event, err := getPipelineEvent([]byte(tc.rawData))
+			event, err := DefaultSupportedEvents.getPipelineEvent([]byte(tc.rawData))
 			if tc.expectError != "" {
 				require.Error(t, err)
 				require.EqualError(t, err, tc.expectError)

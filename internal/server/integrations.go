@@ -62,7 +62,8 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 		case sources.Jira:
 			// TODO: improve management of configuration
 			config := jira.Configuration{
-				Secret: source.Authentication.Secret.String(),
+				Secret:      source.Authentication.Secret.String(),
+				WebhookPath: source.WebhookPath,
 			}
 
 			if err := jira.SetupService(ctx, log, oasRouter, config, pip); err != nil {

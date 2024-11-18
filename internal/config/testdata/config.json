@@ -3,6 +3,7 @@
     {
       "source": {
         "type": "jira",
+        "webhookPath": "/custom-webhook-path",
         "authentication": {
           "secret": {
             "fromFile": "testdata/secret"

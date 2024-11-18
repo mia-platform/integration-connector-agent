@@ -52,14 +52,14 @@ func TestSetupServiceWithConfig(t *testing.T) {
 		"expose the correct API - empty body": {
 			req: func(t *testing.T) *http.Request {
 				t.Helper()
-				return httptest.NewRequest(http.MethodPost, webhookEndpoint, nil)
+				return httptest.NewRequest(http.MethodPost, defaultWebhookEndpoint, nil)
 			},
 			expectedStatusCode: http.StatusOK,
 		},
 		"fails validation": {
 			req: func(t *testing.T) *http.Request {
 				t.Helper()
-				return httptest.NewRequest(http.MethodPost, webhookEndpoint, nil)
+				return httptest.NewRequest(http.MethodPost, defaultWebhookEndpoint, nil)
 			},
 			config: Configuration{
 				Secret: "SECRET",
@@ -75,7 +75,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 				}, expectedBody)
 			},
 		},
-		"expose the correct API - updated issue": {
+		"expose the correct default path API - updated issue": {
 			req: func(t *testing.T) *http.Request {
 				t.Helper()
 
@@ -90,7 +90,29 @@ func TestSetupServiceWithConfig(t *testing.T) {
 				reqBody, err := json.Marshal(jiraIssue)
 				require.NoError(t, err)
 
-				return httptest.NewRequest(http.MethodPost, webhookEndpoint, bytes.NewBuffer(reqBody))
+				return httptest.NewRequest(http.MethodPost, defaultWebhookEndpoint, bytes.NewBuffer(reqBody))
+			},
+			expectedStatusCode: http.StatusOK,
+		},
+		"expose the correct custom path API - updated issue": {
+			config: Configuration{
+				WebhookPath: "/custom-path",
+			},
+			req: func(t *testing.T) *http.Request {
+				t.Helper()
+
+				jiraIssue := map[string]any{
+					"id": 1,
+					"issue": map[string]any{
+						"id":  "1",
+						"key": "ISSUE-KEY",
+					},
+					"webhookEvent": "jira:issue_updated",
+				}
+				reqBody, err := json.Marshal(jiraIssue)
+				require.NoError(t, err)
+
+				return httptest.NewRequest(http.MethodPost, "/custom-path", bytes.NewBuffer(reqBody))
 			},
 			expectedStatusCode: http.StatusOK,
 		},

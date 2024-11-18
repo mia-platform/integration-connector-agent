@@ -23,41 +23,50 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-const (
-	issueCreated = "jira:issue_created"
-	issueUpdated = "jira:issue_updated"
-	issueDeleted = "jira:issue_deleted"
+type Events map[string]Event
 
-	eventIDPath      = "issue.id"
+type Event struct {
+	Operation entities.Operation
+	FieldID   string
+}
+
+const (
+	issueCreated     = "jira:issue_created"
+	issueUpdated     = "jira:issue_updated"
+	issueDeleted     = "jira:issue_deleted"
+	issueEventIDPath = "issue.id"
+
 	webhookEventPath = "webhookEvent"
 )
 
-func getPipelineEvent(rawData []byte) (entities.PipelineEvent, error) {
+var DefaultSupportedEvents = Events{
+	issueCreated: {
+		Operation: entities.Write,
+		FieldID:   issueEventIDPath,
+	},
+	issueUpdated: {
+		Operation: entities.Write,
+		FieldID:   issueEventIDPath,
+	},
+	issueDeleted: {
+		Operation: entities.Delete,
+		FieldID:   issueEventIDPath,
+	},
+}
+
+func (e Events) getPipelineEvent(rawData []byte) (entities.PipelineEvent, error) {
 	parsed := gjson.ParseBytes(rawData)
-	id := parsed.Get(eventIDPath).String()
 	webhookEvent := parsed.Get(webhookEventPath).String()
 
-	operationType, err := getOperationType(webhookEvent)
-	if err != nil {
-		return nil, err
+	event, ok := e[webhookEvent]
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedWebhookEvent, webhookEvent)
 	}
 
 	return &entities.Event{
-		ID:            id,
-		OperationType: operationType,
+		ID:            parsed.Get(event.FieldID).String(),
+		OperationType: event.Operation,
 
 		OriginalRaw: rawData,
 	}, nil
-}
-
-func getOperationType(event string) (entities.Operation, error) {
-	switch event {
-	case issueCreated:
-		fallthrough
-	case issueUpdated:
-		return entities.Write, nil
-	case issueDeleted:
-		return entities.Delete, nil
-	}
-	return 0, fmt.Errorf("%w: %s", ErrUnsupportedWebhookEvent, event)
 }
