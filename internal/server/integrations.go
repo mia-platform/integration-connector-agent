@@ -28,6 +28,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
@@ -60,15 +61,15 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 
 		switch source.Type {
 		case sources.Jira:
-			// TODO: improve management of configuration
-			config := jira.Configuration{
-				Secret:      source.Authentication.Secret.String(),
-				WebhookPath: source.WebhookPath,
-			}
-
-			if err := jira.SetupService(ctx, log, oasRouter, config, pip); err != nil {
+			jiraConfig, err := config.GetConfig[*jira.Config](cfgIntegration.Source)
+			if err != nil {
 				return err
 			}
+
+			if err := webhook.SetupService(ctx, log, oasRouter, &jiraConfig.Configuration, pip); err != nil {
+				return fmt.Errorf("%w: %s", errSetupSource, err)
+			}
+
 		case "test":
 			// do nothing only for testing
 			return nil

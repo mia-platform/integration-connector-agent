@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jira
+package webhook
 
 import (
 	"bytes"
@@ -24,6 +24,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/mia-platform/integration-connector-agent/internal/config"
+	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	fakesink "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
@@ -39,9 +41,10 @@ import (
 
 func TestSetupServiceWithConfig(t *testing.T) {
 	logger, _ := test.NewNullLogger()
+	defaultWebhookEndpoint := "/webhook-path"
 
 	type testItem struct {
-		config   Configuration
+		config   *Configuration
 		req      func(t *testing.T) *http.Request
 		pipeline pipeline.IPipeline
 
@@ -50,6 +53,10 @@ func TestSetupServiceWithConfig(t *testing.T) {
 	}
 	tests := map[string]testItem{
 		"expose the correct API - empty body": {
+			config: &Configuration{
+				WebhookPath: defaultWebhookEndpoint,
+				Events:      &Events{},
+			},
 			req: func(t *testing.T) *http.Request {
 				t.Helper()
 				return httptest.NewRequest(http.MethodPost, defaultWebhookEndpoint, nil)
@@ -57,12 +64,17 @@ func TestSetupServiceWithConfig(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 		},
 		"fails validation": {
+			config: &Configuration{
+				WebhookPath: defaultWebhookEndpoint,
+				Authentication: Authentication{
+					Secret:     config.SecretSource("SECRET"),
+					HeaderName: "X-Hub-Signature",
+				},
+				Events: &Events{},
+			},
 			req: func(t *testing.T) *http.Request {
 				t.Helper()
 				return httptest.NewRequest(http.MethodPost, defaultWebhookEndpoint, nil)
-			},
-			config: Configuration{
-				Secret: "SECRET",
 			},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedBody: func(t *testing.T, body io.ReadCloser) {
@@ -75,7 +87,19 @@ func TestSetupServiceWithConfig(t *testing.T) {
 				}, expectedBody)
 			},
 		},
-		"expose the correct default path API - updated issue": {
+		"expose the correct default path API": {
+			config: &Configuration{
+				WebhookPath: defaultWebhookEndpoint,
+				Events: &Events{
+					Supported: map[string]Event{
+						"jira:issue_updated": {
+							FieldID:   "issue.id",
+							Operation: entities.Write,
+						},
+					},
+					EventTypeFieldPath: "webhookEvent",
+				},
+			},
 			req: func(t *testing.T) *http.Request {
 				t.Helper()
 
@@ -91,28 +115,6 @@ func TestSetupServiceWithConfig(t *testing.T) {
 				require.NoError(t, err)
 
 				return httptest.NewRequest(http.MethodPost, defaultWebhookEndpoint, bytes.NewBuffer(reqBody))
-			},
-			expectedStatusCode: http.StatusOK,
-		},
-		"expose the correct custom path API - updated issue": {
-			config: Configuration{
-				WebhookPath: "/custom-path",
-			},
-			req: func(t *testing.T) *http.Request {
-				t.Helper()
-
-				jiraIssue := map[string]any{
-					"id": 1,
-					"issue": map[string]any{
-						"id":  "1",
-						"key": "ISSUE-KEY",
-					},
-					"webhookEvent": "jira:issue_updated",
-				}
-				reqBody, err := json.Marshal(jiraIssue)
-				require.NoError(t, err)
-
-				return httptest.NewRequest(http.MethodPost, "/custom-path", bytes.NewBuffer(reqBody))
 			},
 			expectedStatusCode: http.StatusOK,
 		},

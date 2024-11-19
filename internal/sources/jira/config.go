@@ -15,11 +15,51 @@
 
 package jira
 
-// Configuration is the representation of the configuration for a Jira Cloud webhook
-type Configuration struct {
-	// Secret the webhook secret configuration for validating the data received
-	Secret      string
-	WebhookPath string
+import (
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+)
 
-	Events Events
+const (
+	defaultWebhookPath    = "/jira/webhook"
+	defaultAuthHeaderName = "X-Hub-Signature"
+
+	webhookEventPath = "webhookEvent"
+)
+
+type Config struct {
+	webhook.Configuration
+}
+
+func (c *Config) withDefault() *Config {
+	if c.Authentication.HeaderName == "" {
+		c.Authentication.HeaderName = defaultAuthHeaderName
+	}
+
+	if c.WebhookPath == "" {
+		c.WebhookPath = defaultWebhookPath
+	}
+
+	if c.Events == nil {
+		c.Events = &DefaultSupportedEvents
+	}
+
+	if c.Events.EventTypeFieldPath == "" {
+		c.Events.EventTypeFieldPath = webhookEventPath
+	}
+
+	if c.Events.Supported == nil {
+		c.Events.Supported = DefaultSupportedEvents.Supported
+	}
+
+	return c
+}
+
+func (c *Config) Validate() error {
+	c.withDefault()
+
+	if err := c.Configuration.Validate(); err != nil {
+		return err
+	}
+
+	return nil
 }

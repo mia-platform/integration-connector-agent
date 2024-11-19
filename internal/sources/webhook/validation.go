@@ -13,22 +13,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jira
+package webhook
 
 import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"strings"
 )
 
 const (
-	webhookSignatureHeader          = "X-Hub-Signature"
-	signatureHeaderButNoSecretError = "secret not configured for validating webhook signature"
-	noSignatureHeaderButSecretError = "missing webhook signature"
-	multipleSignatureHeadersError   = "multiple signature headers found"
-	invalidSignatureError           = "invalid signature in request"
+	invalidWebhookAuthenticationConfig = "invalid webhook authentication configuration"
+	signatureHeaderButNoSecretError    = "secret not configured for validating webhook signature"
+	noSignatureHeaderButSecretError    = "missing webhook signature"
+	multipleSignatureHeadersError      = "multiple signature headers found"
+	invalidSignatureError              = "invalid signature in request"
 )
 
 type ValidatingRequest interface {
@@ -39,8 +40,13 @@ type ValidatingRequest interface {
 // ValidateWebhookRequest will read the webhook signature header and the given secret for validating the webhook
 // payload. It will fail if there is a mismatch in the signatures and if a signature or a secret is provided and the
 // other is not present.
-func ValidateWebhookRequest(req ValidatingRequest, secret string) error {
-	headerValues := req.GetReqHeaders()[webhookSignatureHeader]
+func ValidateWebhookRequest(req ValidatingRequest, authentication Authentication) error {
+	secret := authentication.Secret.String()
+	if secret != "" && authentication.HeaderName == "" {
+		return fmt.Errorf("%s: secret is set but headerName not present", invalidWebhookAuthenticationConfig)
+	}
+
+	headerValues := req.GetReqHeaders()[authentication.HeaderName]
 	switch {
 	case len(headerValues) == 0 && len(secret) == 0:
 		return nil
