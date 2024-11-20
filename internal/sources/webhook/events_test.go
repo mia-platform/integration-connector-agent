@@ -20,11 +20,15 @@ import (
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestEvent(t *testing.T) {
+	logger, _ := test.NewNullLogger()
+
 	testCases := map[string]struct {
 		rawData string
 		events  *Events
@@ -86,7 +90,7 @@ func TestEvent(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			event, err := tc.events.getPipelineEvent([]byte(tc.rawData))
+			event, err := tc.events.getPipelineEvent(logrus.NewEntry(logger), []byte(tc.rawData))
 			if tc.expectError != "" {
 				require.Error(t, err)
 				require.EqualError(t, err, tc.expectError)

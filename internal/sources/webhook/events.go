@@ -31,7 +31,6 @@ var (
 type Events struct {
 	Supported          map[string]Event
 	EventTypeFieldPath string
-	logger             logrus.Logger
 }
 
 type Event struct {
@@ -39,13 +38,13 @@ type Event struct {
 	FieldID   string
 }
 
-func (e *Events) getPipelineEvent(rawData []byte) (entities.PipelineEvent, error) {
+func (e *Events) getPipelineEvent(logger *logrus.Entry, rawData []byte) (entities.PipelineEvent, error) {
 	parsed := gjson.ParseBytes(rawData)
 	webhookEvent := parsed.Get(e.EventTypeFieldPath).String()
 
 	event, ok := e.Supported[webhookEvent]
 	if !ok {
-		e.logger.WithFields(logrus.Fields{
+		logger.WithFields(logrus.Fields{
 			"webhookEvent": webhookEvent,
 			"event":        string(rawData),
 		}).Trace("unsupported webhook event")
@@ -54,7 +53,7 @@ func (e *Events) getPipelineEvent(rawData []byte) (entities.PipelineEvent, error
 
 	id := parsed.Get(event.FieldID).String()
 	if id == "" {
-		e.logger.WithFields(logrus.Fields{
+		logger.WithFields(logrus.Fields{
 			"webhookEvent": webhookEvent,
 			"event":        string(rawData),
 		}).Trace("unsupported webhook event")
