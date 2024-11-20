@@ -13,25 +13,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jira
+package webhook
 
 import (
 	"errors"
 	"testing"
 
+	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestValidateWebhookRequest(t *testing.T) {
 	t.Parallel()
 
+	webhookSignatureHeader := "X-Hub-Signature"
+
 	tests := map[string]struct {
-		request     fakeValidatingRequest
-		secret      string
-		expectedErr error
+		request        fakeValidatingRequest
+		authentication Authentication
+		expectedErr    error
 	}{
 		"no header and no secret return no error": {},
 		"missing secret return error": {
+			authentication: Authentication{
+				HeaderName: webhookSignatureHeader,
+			},
 			request: fakeValidatingRequest{
 				headers: map[string][]string{
 					webhookSignatureHeader: {"signature"},
@@ -40,11 +46,17 @@ func TestValidateWebhookRequest(t *testing.T) {
 			expectedErr: errors.New(signatureHeaderButNoSecretError),
 		},
 		"missing header return error": {
-			secret:      "secret",
+			authentication: Authentication{
+				HeaderName: webhookSignatureHeader,
+				Secret:     config.SecretSource("secret"),
+			},
 			expectedErr: errors.New(noSignatureHeaderButSecretError),
 		},
 		"multiple header return error": {
-			secret: "secret",
+			authentication: Authentication{
+				HeaderName: webhookSignatureHeader,
+				Secret:     config.SecretSource("secret"),
+			},
 			request: fakeValidatingRequest{
 				headers: map[string][]string{
 					webhookSignatureHeader: {"signature", "other"},
@@ -53,7 +65,10 @@ func TestValidateWebhookRequest(t *testing.T) {
 			expectedErr: errors.New(multipleSignatureHeadersError),
 		},
 		"valid signature return nil": {
-			secret: "It's a Secret to Everybody",
+			authentication: Authentication{
+				HeaderName: webhookSignatureHeader,
+				Secret:     config.SecretSource("It's a Secret to Everybody"),
+			},
 			request: fakeValidatingRequest{
 				body: []byte("Hello World!"),
 				headers: map[string][]string{
@@ -62,7 +77,10 @@ func TestValidateWebhookRequest(t *testing.T) {
 			},
 		},
 		"invalid signature return error": {
-			secret: "It's a Secret to Everybody",
+			authentication: Authentication{
+				HeaderName: webhookSignatureHeader,
+				Secret:     config.SecretSource("It's a Secret to Everybody"),
+			},
 			request: fakeValidatingRequest{
 				body: []byte("tampered body"),
 				headers: map[string][]string{
@@ -75,7 +93,7 @@ func TestValidateWebhookRequest(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			err := ValidateWebhookRequest(test.request, test.secret)
+			err := ValidateWebhookRequest(test.request, test.authentication)
 			assert.Equal(t, test.expectedErr, err)
 		})
 	}

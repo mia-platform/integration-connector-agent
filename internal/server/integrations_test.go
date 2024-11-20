@@ -79,7 +79,7 @@ func TestSetupIntegrations(t *testing.T) {
 			cfg: config.Configuration{
 				Integrations: []config.Integration{
 					{
-						Source: config.Source{
+						Source: config.GenericConfig{
 							Type: sources.Jira,
 						},
 						Sinks: config.Sinks{
@@ -95,7 +95,7 @@ func TestSetupIntegrations(t *testing.T) {
 			cfg: config.Configuration{
 				Integrations: []config.Integration{
 					{
-						Source: config.Source{
+						Source: config.GenericConfig{
 							Type: sources.Jira,
 						},
 						Sinks: config.Sinks{
@@ -112,7 +112,7 @@ func TestSetupIntegrations(t *testing.T) {
 			cfg: config.Configuration{
 				Integrations: []config.Integration{
 					{
-						Source: config.Source{
+						Source: config.GenericConfig{
 							Type: "test",
 						},
 						Sinks: config.Sinks{
@@ -126,7 +126,7 @@ func TestSetupIntegrations(t *testing.T) {
 			cfg: config.Configuration{
 				Integrations: []config.Integration{
 					{
-						Source: config.Source{
+						Source: config.GenericConfig{
 							Type: "unsupported",
 						},
 						Sinks: config.Sinks{

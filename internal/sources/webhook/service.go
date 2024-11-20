@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jira
+package webhook
 
 import (
 	"bytes"
@@ -30,12 +30,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	defaultWebhookEndpoint = "/jira/webhook"
-)
-
 var (
-	ErrEmptyConfiguration      = errors.New("empty configuration")
 	ErrUnmarshalEvent          = errors.New("error unmarshaling event")
 	ErrUnsupportedWebhookEvent = errors.New("unsupported webhook event")
 )
@@ -44,9 +39,13 @@ func SetupService(
 	ctx context.Context,
 	logger *logrus.Logger,
 	router *swagger.Router[fiber.Handler, fiber.Router],
-	config Configuration,
+	config *Configuration,
 	p pipeline.IPipeline,
 ) error {
+	if err := config.Validate(); err != nil {
+		return err
+	}
+
 	go func(p pipeline.IPipeline) {
 		err := p.Start(ctx)
 		if err != nil {
@@ -56,27 +55,19 @@ func SetupService(
 		}
 	}(p)
 
-	path := config.WebhookPath
-	if path == "" {
-		path = defaultWebhookEndpoint
-	}
-	if config.Events == nil {
-		config.Events = DefaultSupportedEvents
-	}
-
 	handler := webhookHandler(config, p)
-	if _, err := router.AddRoute(http.MethodPost, path, handler, swagger.Definitions{}); err != nil {
+	if _, err := router.AddRoute(http.MethodPost, config.WebhookPath, handler, swagger.Definitions{}); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func webhookHandler(config Configuration, p pipeline.IPipeline) fiber.Handler {
+func webhookHandler(config *Configuration, p pipeline.IPipeline) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		log := glogrus.FromContext(c.UserContext())
 
-		if err := ValidateWebhookRequest(c, config.Secret); err != nil {
+		if err := ValidateWebhookRequest(c, config.Authentication); err != nil {
 			log.WithError(err).Error("error validating webhook request")
 			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
 		}

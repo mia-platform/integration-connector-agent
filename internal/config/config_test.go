@@ -31,6 +31,7 @@ func TestLoadServiceConfiguration(t *testing.T) {
 		expectedContent         *Configuration
 		expectedSinkConfig      string
 		expectedProcessorConfig string
+		expectedSourceConfig    string
 	}{
 		"invalid configuration not match schema": {
 			path:          "./testdata/invalid-config.json",
@@ -49,12 +50,8 @@ func TestLoadServiceConfiguration(t *testing.T) {
 			expectedContent: &Configuration{
 				Integrations: []Integration{
 					{
-						Source: Source{
-							Type:        "jira",
-							WebhookPath: "/custom-webhook-path",
-							Authentication: Authentication{
-								Secret: SecretSource("MY_SECRET"),
-							},
+						Source: GenericConfig{
+							Type: "jira",
 						},
 						Processors: Processors{
 							{
@@ -71,6 +68,7 @@ func TestLoadServiceConfiguration(t *testing.T) {
 			},
 			expectedSinkConfig:      getExpectedSinkConfig(t),
 			expectedProcessorConfig: getExpectedProcessorConfig(t),
+			expectedSourceConfig:    getExpectedSourceConfig(t),
 		},
 		"invalid config if integrations is empty": {
 			path:          "./testdata/empty-integrations.json",
@@ -92,9 +90,13 @@ func TestLoadServiceConfiguration(t *testing.T) {
 				rawProcessorConfig := config.Integrations[0].Processors[0].Raw
 				config.Integrations[0].Processors[0].Raw = nil
 
+				rawSourceConfig := config.Integrations[0].Source.Raw
+				config.Integrations[0].Source.Raw = nil
+
 				require.Equal(t, test.expectedContent, config)
 				require.JSONEq(t, test.expectedSinkConfig, string(rawSinkConfig))
 				require.JSONEq(t, test.expectedProcessorConfig, string(rawProcessorConfig))
+				require.JSONEq(t, test.expectedSourceConfig, string(rawSourceConfig))
 			}
 		})
 	}
@@ -168,6 +170,20 @@ func getExpectedProcessorConfig(t *testing.T) string {
 		"summary": "{{ issue.fields.summary }}",
 		"createdAt": "{{ issue.fields.created }}",
 		"description": "{{ issue.fields.description }}"
+	}
+}`
+}
+
+func getExpectedSourceConfig(t *testing.T) string {
+	t.Helper()
+
+	return `{
+	"type": "jira",
+	"webhookPath": "/custom-webhook-path",
+	"authentication": {
+		"secret": {
+			"fromFile": "testdata/secret"
+		}
 	}
 }`
 }

@@ -16,57 +16,42 @@
 package jira
 
 import (
-	"fmt"
-
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
-
-	"github.com/tidwall/gjson"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 )
-
-type Events map[string]Event
-
-type Event struct {
-	Operation entities.Operation
-	FieldID   string
-}
 
 const (
 	issueCreated     = "jira:issue_created"
 	issueUpdated     = "jira:issue_updated"
 	issueDeleted     = "jira:issue_deleted"
-	issueEventIDPath = "issue.id"
+	issueLinkCreated = "issuelink_created"
+	issueLinkDeleted = "issuelink_deleted"
 
-	webhookEventPath = "webhookEvent"
+	issueEventIDPath = "issue.id"
 )
 
-var DefaultSupportedEvents = Events{
-	issueCreated: {
-		Operation: entities.Write,
-		FieldID:   issueEventIDPath,
+var DefaultSupportedEvents = webhook.Events{
+	Supported: map[string]webhook.Event{
+		issueCreated: {
+			Operation: entities.Write,
+			FieldID:   issueEventIDPath,
+		},
+		issueUpdated: {
+			Operation: entities.Write,
+			FieldID:   issueEventIDPath,
+		},
+		issueDeleted: {
+			Operation: entities.Delete,
+			FieldID:   issueEventIDPath,
+		},
+		issueLinkCreated: {
+			Operation: entities.Write,
+			FieldID:   issueEventIDPath,
+		},
+		issueLinkDeleted: {
+			Operation: entities.Delete,
+			FieldID:   issueEventIDPath,
+		},
 	},
-	issueUpdated: {
-		Operation: entities.Write,
-		FieldID:   issueEventIDPath,
-	},
-	issueDeleted: {
-		Operation: entities.Delete,
-		FieldID:   issueEventIDPath,
-	},
-}
-
-func (e Events) getPipelineEvent(rawData []byte) (entities.PipelineEvent, error) {
-	parsed := gjson.ParseBytes(rawData)
-	webhookEvent := parsed.Get(webhookEventPath).String()
-
-	event, ok := e[webhookEvent]
-	if !ok {
-		return nil, fmt.Errorf("%w: %s", ErrUnsupportedWebhookEvent, webhookEvent)
-	}
-
-	return &entities.Event{
-		ID:            parsed.Get(event.FieldID).String(),
-		OperationType: event.Operation,
-
-		OriginalRaw: rawData,
-	}, nil
+	EventTypeFieldPath: webhookEventPath,
 }

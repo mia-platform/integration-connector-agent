@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jira
+package webhook
 
 import (
 	"fmt"
@@ -27,31 +27,58 @@ import (
 func TestEvent(t *testing.T) {
 	testCases := map[string]struct {
 		rawData string
+		events  *Events
 
 		expectError           string
 		expectedID            string
 		expectedOperationType entities.Operation
 	}{
-		"issue_created": {
-			rawData: fmt.Sprintf(`{"issue": {"id": "my-id", "key": "TEST-1"}, "webhookEvent": "%s"}`, issueCreated),
-
+		"without id": {
+			rawData: `{"webhookEvent": "my-event"}`,
+			events: &Events{
+				Supported: map[string]Event{
+					"my-event": {
+						FieldID:   "issue.id",
+						Operation: entities.Write,
+					},
+				},
+				EventTypeFieldPath: "webhookEvent",
+			},
+			expectError: "missing id field in event: issue.id",
+		},
+		"supported write event": {
+			rawData: `{"issue":{"id":"my-id"},"webhookEvent": "my-event"}`,
+			events: &Events{
+				Supported: map[string]Event{
+					"my-event": {
+						FieldID:   "issue.id",
+						Operation: entities.Write,
+					},
+				},
+				EventTypeFieldPath: "webhookEvent",
+			},
 			expectedID:            "my-id",
 			expectedOperationType: entities.Write,
 		},
-		"issue_updated": {
-			rawData: fmt.Sprintf(`{"issue": {"id": "my-id", "key": "TEST-1"}, "webhookEvent": "%s"}`, issueUpdated),
-
-			expectedID:            "my-id",
-			expectedOperationType: entities.Write,
-		},
-		"issue_deleted": {
-			rawData: fmt.Sprintf(`{"issue": {"id": "my-id", "key": "TEST-1"}, "webhookEvent": "%s"}`, issueDeleted),
-
-			expectedID:            "my-id",
+		"supported delete event": {
+			rawData: `{"issue":{"id":"my-id"},"webhookEvent": "my-event"}`,
+			events: &Events{
+				Supported: map[string]Event{
+					"my-event": {
+						FieldID:   "issue.id",
+						Operation: entities.Delete,
+					},
+				},
+				EventTypeFieldPath: "webhookEvent",
+			},
 			expectedOperationType: entities.Delete,
+			expectedID:            "my-id",
 		},
 		"unsupported_event": {
 			rawData: `{"issue": {"id": "my-id", "key": "TEST-1"}, "webhookEvent": "unsupported"}`,
+			events: &Events{
+				EventTypeFieldPath: "webhookEvent",
+			},
 
 			expectError: fmt.Sprintf("%s: %s", ErrUnsupportedWebhookEvent, "unsupported"),
 		},
@@ -59,7 +86,7 @@ func TestEvent(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			event, err := DefaultSupportedEvents.getPipelineEvent([]byte(tc.rawData))
+			event, err := tc.events.getPipelineEvent([]byte(tc.rawData))
 			if tc.expectError != "" {
 				require.Error(t, err)
 				require.EqualError(t, err, tc.expectError)

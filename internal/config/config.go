@@ -36,17 +36,12 @@ type Authentication struct {
 
 type Processors []GenericConfig
 type Sinks []GenericConfig
-
-type Source struct {
-	Type           string         `json:"type"`
-	WebhookPath    string         `json:"webhookPath"`
-	Authentication Authentication `json:"authentication"`
-}
+type Source GenericConfig
 
 type Integration struct {
-	Source     Source     `json:"source"`
-	Processors Processors `json:"processors"`
-	Sinks      Sinks      `json:"sinks"`
+	Source     GenericConfig `json:"source"`
+	Processors Processors    `json:"processors"`
+	Sinks      Sinks         `json:"sinks"`
 }
 
 type Configuration struct {

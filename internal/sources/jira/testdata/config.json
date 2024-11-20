@@ -1,0 +1,9 @@
+{
+  "type": "jira",
+  "authentication": {
+    "secret": {
+      "fromFile": "testdata/secret"
+    }
+  },
+  "webhookPath": "/webhook"
+}

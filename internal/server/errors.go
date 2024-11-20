@@ -18,6 +18,7 @@ package server
 import "errors"
 
 var (
+	errSetupSource                = errors.New("error setting up source")
 	errSetupWriter                = errors.New("error setting up writer")
 	errUnsupportedWriter          = errors.New("unsupported writer type")
 	errUnsupportedIntegrationType = errors.New("unsupported integration type")
