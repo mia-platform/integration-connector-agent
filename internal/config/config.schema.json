@@ -25,9 +25,9 @@
                   "secret": {
                     "$ref": "#/definitions/secret"
                   },
-									"headerName": {
-										"type": "string"
-									}
+                  "headerName": {
+                    "type": "string"
+                  }
                 }
               }
             },
