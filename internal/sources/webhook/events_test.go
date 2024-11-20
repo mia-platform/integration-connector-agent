@@ -27,7 +27,7 @@ import (
 func TestEvent(t *testing.T) {
 	testCases := map[string]struct {
 		rawData string
-		events  Events
+		events  *Events
 
 		expectError           string
 		expectedID            string
@@ -35,7 +35,7 @@ func TestEvent(t *testing.T) {
 	}{
 		"without id": {
 			rawData: `{"webhookEvent": "my-event"}`,
-			events: Events{
+			events: &Events{
 				Supported: map[string]Event{
 					"my-event": {
 						FieldID:   "issue.id",
@@ -48,7 +48,7 @@ func TestEvent(t *testing.T) {
 		},
 		"supported write event": {
 			rawData: `{"issue":{"id":"my-id"},"webhookEvent": "my-event"}`,
-			events: Events{
+			events: &Events{
 				Supported: map[string]Event{
 					"my-event": {
 						FieldID:   "issue.id",
@@ -62,7 +62,7 @@ func TestEvent(t *testing.T) {
 		},
 		"supported delete event": {
 			rawData: `{"issue":{"id":"my-id"},"webhookEvent": "my-event"}`,
-			events: Events{
+			events: &Events{
 				Supported: map[string]Event{
 					"my-event": {
 						FieldID:   "issue.id",
@@ -76,7 +76,7 @@ func TestEvent(t *testing.T) {
 		},
 		"unsupported_event": {
 			rawData: `{"issue": {"id": "my-id", "key": "TEST-1"}, "webhookEvent": "unsupported"}`,
-			events: Events{
+			events: &Events{
 				EventTypeFieldPath: "webhookEvent",
 			},
 
