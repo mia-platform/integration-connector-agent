@@ -54,6 +54,10 @@ func (e *Events) getPipelineEvent(rawData []byte) (entities.PipelineEvent, error
 
 	id := parsed.Get(event.FieldID).String()
 	if id == "" {
+		e.logger.WithFields(logrus.Fields{
+			"webhookEvent": webhookEvent,
+			"event":        string(rawData),
+		}).Trace("unsupported webhook event")
 		return nil, fmt.Errorf("%w: %s", ErrMissingFieldID, event.FieldID)
 	}
 
