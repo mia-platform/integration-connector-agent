@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/sirupsen/logrus"
 
 	"github.com/tidwall/gjson"
 )
@@ -30,6 +31,7 @@ var (
 type Events struct {
 	Supported          map[string]Event
 	EventTypeFieldPath string
+	logger             logrus.Logger
 }
 
 type Event struct {
@@ -37,12 +39,16 @@ type Event struct {
 	FieldID   string
 }
 
-func (e Events) getPipelineEvent(rawData []byte) (entities.PipelineEvent, error) {
+func (e *Events) getPipelineEvent(rawData []byte) (entities.PipelineEvent, error) {
 	parsed := gjson.ParseBytes(rawData)
 	webhookEvent := parsed.Get(e.EventTypeFieldPath).String()
 
 	event, ok := e.Supported[webhookEvent]
 	if !ok {
+		e.logger.WithFields(logrus.Fields{
+			"webhookEvent": webhookEvent,
+			"event":        string(rawData),
+		}).Trace("unsupported webhook event")
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedWebhookEvent, webhookEvent)
 	}
 

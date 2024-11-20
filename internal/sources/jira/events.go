@@ -24,6 +24,9 @@ const (
 	issueCreated     = "jira:issue_created"
 	issueUpdated     = "jira:issue_updated"
 	issueDeleted     = "jira:issue_deleted"
+	issueLinkCreated = "issuelink_created"
+	issueLinkDeleted = "issuelink_deleted"
+
 	issueEventIDPath = "issue.id"
 )
 
@@ -38,6 +41,14 @@ var DefaultSupportedEvents = webhook.Events{
 			FieldID:   issueEventIDPath,
 		},
 		issueDeleted: {
+			Operation: entities.Delete,
+			FieldID:   issueEventIDPath,
+		},
+		issueLinkCreated: {
+			Operation: entities.Write,
+			FieldID:   issueEventIDPath,
+		},
+		issueLinkDeleted: {
 			Operation: entities.Delete,
 			FieldID:   issueEventIDPath,
 		},
