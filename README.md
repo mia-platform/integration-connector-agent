@@ -3,12 +3,13 @@
 ## Development Local
 
 To develop the service locally you need:
-	- Go 1.23+
+
+- Go 1.23+
 
 To start the application locally
 
 ```go
-go run integration-connector-agent
+go run .
 ```
 
 By default the service will run on port 8080, to change the port please set `HTTP_PORT` env variable
@@ -20,6 +21,3 @@ To test the application use:
 ```go
 make test
 ```
-
-[logger]: https://github.com/mia-platform/glogger
-[library]: https://github.com/mia-platform/configlib
