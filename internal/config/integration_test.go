@@ -29,10 +29,10 @@ func TestWriterConfig(t *testing.T) {
 	cfg, err := config.LoadServiceConfiguration("testdata/all-writer-config.json")
 	require.NoError(t, err)
 
-	writers := cfg.Integrations[0].Sinks
+	writers := cfg.Integrations[0].Pipelines[0].Sinks
 	require.NotNil(t, writers)
 
-	processors := cfg.Integrations[0].Processors
+	processors := cfg.Integrations[0].Pipelines[0].Processors
 	require.NotNil(t, processors)
 
 	mappedSinks := map[string]config.GenericConfig{}

@@ -30,6 +30,7 @@ type PipelineEvent interface {
 	Type() Operation
 	WithData([]byte)
 	JSON() (map[string]any, error)
+	Clone() PipelineEvent
 }
 
 type Event struct {
@@ -62,4 +63,12 @@ func (e Event) JSON() (map[string]any, error) {
 
 func (e *Event) WithData(raw []byte) {
 	e.OriginalRaw = raw
+}
+
+func (e *Event) Clone() PipelineEvent {
+	return &Event{
+		ID:            e.ID,
+		OperationType: e.OperationType,
+		OriginalRaw:   e.OriginalRaw,
+	}
 }

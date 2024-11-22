@@ -53,14 +53,18 @@ func TestLoadServiceConfiguration(t *testing.T) {
 						Source: GenericConfig{
 							Type: "jira",
 						},
-						Processors: Processors{
+						Pipelines: []Pipeline{
 							{
-								Type: "mapper",
-							},
-						},
-						Sinks: Sinks{
-							{
-								Type: "mongo",
+								Processors: Processors{
+									{
+										Type: "mapper",
+									},
+								},
+								Sinks: Sinks{
+									{
+										Type: "mongo",
+									},
+								},
 							},
 						},
 					},
@@ -84,11 +88,11 @@ func TestLoadServiceConfiguration(t *testing.T) {
 				require.Nil(t, config)
 			} else {
 				require.NoError(t, err)
-				rawSinkConfig := config.Integrations[0].Sinks[0].Raw
-				config.Integrations[0].Sinks[0].Raw = nil
+				rawSinkConfig := config.Integrations[0].Pipelines[0].Sinks[0].Raw
+				config.Integrations[0].Pipelines[0].Sinks[0].Raw = nil
 
-				rawProcessorConfig := config.Integrations[0].Processors[0].Raw
-				config.Integrations[0].Processors[0].Raw = nil
+				rawProcessorConfig := config.Integrations[0].Pipelines[0].Processors[0].Raw
+				config.Integrations[0].Pipelines[0].Processors[0].Raw = nil
 
 				rawSourceConfig := config.Integrations[0].Source.Raw
 				config.Integrations[0].Source.Raw = nil

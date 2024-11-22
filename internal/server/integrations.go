@@ -38,27 +38,34 @@ import (
 // TODO: write an integration test to test this setup
 func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) error {
 	for _, cfgIntegration := range cfg.Integrations {
+		var pipelines []pipeline.IPipeline
+
+		for _, cfgPipeline := range cfgIntegration.Pipelines {
+			sinks, err := setupSinks(ctx, cfgPipeline.Sinks)
+			if err != nil {
+				return err
+			}
+			if len(sinks) != 1 {
+				return fmt.Errorf("only 1 writer is supported, now there are %d", len(sinks))
+			}
+			writer := sinks[0]
+
+			proc, err := processors.New(cfgPipeline.Processors)
+			if err != nil {
+				return err
+			}
+
+			pip, err := pipeline.New(log, proc, writer)
+			if err != nil {
+				return err
+			}
+
+			pipelines = append(pipelines, pip)
+		}
+
+		pg := pipeline.NewGroup(log, pipelines...)
+
 		source := cfgIntegration.Source
-
-		sinks, err := setupSinks(ctx, cfgIntegration.Sinks)
-		if err != nil {
-			return err
-		}
-		if len(sinks) != 1 {
-			return fmt.Errorf("only 1 writer is supported, now there are %d for integration %s", len(sinks), source.Type)
-		}
-		writer := sinks[0]
-
-		proc, err := processors.New(cfgIntegration.Processors)
-		if err != nil {
-			return err
-		}
-
-		pip, err := pipeline.New(log, proc, writer)
-		if err != nil {
-			return err
-		}
-
 		switch source.Type {
 		case sources.Jira:
 			jiraConfig, err := config.GetConfig[*jira.Config](cfgIntegration.Source)
@@ -66,7 +73,7 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 				return err
 			}
 
-			if err := webhook.SetupService(ctx, log, oasRouter, &jiraConfig.Configuration, pip); err != nil {
+			if err := webhook.SetupService(ctx, oasRouter, &jiraConfig.Configuration, pg); err != nil {
 				return fmt.Errorf("%w: %s", errSetupSource, err)
 			}
 
