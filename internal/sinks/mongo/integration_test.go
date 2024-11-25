@@ -95,7 +95,7 @@ func TestMongoOnlyInsert(t *testing.T) {
 		err = w.WriteData(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{
-			{"foo": "bar", "key": "123", "type": "created"},
+			{"foo": "bar", "key": "234", "type": "created"},
 		})
 	})
 
@@ -104,8 +104,8 @@ func TestMongoOnlyInsert(t *testing.T) {
 		err = w.WriteData(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{
-			{"foo": "bar", "key": "123", "type": "created"},
-			{"foo": "taz", "key": "123", "another": "field", "type": "updated"},
+			{"foo": "bar", "key": "234", "type": "created"},
+			{"foo": "taz", "key": "234", "another": "field", "type": "updated"},
 		})
 	})
 
@@ -114,9 +114,9 @@ func TestMongoOnlyInsert(t *testing.T) {
 		err = w.WriteData(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{
-			{"foo": "bar", "key": "123", "type": "created"},
-			{"foo": "taz", "key": "123", "another": "field", "type": "updated"},
-			{"foo": "taz", "key": "123", "another": "field", "type": "deleted"},
+			{"foo": "bar", "key": "234", "type": "created"},
+			{"foo": "taz", "key": "234", "another": "field", "type": "updated"},
+			{"foo": "taz", "key": "234", "another": "field", "type": "deleted"},
 		})
 	})
 }
