@@ -7,6 +7,7 @@ require (
 	github.com/davidebianchi/gswagger v0.10.0
 	github.com/getkin/kin-openapi v0.128.0
 	github.com/gofiber/fiber/v2 v2.52.5
+	github.com/google/cel-go v0.22.1
 	github.com/mia-platform/glogger/v4 v4.2.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
@@ -27,7 +28,6 @@ require (
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/cel-go v0.22.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/invopop/jsonschema v0.12.0 // indirect
 	github.com/invopop/yaml v0.3.1 // indirect
