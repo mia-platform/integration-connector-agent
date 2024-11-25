@@ -18,9 +18,10 @@ package filter
 import (
 	"fmt"
 
+	"github.com/mia-platform/integration-connector-agent/internal/entities"
+
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
 )
 
 var (

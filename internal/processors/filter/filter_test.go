@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
+
 	"github.com/stretchr/testify/require"
 )
 
