@@ -22,6 +22,7 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
+	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 
 	"github.com/sirupsen/logrus"
@@ -67,27 +68,31 @@ loop:
 				break loop
 			}
 
-			message, err := p.processors.Process(ctx, message)
+			processedMessage, err := p.processors.Process(ctx, message)
 			if err != nil {
+				if errors.Is(err, filter.ErrEventToFilter) {
+					// the message has been filtered out
+					continue
+				}
 				p.logger.WithError(err).WithField("message", message.Data()).Error("error processing data")
 				continue
 			}
 
-			switch message.Type() {
+			switch processedMessage.Operation() {
 			case entities.Write:
-				if err := p.sinks.Write(ctx, message); err != nil {
+				if err := p.sinks.Write(ctx, processedMessage); err != nil {
 					// TODO: manage failure in writing message. DLQ?
 					p.logger.WithError(err).WithFields(logrus.Fields{
-						"id":   message.GetID(),
-						"data": string(message.Data()),
+						"id":   processedMessage.GetID(),
+						"data": string(processedMessage.Data()),
 					}).Error("error writing data")
 				}
 			case entities.Delete:
-				if err := p.sinks.Delete(ctx, message); err != nil {
+				if err := p.sinks.Delete(ctx, processedMessage); err != nil {
 					// TODO: manage failure in writing message. DLQ?
 					p.logger.WithError(err).WithFields(logrus.Fields{
-						"id":   message.GetID(),
-						"data": string(message.Data()),
+						"id":   processedMessage.GetID(),
+						"data": string(processedMessage.Data()),
 					}).Error("error deleting data")
 				}
 			}

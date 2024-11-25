@@ -33,7 +33,7 @@ func TestEvent(t *testing.T) {
 	require.Implements(t, (*PipelineEvent)(nil), e)
 	require.Equal(t, "test", e.GetID())
 	require.Equal(t, []byte(`{"test": "test"}`), e.Data())
-	require.Equal(t, Write, e.Type())
+	require.Equal(t, Write, e.Operation())
 	expectedParsedData := map[string]any{"test": "test"}
 	parsed, err := e.JSON()
 	require.Equal(t, expectedParsedData, parsed)

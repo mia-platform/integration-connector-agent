@@ -27,7 +27,8 @@ const (
 	issueLinkCreated = "issuelink_created"
 	issueLinkDeleted = "issuelink_deleted"
 
-	issueEventIDPath = "issue.id"
+	issueEventIDPath     = "issue.id"
+	issuelinkEventIDPath = "issueLink.id"
 )
 
 var DefaultSupportedEvents = webhook.Events{
@@ -46,11 +47,11 @@ var DefaultSupportedEvents = webhook.Events{
 		},
 		issueLinkCreated: {
 			Operation: entities.Write,
-			FieldID:   issueEventIDPath,
+			FieldID:   issuelinkEventIDPath,
 		},
 		issueLinkDeleted: {
 			Operation: entities.Delete,
-			FieldID:   issueEventIDPath,
+			FieldID:   issuelinkEventIDPath,
 		},
 	},
 	EventTypeFieldPath: webhookEventPath,

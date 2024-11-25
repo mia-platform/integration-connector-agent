@@ -18,19 +18,21 @@ package processors
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
 
 	"github.com/stretchr/testify/require"
 )
 
 type mockProcessor struct {
-	processFunc func(data []byte) ([]byte, error)
+	processFunc func(data entities.PipelineEvent) (entities.PipelineEvent, error)
 }
 
-func (m *mockProcessor) Process(data []byte) ([]byte, error) {
+func (m *mockProcessor) Process(data entities.PipelineEvent) (entities.PipelineEvent, error) {
 	return m.processFunc(data)
 }
 
@@ -45,8 +47,9 @@ func TestProcessors_Process(t *testing.T) {
 		"successful processing": {
 			processors: []Processor{
 				&mockProcessor{
-					processFunc: func(data []byte) ([]byte, error) {
-						return append(data, []byte(" processed")...), nil
+					processFunc: func(event entities.PipelineEvent) (entities.PipelineEvent, error) {
+						event.WithData(append(event.Data(), []byte(" processed")...))
+						return event, nil
 					},
 				},
 			},
@@ -56,13 +59,29 @@ func TestProcessors_Process(t *testing.T) {
 		"processor error": {
 			processors: []Processor{
 				&mockProcessor{
-					processFunc: func(_ []byte) ([]byte, error) {
+					processFunc: func(_ entities.PipelineEvent) (entities.PipelineEvent, error) {
 						return nil, errors.New("processing error")
 					},
 				},
 			},
 			input:       &entities.Event{OriginalRaw: []byte("test")},
 			expectedErr: "processing error",
+		},
+		"successful filter": {
+			processors: []Processor{
+				&mockProcessor{
+					processFunc: func(event entities.PipelineEvent) (entities.PipelineEvent, error) {
+						return event, fmt.Errorf("%w: event filtered", filter.ErrEventToFilter)
+					},
+				},
+				&mockProcessor{
+					processFunc: func(_ entities.PipelineEvent) (entities.PipelineEvent, error) {
+						panic("the event should be filtered")
+					},
+				},
+			},
+			input:       &entities.Event{OriginalRaw: []byte("test")},
+			expectedErr: fmt.Sprintf("%s: event filtered", filter.ErrEventToFilter),
 		},
 	}
 
@@ -103,6 +122,17 @@ func TestNew(t *testing.T) {
 				{Type: Mapper, Raw: []byte(`{"type":"mapper","outputEvent":invalid-json}`)},
 			},
 			expectedErr: "invalid character 'i' looking for beginning of value",
+		},
+		"filter processor": {
+			cfg: config.Processors{
+				{Type: Filter, Raw: []byte(`{"type":"filter","celExpression":"eventType == 'my-event-type'"}`)},
+			},
+		},
+		"filter processor - wrong config": {
+			cfg: config.Processors{
+				{Type: Filter, Raw: []byte(`{"type":"filter","celExpression":"foo"}`)},
+			},
+			expectedErr: "ERROR: <input>:1:1: undeclared reference to 'foo' (in container '')\n | foo\n | ^",
 		},
 	}
 

@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )
@@ -124,17 +125,21 @@ func TestMapper(t *testing.T) {
 			}
 			require.NoError(t, err)
 
-			actual, err := mapper.Process([]byte(tc.dataToTransform))
+			event := entities.PipelineEvent(&entities.Event{
+				OriginalRaw: []byte(tc.dataToTransform),
+			})
+
+			event, err = mapper.Process(event)
 			if tc.expectTransformError != "" {
 				require.EqualError(t, err, tc.expectTransformError)
-				require.Nil(t, actual)
+				require.Nil(t, event)
 				return
 			}
 			require.NoError(t, err)
 
 			out, err := json.Marshal(tc.expectedTransformedData)
 			require.NoError(t, err)
-			require.JSONEq(t, string(out), string(actual))
+			require.JSONEq(t, string(out), string(event.Data()))
 		})
 	}
 }

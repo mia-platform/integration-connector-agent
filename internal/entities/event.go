@@ -26,8 +26,10 @@ const (
 
 type PipelineEvent interface {
 	GetID() string
+	GetType() string
+
 	Data() []byte
-	Type() Operation
+	Operation() Operation
 	WithData([]byte)
 	JSON() (map[string]any, error)
 	Clone() PipelineEvent
@@ -35,9 +37,11 @@ type PipelineEvent interface {
 
 type Event struct {
 	ID            string
+	Type          string
 	OperationType Operation
 
 	OriginalRaw []byte
+	jsonData    map[string]any
 }
 
 func (e Event) GetID() string {
@@ -48,11 +52,14 @@ func (e Event) Data() []byte {
 	return e.OriginalRaw
 }
 
-func (e Event) Type() Operation {
+func (e Event) Operation() Operation {
 	return e.OperationType
 }
 
 func (e Event) JSON() (map[string]any, error) {
+	if e.jsonData != nil {
+		return e.jsonData, nil
+	}
 	parsed := map[string]any{}
 
 	if err := json.Unmarshal(e.OriginalRaw, &parsed); err != nil {
@@ -70,5 +77,12 @@ func (e *Event) Clone() PipelineEvent {
 		ID:            e.ID,
 		OperationType: e.OperationType,
 		OriginalRaw:   e.OriginalRaw,
+		Type:          e.Type,
+
+		jsonData: e.jsonData,
 	}
+}
+
+func (e Event) GetType() string {
+	return e.Type
 }

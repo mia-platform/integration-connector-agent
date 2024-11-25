@@ -11,7 +11,22 @@
       },
       "pipelines": [
         {
+          "sinks": [
+            {
+              "type": "mongo",
+              "url": {
+                "fromEnv": "INTEGRATION_TEST_MONGO_URL"
+              },
+              "collection": "jira"
+            }
+          ]
+        },
+        {
           "processors": [
+            {
+              "type": "filter",
+              "celExpression": "eventType.startsWith('jira:issue_')"
+            },
             {
               "type": "mapper",
               "outputEvent": {
@@ -28,7 +43,7 @@
               "url": {
                 "fromEnv": "INTEGRATION_TEST_MONGO_URL"
               },
-              "collection": "jira"
+              "collection": "jira-issues"
             }
           ]
         }

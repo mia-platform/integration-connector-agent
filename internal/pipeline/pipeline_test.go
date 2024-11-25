@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	fakesink "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
@@ -194,6 +195,44 @@ func TestPipeline(t *testing.T) {
 			return true
 		}, 1*time.Second, 10*time.Millisecond)
 		require.Equal(t, "error deleting data", hook.LastEntry().Message)
+	})
+
+	t.Run("filter event when filter returns false", func(t *testing.T) {
+		log, hook := test.NewNullLogger()
+		w := fakesink.New(model)
+		proc, err := processors.New(config.Processors{
+			{
+				Type: processors.Filter,
+				Raw:  []byte(`{"type":"filter","celExpression":"false"}`),
+			},
+		})
+		require.NoError(t, err)
+
+		p, err := New(log, proc, w)
+		require.NoError(t, err)
+		runPipeline(t, p)
+
+		p.AddMessage(&entities.Event{
+			ID:            "fake event",
+			Type:          "event-type",
+			OperationType: entities.Write,
+
+			OriginalRaw: []byte(`{"type":"event-type"}`),
+		})
+
+		require.Eventually(t, func() bool {
+			require.Equal(t, 0, len(w.Calls()))
+			return true
+		}, 1*time.Second, 100*time.Millisecond)
+
+		logErrorProcessingDataMessageCount := 0
+		for _, entry := range hook.AllEntries() {
+			if entry.Message == "error processing data" {
+				logErrorProcessingDataMessageCount++
+			}
+		}
+
+		require.Equal(t, 0, logErrorProcessingDataMessageCount)
 	})
 }
 

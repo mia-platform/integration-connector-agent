@@ -63,6 +63,7 @@ func (e *Events) getPipelineEvent(logger *logrus.Entry, rawData []byte) (entitie
 	return &entities.Event{
 		ID:            id,
 		OperationType: event.Operation,
+		Type:          webhookEvent,
 
 		OriginalRaw: rawData,
 	}, nil
