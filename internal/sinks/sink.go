@@ -35,7 +35,7 @@ type DataWithIdentifier interface {
 // to know how to write and delete a Data.
 type Sink[Data DataWithIdentifier] interface {
 	// WriteData will save the Data to the destination configured in the Writer.
-	// Data will have the operation to perform (insert, update, delete) and the data to save,
+	// Data will have the operation to perform (write, delete) and the data to save,
 	// which can be used based on the sink type.
 	WriteData(ctx context.Context, data Data) error
 }
