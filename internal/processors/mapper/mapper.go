@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/tidwall/gjson"
 )
 
@@ -26,17 +27,18 @@ type Mapper struct {
 	operations []operation
 }
 
-func (m Mapper) Process(input []byte) ([]byte, error) {
+func (m Mapper) Process(event entities.PipelineEvent) (entities.PipelineEvent, error) {
 	output := []byte("{}")
 	var err error
 	for _, operation := range m.operations {
-		output, err = operation.apply(input, output)
+		output, err = operation.apply(event.Data(), output)
 		if err != nil {
 			return nil, err
 		}
 	}
+	event.WithData(output)
 
-	return output, nil
+	return event, nil
 }
 
 func New(cfg Config) (*Mapper, error) {

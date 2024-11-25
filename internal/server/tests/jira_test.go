@@ -32,20 +32,21 @@ import (
 )
 
 func TestJiraIntegration(t *testing.T) {
-	collName := "jira"
 	app, mongoURL, db := setupApp(t, setupServerConfig{
 		configPath: "testdata/jira/config.json",
 	})
 	defer app.Shutdown()
 
 	t.Run("save data on mongo", func(t *testing.T) {
-		coll := testutils.MongoCollection(t, mongoURL, collName, db)
+		collJiraIssues := testutils.MongoCollection(t, mongoURL, "jira-issues", db)
+		collJira := testutils.MongoCollection(t, mongoURL, "jira", db)
 
 		events := []struct {
 			name    string
 			reqBody map[string]any
 
-			expectedResults []map[string]any
+			expectedIssuesResults   []map[string]any
+			expectedCollJiraResults []map[string]any
 		}{
 			{
 				name: "create issue 1",
@@ -67,13 +68,33 @@ func TestJiraIntegration(t *testing.T) {
 					},
 				},
 
-				expectedResults: []map[string]any{
+				expectedIssuesResults: []map[string]any{
 					{
 						"_eventId":    "12345",
 						"key":         "TEST-123",
 						"createdAt":   "2024-11-06T00:00:00.000Z",
 						"description": "This is a test issue description",
 						"summary":     "Test issue",
+					},
+				},
+				expectedCollJiraResults: []map[string]any{
+					{
+						"_eventId":     "12345",
+						"webhookEvent": "jira:issue_created",
+						"id":           float64(123),
+						"timestamp":    float64(time.Now().UnixMilli()),
+						"issue": map[string]any{
+							"id":  "12345",
+							"key": "TEST-123",
+							"fields": map[string]any{
+								"summary":     "Test issue",
+								"created":     "2024-11-06T00:00:00.000Z",
+								"description": "This is a test issue description",
+							},
+						},
+						"user": map[string]any{
+							"name": "testuser-name",
+						},
 					},
 				},
 			},
@@ -97,13 +118,33 @@ func TestJiraIntegration(t *testing.T) {
 					},
 				},
 
-				expectedResults: []map[string]any{
+				expectedIssuesResults: []map[string]any{
 					{
 						"_eventId":    "12345",
 						"key":         "TEST-123",
 						"createdAt":   "2024-11-06T00:00:00.000Z",
 						"description": "This is a test issue description modified",
 						"summary":     "Test modified issue",
+					},
+				},
+				expectedCollJiraResults: []map[string]any{
+					{
+						"_eventId":     "12345",
+						"webhookEvent": "jira:issue_updated",
+						"id":           float64(124),
+						"timestamp":    float64(time.Now().UnixMilli()),
+						"issue": map[string]any{
+							"id":  "12345",
+							"key": "TEST-123",
+							"fields": map[string]any{
+								"summary":     "Test modified issue",
+								"created":     "2024-11-06T00:00:00.000Z",
+								"description": "This is a test issue description modified",
+							},
+						},
+						"user": map[string]any{
+							"name": "testuser-name",
+						},
 					},
 				},
 			},
@@ -127,7 +168,7 @@ func TestJiraIntegration(t *testing.T) {
 					},
 				},
 
-				expectedResults: []map[string]any{
+				expectedIssuesResults: []map[string]any{
 					{
 						"_eventId":    "12345",
 						"key":         "TEST-123",
@@ -141,6 +182,44 @@ func TestJiraIntegration(t *testing.T) {
 						"createdAt":   "2024-11-10T00:00:00.000Z",
 						"description": "This is the second issue",
 						"summary":     "Test second issue",
+					},
+				},
+				expectedCollJiraResults: []map[string]any{
+					{
+						"_eventId":     "12345",
+						"webhookEvent": "jira:issue_updated",
+						"id":           float64(124),
+						"timestamp":    float64(time.Now().UnixMilli()),
+						"issue": map[string]any{
+							"id":  "12345",
+							"key": "TEST-123",
+							"fields": map[string]any{
+								"summary":     "Test modified issue",
+								"created":     "2024-11-06T00:00:00.000Z",
+								"description": "This is a test issue description modified",
+							},
+						},
+						"user": map[string]any{
+							"name": "testuser-name",
+						},
+					},
+					{
+						"_eventId":     "12346",
+						"webhookEvent": "jira:issue_created",
+						"id":           float64(125),
+						"timestamp":    float64(time.Now().UnixMilli()),
+						"issue": map[string]any{
+							"id":  "12346",
+							"key": "TEST-456",
+							"fields": map[string]any{
+								"summary":     "Test second issue",
+								"created":     "2024-11-10T00:00:00.000Z",
+								"description": "This is the second issue",
+							},
+						},
+						"user": map[string]any{
+							"name": "testuser-name",
+						},
 					},
 				},
 			},
@@ -159,13 +238,101 @@ func TestJiraIntegration(t *testing.T) {
 					},
 				},
 
-				expectedResults: []map[string]any{
+				expectedIssuesResults: []map[string]any{
 					{
 						"_eventId":    "12345",
 						"key":         "TEST-123",
 						"createdAt":   "2024-11-06T00:00:00.000Z",
 						"description": "This is a test issue description modified",
 						"summary":     "Test modified issue",
+					},
+				},
+				expectedCollJiraResults: []map[string]any{
+					{
+						"_eventId":     "12345",
+						"webhookEvent": "jira:issue_updated",
+						"id":           float64(124),
+						"timestamp":    float64(time.Now().UnixMilli()),
+						"issue": map[string]any{
+							"id":  "12345",
+							"key": "TEST-123",
+							"fields": map[string]any{
+								"summary":     "Test modified issue",
+								"created":     "2024-11-06T00:00:00.000Z",
+								"description": "This is a test issue description modified",
+							},
+						},
+						"user": map[string]any{
+							"name": "testuser-name",
+						},
+					},
+				},
+			},
+			{
+				name: "another event type is saved only on jira collection",
+				reqBody: map[string]any{
+					"webhookEvent": "issuelink_created",
+					"issueLink": map[string]any{
+						"id":                 876,
+						"sourceIssueId":      222,
+						"destinationIssueId": 333,
+						"issueLinkType": map[string]any{
+							"id":                111,
+							"name":              "Link name",
+							"outwardName":       "executes Test",
+							"inwardName":        "is executed by",
+							"isSubTaskLinkType": false,
+							"isSystemLinkType":  false,
+						},
+						"systemLink": false,
+					},
+				},
+
+				expectedIssuesResults: []map[string]any{
+					{
+						"_eventId":    "12345",
+						"key":         "TEST-123",
+						"createdAt":   "2024-11-06T00:00:00.000Z",
+						"description": "This is a test issue description modified",
+						"summary":     "Test modified issue",
+					},
+				},
+				expectedCollJiraResults: []map[string]any{
+					{
+						"_eventId":     "12345",
+						"webhookEvent": "jira:issue_updated",
+						"id":           float64(124),
+						"timestamp":    float64(time.Now().UnixMilli()),
+						"issue": map[string]any{
+							"id":  "12345",
+							"key": "TEST-123",
+							"fields": map[string]any{
+								"summary":     "Test modified issue",
+								"created":     "2024-11-06T00:00:00.000Z",
+								"description": "This is a test issue description modified",
+							},
+						},
+						"user": map[string]any{
+							"name": "testuser-name",
+						},
+					},
+					{
+						"_eventId":     "876",
+						"webhookEvent": "issuelink_created",
+						"issueLink": map[string]any{
+							"id":                 float64(876),
+							"sourceIssueId":      float64(222),
+							"destinationIssueId": float64(333),
+							"issueLinkType": map[string]any{
+								"id":                float64(111),
+								"name":              "Link name",
+								"outwardName":       "executes Test",
+								"inwardName":        "is executed by",
+								"isSubTaskLinkType": false,
+								"isSystemLinkType":  false,
+							},
+							"systemLink": false,
+						},
 					},
 				},
 			},
@@ -183,7 +350,8 @@ func TestJiraIntegration(t *testing.T) {
 
 			require.Equal(t, http.StatusOK, resp.StatusCode)
 
-			findAllDocuments(t, coll, tc.expectedResults)
+			findAllDocuments(t, collJiraIssues, tc.expectedIssuesResults)
+			findAllDocuments(t, collJira, tc.expectedCollJiraResults)
 		}
 	})
 }

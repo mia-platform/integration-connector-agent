@@ -17,23 +17,25 @@ package processors
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/mapper"
 )
 
 type Processor interface {
-	Process(data []byte) ([]byte, error)
+	Process(data entities.PipelineEvent) (entities.PipelineEvent, error)
 }
 
 var (
-	ErrProcessorNotSupported = errors.New("processor not supported")
+	ErrProcessorNotSupported = fmt.Errorf("processor not supported")
 )
 
 const (
 	Mapper = "mapper"
+	Filter = "filter"
 )
 
 type Processors struct {
@@ -41,16 +43,14 @@ type Processors struct {
 }
 
 func (p *Processors) Process(_ context.Context, message entities.PipelineEvent) (entities.PipelineEvent, error) {
-	processedData := message.Data()
 	for _, processor := range p.processors {
 		var err error
-		processedData, err = processor.Process(processedData)
+		message, err = processor.Process(message)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	message.WithData(processedData)
 	return message, nil
 }
 
@@ -69,6 +69,16 @@ func New(cfg config.Processors) (*Processors, error) {
 				return nil, err
 			}
 			p.processors = append(p.processors, m)
+		case Filter:
+			config, err := config.GetConfig[filter.Config](processor)
+			if err != nil {
+				return nil, err
+			}
+			f, err := filter.New(config)
+			if err != nil {
+				return nil, err
+			}
+			p.processors = append(p.processors, f)
 		default:
 			return nil, ErrProcessorNotSupported
 		}

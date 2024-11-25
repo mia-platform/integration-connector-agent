@@ -35,6 +35,7 @@ func TestEvent(t *testing.T) {
 
 		expectError           string
 		expectedID            string
+		expectedType          string
 		expectedOperationType entities.Operation
 	}{
 		"without id": {
@@ -62,6 +63,7 @@ func TestEvent(t *testing.T) {
 				EventTypeFieldPath: "webhookEvent",
 			},
 			expectedID:            "my-id",
+			expectedType:          "my-event",
 			expectedOperationType: entities.Write,
 		},
 		"supported delete event": {
@@ -76,6 +78,7 @@ func TestEvent(t *testing.T) {
 				EventTypeFieldPath: "webhookEvent",
 			},
 			expectedOperationType: entities.Delete,
+			expectedType:          "my-event",
 			expectedID:            "my-id",
 		},
 		"unsupported_event": {
@@ -84,7 +87,8 @@ func TestEvent(t *testing.T) {
 				EventTypeFieldPath: "webhookEvent",
 			},
 
-			expectError: fmt.Sprintf("%s: %s", ErrUnsupportedWebhookEvent, "unsupported"),
+			expectError:  fmt.Sprintf("%s: %s", ErrUnsupportedWebhookEvent, "unsupported"),
+			expectedType: "unsupported",
 		},
 	}
 
@@ -100,6 +104,7 @@ func TestEvent(t *testing.T) {
 				require.Equal(t, &entities.Event{
 					ID:            tc.expectedID,
 					OperationType: tc.expectedOperationType,
+					Type:          tc.expectedType,
 
 					OriginalRaw: []byte(tc.rawData),
 				}, event)

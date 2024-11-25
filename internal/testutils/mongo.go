@@ -70,8 +70,14 @@ func MongoCollection(t *testing.T, mongoURL, collection, db string) *mongo.Colle
 func RemoveMongoID(docs []map[string]any) []map[string]any {
 	results := []map[string]any{}
 	for _, doc := range docs {
-		delete(doc, "_id")
-		results = append(results, doc)
+		newDoc := make(map[string]any)
+		for k, v := range doc {
+			if k == "_id" {
+				continue
+			}
+			newDoc[k] = v
+		}
+		results = append(results, newDoc)
 	}
 	return results
 }

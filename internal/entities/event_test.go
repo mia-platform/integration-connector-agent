@@ -33,16 +33,18 @@ func TestEvent(t *testing.T) {
 	require.Implements(t, (*PipelineEvent)(nil), e)
 	require.Equal(t, "test", e.GetID())
 	require.Equal(t, []byte(`{"test": "test"}`), e.Data())
-	require.Equal(t, Write, e.Type())
-	expectedParsedData := map[string]any{"test": "test"}
-	parsed, err := e.JSON()
-	require.Equal(t, expectedParsedData, parsed)
-	require.NoError(t, err)
+	require.Equal(t, Write, e.Operation())
 	e.WithData([]byte(`{"test": "test2"}`))
 	require.Equal(t, []byte(`{"test": "test2"}`), e.Data())
+	parsed, err := e.JSON()
+	require.Equal(t, map[string]any{"test": "test2"}, parsed)
+	require.NoError(t, err)
 	require.Equal(t, &Event{
 		ID:            "test",
 		OperationType: Write,
 		OriginalRaw:   []byte(`{"test": "test"}`),
 	}, eventCloned)
+	cloneParsed, err := e.JSON()
+	require.Equal(t, map[string]any{"test": "test2"}, cloneParsed)
+	require.NoError(t, err)
 }
