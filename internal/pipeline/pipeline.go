@@ -72,6 +72,7 @@ loop:
 			if err != nil {
 				if errors.Is(err, filter.ErrEventToFilter) {
 					// the message has been filtered out
+					p.logger.WithError(err).WithField("message", message.Data()).Trace("event filtered for pipeline")
 					continue
 				}
 				p.logger.WithError(err).WithField("message", message.Data()).Error("error processing data")
