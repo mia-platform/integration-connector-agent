@@ -95,6 +95,9 @@
                           },
                           "collection": {
                             "type": "string"
+                          },
+                          "insertOnly": {
+                            "type": "boolean"
                           }
                         },
                         "required": [

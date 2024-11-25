@@ -40,9 +40,10 @@ type validateFunc func(context.Context, *mongo.Client) error
 type Writer[T entities.PipelineEvent] struct {
 	client *mongo.Client
 
-	database   string
-	collection string
-	idField    string
+	database      string
+	collection    string
+	upsertIDField string
+	insertOnly    bool
 }
 
 // NewMongoDBWriter will construct a new MongoDB writer and validate the connection parameters via a ping request.
@@ -70,15 +71,60 @@ func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Con
 	}
 
 	return &Writer[T]{
-		client:     client,
-		database:   db,
-		collection: collection,
-		idField:    "_eventId",
+		client:        client,
+		database:      db,
+		collection:    collection,
+		upsertIDField: "_eventId",
+		insertOnly:    config.InsertOnly,
 	}, nil
 }
 
+func (w *Writer[T]) WriteData(ctx context.Context, data T) error {
+	if w.insertOnly {
+		return w.Insert(ctx, data)
+	}
+
+	switch data.Operation() {
+	case entities.Write:
+		if err := w.Upsert(ctx, data); err != nil {
+			return err
+		}
+	case entities.Delete:
+		if err := w.Delete(ctx, data); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (w *Writer[T]) Insert(ctx context.Context, data T) error {
+	ctxWithCancel, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	opts := options.InsertOne()
+	dataToUpsert, err := data.JSON()
+	if err != nil {
+		return err
+	}
+
+	dataToSave, err := bson.Marshal(dataToUpsert)
+	if err != nil {
+		return err
+	}
+
+	_, err = w.client.Database(w.database).
+		Collection(w.collection).
+		InsertOne(ctxWithCancel, dataToSave, opts)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Write implement the Writer interface. The MongoDBWriter will do an upsert of data using its id as primary key
-func (w *Writer[T]) Write(ctx context.Context, data T) error {
+func (w *Writer[T]) Upsert(ctx context.Context, data T) error {
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -90,14 +136,21 @@ func (w *Writer[T]) Write(ctx context.Context, data T) error {
 		return err
 	}
 
-	dataToUpsert, err := w.bsonData(data)
+	parsedData, err := data.JSON()
+	if err != nil {
+		return err
+	}
+
+	parsedData[w.upsertIDField] = data.GetID()
+
+	dataToSave, err := bson.Marshal(parsedData)
 	if err != nil {
 		return err
 	}
 
 	result, err := w.client.Database(w.database).
 		Collection(w.collection).
-		ReplaceOne(ctxWithCancel, queryFilter, dataToUpsert, opts)
+		ReplaceOne(ctxWithCancel, queryFilter, dataToSave, opts)
 	if err != nil {
 		return err
 	}
@@ -156,20 +209,5 @@ func (w Writer[T]) idFilter(event T) (bson.D, error) {
 	if id == "" {
 		return bson.D{}, fmt.Errorf("id is empty")
 	}
-	return bson.D{{Key: w.idField, Value: id}}, nil
-}
-
-func (w Writer[T]) bsonData(event T) ([]byte, error) {
-	data, err := event.JSON()
-	if err != nil {
-		return nil, err
-	}
-
-	data[w.idField] = event.GetID()
-
-	bsonData, err := bson.Marshal(data)
-	if err != nil {
-		return nil, err
-	}
-	return bsonData, nil
+	return bson.D{{Key: w.upsertIDField, Value: id}}, nil
 }

@@ -95,29 +95,13 @@ func (f *Writer) AddMock(mock Mock) {
 	f.mocks = append(f.mocks, mock)
 }
 
-func (f *Writer) Write(_ context.Context, data entities.PipelineEvent) error {
+func (f *Writer) WriteData(_ context.Context, data entities.PipelineEvent) error {
 	f.mtx.Lock()
 	defer f.mtx.Unlock()
 
 	f.stub = append(f.stub, Call{
 		Data:      data,
-		Operation: entities.Write,
-	})
-
-	if len(f.mocks) > 0 {
-		mock := f.mocks.ReadAndPop()
-		return mock.Error
-	}
-	return nil
-}
-
-func (f *Writer) Delete(_ context.Context, data entities.PipelineEvent) error {
-	f.mtx.Lock()
-	defer f.mtx.Unlock()
-
-	f.stub = append(f.stub, Call{
-		Data:      data,
-		Operation: entities.Delete,
+		Operation: data.Operation(),
 	})
 
 	if len(f.mocks) > 0 {

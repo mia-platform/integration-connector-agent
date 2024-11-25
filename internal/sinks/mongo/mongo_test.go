@@ -162,7 +162,7 @@ func TestUpsert(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
 			defer cancel()
 
-			err := writer.Write(ctx, test.data)
+			err := writer.Upsert(ctx, test.data)
 			if test.expectedErr != "" {
 				require.EqualError(t, err, test.expectedErr)
 				return
@@ -215,6 +215,57 @@ func TestDelete(t *testing.T) {
 			defer cancel()
 
 			err := writer.Delete(ctx, test.data)
+			if test.expectedErr != "" {
+				require.EqualError(t, err, test.expectedErr)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestInsert(t *testing.T) {
+	t.Parallel()
+	tests := map[string]struct {
+		data        entities.PipelineEvent
+		responses   primitive.D
+		expectedErr string
+	}{
+		"insert element": {
+			data:      getEvent(t),
+			responses: mtest.CreateSuccessResponse(),
+		},
+		"error if data is not a JSON": {
+			data: &entities.Event{
+				ID:          "12345",
+				OriginalRaw: []byte(`{`),
+			},
+			responses:   mtest.CreateSuccessResponse(bson.E{}),
+			expectedErr: "unexpected end of JSON input",
+		},
+		"mongo returns error": {
+			data:        getEvent(t),
+			responses:   mtest.CreateCommandErrorResponse(mtest.CommandError{Message: "some error"}),
+			expectedErr: "some error",
+		},
+	}
+
+	for testName, test := range tests {
+		mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+
+		mt.Run(testName, func(mt *mtest.T) {
+			writer := &Writer[entities.PipelineEvent]{
+				client:     mt.Client,
+				collection: mt.Coll.Name(),
+				database:   mt.DB.Name(),
+			}
+
+			mt.AddMockResponses(test.responses)
+
+			ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+			defer cancel()
+
+			err := writer.Insert(ctx, test.data)
 			if test.expectedErr != "" {
 				require.EqualError(t, err, test.expectedErr)
 				return

@@ -79,23 +79,13 @@ loop:
 				continue
 			}
 
-			switch processedMessage.Operation() {
-			case entities.Write:
-				if err := p.sinks.Write(ctx, processedMessage); err != nil {
-					// TODO: manage failure in writing message. DLQ?
-					p.logger.WithError(err).WithFields(logrus.Fields{
-						"id":   processedMessage.GetID(),
-						"data": string(processedMessage.Data()),
-					}).Error("error writing data")
-				}
-			case entities.Delete:
-				if err := p.sinks.Delete(ctx, processedMessage); err != nil {
-					// TODO: manage failure in writing message. DLQ?
-					p.logger.WithError(err).WithFields(logrus.Fields{
-						"id":   processedMessage.GetID(),
-						"data": string(processedMessage.Data()),
-					}).Error("error deleting data")
-				}
+			if err := p.sinks.WriteData(ctx, processedMessage); err != nil {
+				// TODO: manage failure in writing message. DLQ?
+				p.logger.WithError(err).WithFields(logrus.Fields{
+					"id":               processedMessage.GetID(),
+					"data":             string(processedMessage.Data()),
+					"messageOperation": processedMessage.Operation(),
+				}).Error("error writing data")
 			}
 
 		case <-ctx.Done():

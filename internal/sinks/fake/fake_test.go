@@ -37,9 +37,10 @@ func TestImplementWriter(t *testing.T) {
 		f := New(config)
 
 		event := &entities.Event{
-			ID: "id",
+			ID:            "id",
+			OperationType: entities.Write,
 		}
-		err := f.Write(context.Background(), event)
+		err := f.WriteData(context.Background(), event)
 		require.NoError(t, err)
 
 		require.Len(t, f.Calls(), 1)
@@ -53,9 +54,10 @@ func TestImplementWriter(t *testing.T) {
 		f := New(config)
 
 		event := &entities.Event{
-			ID: "id",
+			ID:            "id",
+			OperationType: entities.Delete,
 		}
-		err := f.Delete(context.Background(), event)
+		err := f.WriteData(context.Background(), event)
 		require.NoError(t, err)
 
 		require.Len(t, f.Calls(), 1)
@@ -69,12 +71,13 @@ func TestImplementWriter(t *testing.T) {
 		f := New(config)
 
 		event := &entities.Event{
-			ID: "id",
+			ID:            "id",
+			OperationType: entities.Write,
 		}
 		f.AddMock(Mock{
 			Error: errors.New("mock error"),
 		})
-		err := f.Write(context.Background(), event)
+		err := f.WriteData(context.Background(), event)
 		require.EqualError(t, err, "mock error")
 
 		require.Len(t, f.Calls(), 1)
@@ -88,12 +91,13 @@ func TestImplementWriter(t *testing.T) {
 		f := New(config)
 
 		event := &entities.Event{
-			ID: "id",
+			ID:            "id",
+			OperationType: entities.Delete,
 		}
 		f.AddMock(Mock{
 			Error: errors.New("mock error"),
 		})
-		err := f.Delete(context.Background(), event)
+		err := f.WriteData(context.Background(), event)
 		require.EqualError(t, err, "mock error")
 
 		require.Len(t, f.Calls(), 1)
