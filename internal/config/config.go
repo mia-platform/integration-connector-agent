@@ -38,10 +38,14 @@ type Processors []GenericConfig
 type Sinks []GenericConfig
 type Source GenericConfig
 
+type Pipeline struct {
+	Processors Processors `json:"processors"`
+	Sinks      Sinks      `json:"sinks"`
+}
+
 type Integration struct {
-	Source     GenericConfig `json:"source"`
-	Processors Processors    `json:"processors"`
-	Sinks      Sinks         `json:"sinks"`
+	Source    GenericConfig `json:"source"`
+	Pipelines []Pipeline    `json:"pipelines"`
 }
 
 type Configuration struct {

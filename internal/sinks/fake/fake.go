@@ -20,7 +20,6 @@ import (
 	"sync"
 
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 )
 
 type Config struct {
@@ -32,7 +31,7 @@ func (c *Config) Validate() error {
 }
 
 type Call struct {
-	Data      sinks.DataWithIdentifier
+	Data      entities.PipelineEvent
 	Operation entities.Operation
 }
 

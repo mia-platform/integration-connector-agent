@@ -44,9 +44,8 @@ func TestSetupServiceWithConfig(t *testing.T) {
 	defaultWebhookEndpoint := "/webhook-path"
 
 	type testItem struct {
-		config   *Configuration
-		req      func(t *testing.T) *http.Request
-		pipeline pipeline.IPipeline
+		config *Configuration
+		req    func(t *testing.T) *http.Request
 
 		expectedStatusCode int
 		expectedBody       func(t *testing.T, body io.ReadCloser)
@@ -124,15 +123,14 @@ func TestSetupServiceWithConfig(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			app, router := getRouter(t)
 
-			if test.pipeline == nil {
-				proc := &processors.Processors{}
-				s := fakesink.New(nil)
-				var err error
-				test.pipeline, err = pipeline.New(logger, proc, s)
-				require.NoError(t, err)
-			}
+			proc := &processors.Processors{}
+			s := fakesink.New(nil)
+			p1, err := pipeline.New(logger, proc, s)
+			require.NoError(t, err)
 
-			err := SetupService(context.TODO(), logger, router, test.config, test.pipeline)
+			pg := pipeline.NewGroup(logger, p1)
+
+			err = SetupService(context.TODO(), router, test.config, pg)
 			require.NoError(t, err)
 
 			res, err := app.Test(test.req(t))

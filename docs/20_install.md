@@ -42,24 +42,28 @@ The following is an example of a configuration for integrate source `Jira` with 
           }
         },
       },
-      "processors": [
+      "pipelines": [
         {
-          "type": "mapper",
-          "outputEvent": {
-            "key": "{{ issue.key }}",
-            "summary": "{{ issue.fields.summary }}",
-            "createdAt": "{{ issue.fields.created }}",
-            "description": "{{ issue.fields.description }}"
-          }
-        }
-      ],
-      "sinks": [
-        {
-          "type": "mongo",
-          "url": {
-            "fromEnv": "TEST_LOAD_SERVICE_MONGO_URL"
-          },
-          "collection": "my-collection"
+          "processors": [
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "key": "{{ issue.key }}",
+                "summary": "{{ issue.fields.summary }}",
+                "createdAt": "{{ issue.fields.created }}",
+                "description": "{{ issue.fields.description }}"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "mongo",
+              "url": {
+                "fromEnv": "TEST_LOAD_SERVICE_MONGO_URL"
+              },
+              "collection": "my-collection"
+            }
+          ]
         }
       ]
     }

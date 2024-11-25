@@ -35,55 +35,67 @@
               "type"
             ]
           },
-          "processors": {
+          "pipelines": {
             "type": "array",
             "items": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "type": {
-                      "type": "string",
-                      "enum": [
-                        "mapper"
-                      ]
-                    },
-                    "outputEvent": {
-                      "type": "object"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "outputEvent"
-                  ]
+              "type": "object",
+              "properties": {
+                "processors": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "mapper"
+                            ]
+                          },
+                          "outputEvent": {
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "outputEvent"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "sinks": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "mongo"
+                          },
+                          "url": {
+                            "$ref": "#/definitions/secret"
+                          },
+                          "collection": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "url",
+                          "collection"
+                        ]
+                      }
+                    ]
+                  }
                 }
-              ]
-            }
-          },
-          "sinks": {
-            "type": "array",
-            "items": {
-              "oneOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "type": {
-                      "type": "string",
-                      "const": "mongo"
-                    },
-                    "url": {
-                      "$ref": "#/definitions/secret"
-                    },
-                    "collection": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "url",
-                    "collection"
-                  ]
-                }
+              },
+              "required": [
+                "processors",
+                "sinks"
               ]
             },
             "minItems": 1
@@ -91,7 +103,7 @@
         },
         "required": [
           "source",
-          "sinks"
+          "pipelines"
         ],
         "additionalProperties": false
       },

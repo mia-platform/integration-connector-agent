@@ -28,6 +28,8 @@ func TestEvent(t *testing.T) {
 		OriginalRaw:   []byte(`{"test": "test"}`),
 	}
 
+	eventCloned := e.Clone()
+
 	require.Implements(t, (*PipelineEvent)(nil), e)
 	require.Equal(t, "test", e.GetID())
 	require.Equal(t, []byte(`{"test": "test"}`), e.Data())
@@ -38,4 +40,9 @@ func TestEvent(t *testing.T) {
 	require.NoError(t, err)
 	e.WithData([]byte(`{"test": "test2"}`))
 	require.Equal(t, []byte(`{"test": "test2"}`), e.Data())
+	require.Equal(t, &Event{
+		ID:            "test",
+		OperationType: Write,
+		OriginalRaw:   []byte(`{"test": "test"}`),
+	}, eventCloned)
 }

@@ -82,14 +82,18 @@ func TestSetupIntegrations(t *testing.T) {
 						Source: config.GenericConfig{
 							Type: sources.Jira,
 						},
-						Sinks: config.Sinks{
-							getFakeWriter(t),
-							getFakeWriter(t),
+						Pipelines: []config.Pipeline{
+							{
+								Sinks: config.Sinks{
+									getFakeWriter(t),
+									getFakeWriter(t),
+								},
+							},
 						},
 					},
 				},
 			},
-			expectError: "only 1 writer is supported, now there are 2 for integration jira",
+			expectError: "only 1 writer is supported, now there are 2",
 		},
 		"unsupported writer type": {
 			cfg: config.Configuration{
@@ -98,9 +102,11 @@ func TestSetupIntegrations(t *testing.T) {
 						Source: config.GenericConfig{
 							Type: sources.Jira,
 						},
-						Sinks: config.Sinks{
+						Pipelines: []config.Pipeline{
 							{
-								Type: "unsupported",
+								Sinks: config.Sinks{
+									{Type: "unsupported"},
+								},
 							},
 						},
 					},
@@ -115,8 +121,12 @@ func TestSetupIntegrations(t *testing.T) {
 						Source: config.GenericConfig{
 							Type: "test",
 						},
-						Sinks: config.Sinks{
-							getFakeWriter(t),
+						Pipelines: []config.Pipeline{
+							{
+								Sinks: config.Sinks{
+									getFakeWriter(t),
+								},
+							},
 						},
 					},
 				},
@@ -129,8 +139,12 @@ func TestSetupIntegrations(t *testing.T) {
 						Source: config.GenericConfig{
 							Type: "unsupported",
 						},
-						Sinks: config.Sinks{
-							getFakeWriter(t),
+						Pipelines: []config.Pipeline{
+							{
+								Sinks: config.Sinks{
+									getFakeWriter(t),
+								},
+							},
 						},
 					},
 				},

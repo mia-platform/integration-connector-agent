@@ -27,7 +27,6 @@ import (
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
 	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -37,23 +36,15 @@ var (
 
 func SetupService(
 	ctx context.Context,
-	logger *logrus.Logger,
 	router *swagger.Router[fiber.Handler, fiber.Router],
 	config *Configuration,
-	p pipeline.IPipeline,
+	p *pipeline.Group,
 ) error {
 	if err := config.Validate(); err != nil {
 		return err
 	}
 
-	go func(p pipeline.IPipeline) {
-		err := p.Start(ctx)
-		if err != nil {
-			logger.WithError(err).Error("error starting pipeline")
-			// TODO: manage error
-			panic(err)
-		}
-	}(p)
+	p.Start(ctx)
 
 	handler := webhookHandler(config, p)
 	if _, err := router.AddRoute(http.MethodPost, config.WebhookPath, handler, swagger.Definitions{}); err != nil {
@@ -63,7 +54,7 @@ func SetupService(
 	return nil
 }
 
-func webhookHandler(config *Configuration, p pipeline.IPipeline) fiber.Handler {
+func webhookHandler(config *Configuration, p *pipeline.Group) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		log := glogrus.FromContext(c.UserContext())
 

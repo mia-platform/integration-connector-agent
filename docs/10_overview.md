@@ -17,7 +17,14 @@ real-time updates across all configured sinks.
 
 The following image shows the architecture of the Integration Connector Agent.
 
-![architecture](./img/architecture.svg)
+![architecture](./img/architecture.excalidraw.svg)
+
+### Data processing
+
+For each source, it is possible to configure different pipelines, each pipeline can have one or more
+processors and must have one or more sinks.
+
+![data-processing](./img/data-processing.excalidraw.svg)
 
 ### Use Cases
 
@@ -53,28 +60,33 @@ to save data into the collection `jira-issues`.
           }
         }
       },
-      "processors": [
+      "pipelines": [
         {
-          "type": "mapper",
-          "outputEvent": {
-            "key": "{{ issue.key }}",
-            "summary": "{{ issue.fields.summary }}",
-            "createdAt": "{{ issue.fields.created }}",
-            "description": "{{ issue.fields.description }}"
-          }
-        }
-      ],
-      "sinks": [
-        {
-          "type": "mongo",
-          "url": {
-            "fromEnv": "MONGO_URL"
-          },
-          "collection": "jira-issues"
+          "processors": [
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "key": "{{ issue.key }}",
+                "summary": "{{ issue.fields.summary }}",
+                "createdAt": "{{ issue.fields.created }}",
+                "description": "{{ issue.fields.description }}"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "mongo",
+              "url": {
+                "fromEnv": "MONGO_URL"
+              },
+              "collection": "jira-issues"
+            }
+          ]
         }
       ]
     }
   ]
 }
-</details>
 ```
+
+</details>

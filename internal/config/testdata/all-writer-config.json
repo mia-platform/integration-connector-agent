@@ -9,24 +9,28 @@
           }
         }
       },
-      "processors": [
+      "pipelines": [
         {
-          "type": "mapper",
-          "outputEvent": {
-            "key": "{{ issue.key }}",
-            "summary": "{{ issue.fields.summary }}",
-            "createdAt": "{{ issue.fields.created }}",
-            "description": "{{ issue.fields.description }}"
-          }
-        }
-      ],
-      "sinks": [
-        {
-          "type": "mongo",
-          "url": {
-            "fromEnv": "TEST_SECRET_ENV"
-          },
-          "collection": "my-collection"
+          "processors": [
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "key": "{{ issue.key }}",
+                "summary": "{{ issue.fields.summary }}",
+                "createdAt": "{{ issue.fields.created }}",
+                "description": "{{ issue.fields.description }}"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "mongo",
+              "url": {
+                "fromEnv": "TEST_SECRET_ENV"
+              },
+              "collection": "my-collection"
+            }
+          ]
         }
       ]
     }
