@@ -91,7 +91,7 @@ func TestMongoOnlyInsert(t *testing.T) {
 	defer coll.Drop(ctx)
 
 	t.Run("insert new data - 1", func(t *testing.T) {
-		e := getTestEvent(t, "123", map[string]any{"foo": "bar", "key": "123", "type": "created"}, entities.Write)
+		e := getTestEvent(t, "234", map[string]any{"foo": "bar", "key": "234", "type": "created"}, entities.Write)
 		err = w.WriteData(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{
@@ -100,7 +100,7 @@ func TestMongoOnlyInsert(t *testing.T) {
 	})
 
 	t.Run("insert new data with existing id already saved", func(t *testing.T) {
-		e := getTestEvent(t, "123", map[string]any{"foo": "taz", "key": "123", "another": "field", "type": "updated"}, entities.Write)
+		e := getTestEvent(t, "234", map[string]any{"foo": "taz", "key": "234", "another": "field", "type": "updated"}, entities.Write)
 		err = w.WriteData(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{
@@ -110,7 +110,7 @@ func TestMongoOnlyInsert(t *testing.T) {
 	})
 
 	t.Run("insert new deletion data", func(t *testing.T) {
-		e := getTestEvent(t, "123", map[string]any{"foo": "taz", "key": "123", "another": "field", "type": "deleted"}, entities.Delete)
+		e := getTestEvent(t, "234", map[string]any{"foo": "taz", "key": "234", "another": "field", "type": "deleted"}, entities.Delete)
 		err = w.WriteData(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{
