@@ -98,6 +98,10 @@ func (w *Writer[T]) WriteData(ctx context.Context, data T) error {
 	return nil
 }
 
+func (w *Writer[T]) Close(ctx context.Context) error {
+	return w.client.Disconnect(ctx)
+}
+
 func (w *Writer[T]) Insert(ctx context.Context, data T) error {
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	defer cancel()

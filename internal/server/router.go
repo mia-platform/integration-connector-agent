@@ -64,9 +64,11 @@ func NewApp(ctx context.Context, env config.EnvironmentVariables, log *logrus.Lo
 		return nil, err
 	}
 
-	if err := setupPipelines(ctx, log, cfg, oasRouter); err != nil {
+	closeHandler, err := setupPipelines(ctx, log, cfg, oasRouter)
+	if err != nil {
 		return nil, err
 	}
+	app.Hooks().OnShutdown(closeHandler)
 
 	if err := oasRouter.GenerateAndExposeOpenapi(); err != nil {
 		return nil, err

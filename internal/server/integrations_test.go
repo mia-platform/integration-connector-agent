@@ -159,7 +159,7 @@ func TestSetupIntegrations(t *testing.T) {
 			log, _ := test.NewNullLogger()
 			router := getRouter(t)
 
-			err := setupPipelines(ctx, log, &tc.cfg, router)
+			_, err := setupPipelines(ctx, log, &tc.cfg, router)
 			if tc.expectError != "" {
 				require.EqualError(t, err, tc.expectError)
 			} else {

@@ -38,6 +38,7 @@ type Sink[Data DataWithIdentifier] interface {
 	// Data will have the operation to perform (write, delete) and the data to save,
 	// which can be used based on the sink type.
 	WriteData(ctx context.Context, data Data) error
+	Close(ctx context.Context) error
 }
 
 const (

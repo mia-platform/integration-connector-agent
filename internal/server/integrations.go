@@ -36,28 +36,30 @@ import (
 )
 
 // TODO: write an integration test to test this setup
-func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) error {
+func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) (fiber.OnShutdownHandler, error) {
+	totalSinks := []sinks.Sink[entities.PipelineEvent]{}
 	for _, cfgIntegration := range cfg.Integrations {
 		var pipelines []pipeline.IPipeline
 
 		for _, cfgPipeline := range cfgIntegration.Pipelines {
 			sinks, err := setupSinks(ctx, cfgPipeline.Sinks)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if len(sinks) != 1 {
-				return fmt.Errorf("only 1 writer is supported, now there are %d", len(sinks))
+				return nil, fmt.Errorf("only 1 writer is supported, now there are %d", len(sinks))
 			}
 			writer := sinks[0]
+			totalSinks = append(totalSinks, writer)
 
 			proc, err := processors.New(cfgPipeline.Processors)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			pip, err := pipeline.New(log, proc, writer)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			pipelines = append(pipelines, pip)
@@ -70,22 +72,31 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 		case sources.Jira:
 			jiraConfig, err := config.GetConfig[*jira.Config](cfgIntegration.Source)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			if err := webhook.SetupService(ctx, oasRouter, &jiraConfig.Configuration, pg); err != nil {
-				return fmt.Errorf("%w: %s", errSetupSource, err)
+				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
 			}
 
 		case "test":
 			// do nothing only for testing
-			return nil
+			return nil, nil
 		default:
-			return errUnsupportedIntegrationType
+			return nil, errUnsupportedIntegrationType
 		}
 	}
 
-	return nil
+	closeSink := func() error {
+		for _, sink := range totalSinks {
+			if err := sink.Close(ctx); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	return closeSink, nil
 }
 
 func setupSinks(ctx context.Context, writers config.Sinks) ([]sinks.Sink[entities.PipelineEvent], error) {
