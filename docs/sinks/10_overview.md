@@ -10,3 +10,4 @@ The supported sinks are:
 - [**CRUD Service**](30_crudservice.md): Useful to save events using
 - [**MongoDB**](20_mongodb.md): A NoSQL database that stores data in a flexible, JSON-like format.
   [Mia-Platform CRUD Service](https://docs.mia-platform.eu/docs/runtime_suite/crud-service/overview_and_usage) HTTP API.
+- [Apache Kafka](40_kafka.md): A distributed event streaming platform

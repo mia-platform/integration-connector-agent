@@ -46,6 +46,10 @@ func NewWriter[T entities.PipelineEvent](config *Config) (sinks.Sink[T], error) 
 	}, nil
 }
 
+func (w *Writer[T]) Close(_ context.Context) error {
+	return nil
+}
+
 func (w *Writer[T]) WriteData(ctx context.Context, data T) error {
 	if w.insertOnly {
 		return w.client.Insert(ctx, data)
