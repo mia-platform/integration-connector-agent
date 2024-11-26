@@ -18,6 +18,8 @@ package sinks
 import (
 	"context"
 	"errors"
+
+	"github.com/mia-platform/integration-connector-agent/internal/entities"
 )
 
 var (
@@ -26,17 +28,16 @@ var (
 
 type DataWithIdentifier interface {
 	GetID() string
+	Operation() entities.Operation
 }
 
 // Sink interface abstract the implementation of an integration pipeline target. The concrete implementation has
 // to know how to write and delete a Data.
 type Sink[Data DataWithIdentifier] interface {
-	// Write will save the Data to the destination configured in the Writer. Writer implementation can choose to
-	// implement this function as a single write or to update data based on an identifier
-	Write(ctx context.Context, data Data) error
-
-	// Delete will delete the Data from the destination configured in the Writer.
-	Delete(ctx context.Context, data Data) error
+	// WriteData will save the Data to the destination configured in the Writer.
+	// Data will have the operation to perform (write, delete) and the data to save,
+	// which can be used based on the sink type.
+	WriteData(ctx context.Context, data Data) error
 }
 
 const (

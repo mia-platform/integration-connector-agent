@@ -48,8 +48,8 @@ func TestMongo(t *testing.T) {
 	defer coll.Drop(ctx)
 
 	t.Run("create", func(t *testing.T) {
-		e := getTestEvent(t, "123", map[string]any{"foo": "bar", "key": "123"})
-		err = w.Write(ctx, e)
+		e := getTestEvent(t, "123", map[string]any{"foo": "bar", "key": "123"}, entities.Write)
+		err = w.WriteData(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{
 			{"_eventId": "123", "foo": "bar", "key": "123"},
@@ -57,8 +57,8 @@ func TestMongo(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
-		e := getTestEvent(t, "123", map[string]any{"foo": "taz", "key": "123", "another": "field"})
-		err = w.Write(ctx, e)
+		e := getTestEvent(t, "123", map[string]any{"foo": "taz", "key": "123", "another": "field"}, entities.Write)
+		err = w.WriteData(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{
 			{"_eventId": "123", "foo": "taz", "key": "123", "another": "field"},
@@ -66,18 +66,67 @@ func TestMongo(t *testing.T) {
 	})
 
 	t.Run("delete", func(t *testing.T) {
-		e := getTestEvent(t, "123", nil)
-		err = w.Delete(ctx, e)
+		e := getTestEvent(t, "123", nil, entities.Delete)
+		err = w.WriteData(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{})
 	})
 }
 
-func getTestEvent(t *testing.T, id string, data map[string]any) *entities.Event {
+func TestMongoOnlyInsert(t *testing.T) {
+	ctx := context.Background()
+
+	mongoURL, db := testutils.GenerateMongoURL(t)
+	collection := testutils.RandomString(t, 6)
+
+	w, err := NewMongoDBWriter[*entities.Event](ctx, &Config{
+		URL:        config.SecretSource(mongoURL),
+		Database:   db,
+		Collection: collection,
+		InsertOnly: true,
+	})
+	require.NoError(t, err)
+
+	coll := testutils.MongoCollection(t, mongoURL, collection, db)
+	defer coll.Drop(ctx)
+
+	t.Run("insert new data - 1", func(t *testing.T) {
+		e := getTestEvent(t, "234", map[string]any{"foo": "bar", "key": "234", "type": "created"}, entities.Write)
+		err = w.WriteData(ctx, e)
+		require.NoError(t, err)
+		findAllDocuments(t, coll, []map[string]any{
+			{"foo": "bar", "key": "234", "type": "created"},
+		})
+	})
+
+	t.Run("insert new data with existing id already saved", func(t *testing.T) {
+		e := getTestEvent(t, "234", map[string]any{"foo": "taz", "key": "234", "another": "field", "type": "updated"}, entities.Write)
+		err = w.WriteData(ctx, e)
+		require.NoError(t, err)
+		findAllDocuments(t, coll, []map[string]any{
+			{"foo": "bar", "key": "234", "type": "created"},
+			{"foo": "taz", "key": "234", "another": "field", "type": "updated"},
+		})
+	})
+
+	t.Run("insert new deletion data", func(t *testing.T) {
+		e := getTestEvent(t, "234", map[string]any{"foo": "taz", "key": "234", "another": "field", "type": "deleted"}, entities.Delete)
+		err = w.WriteData(ctx, e)
+		require.NoError(t, err)
+		findAllDocuments(t, coll, []map[string]any{
+			{"foo": "bar", "key": "234", "type": "created"},
+			{"foo": "taz", "key": "234", "another": "field", "type": "updated"},
+			{"foo": "taz", "key": "234", "another": "field", "type": "deleted"},
+		})
+	})
+}
+
+func getTestEvent(t *testing.T, id string, data map[string]any, operation entities.Operation) *entities.Event {
 	t.Helper()
 
 	e := &entities.Event{
-		ID: id,
+		ID:            id,
+		OperationType: operation,
 	}
 
 	d, err := json.Marshal(data)

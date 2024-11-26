@@ -25,6 +25,7 @@ import (
 type Config struct {
 	URL        config.SecretSource `json:"url"`
 	Collection string              `json:"collection"`
+	InsertOnly bool                `json:"insertOnly"`
 
 	Database string `json:"-"`
 }

@@ -194,7 +194,7 @@ func TestPipeline(t *testing.T) {
 			}, w.Calls().LastCall())
 			return true
 		}, 1*time.Second, 10*time.Millisecond)
-		require.Equal(t, "error deleting data", hook.LastEntry().Message)
+		require.Equal(t, "error writing data", hook.LastEntry().Message)
 	})
 
 	t.Run("filter event when filter returns false", func(t *testing.T) {
