@@ -21,14 +21,30 @@ import (
 )
 
 const (
-	issueCreated     = "jira:issue_created"
-	issueUpdated     = "jira:issue_updated"
-	issueDeleted     = "jira:issue_deleted"
+	// issue events
+	issueCreated = "jira:issue_created"
+	issueUpdated = "jira:issue_updated"
+	issueDeleted = "jira:issue_deleted"
+	// issuelink events
 	issueLinkCreated = "issuelink_created"
 	issueLinkDeleted = "issuelink_deleted"
+	// project events
+	projectCreated         = "project_created"
+	projectUpdated         = "project_updated"
+	projectDeleted         = "project_deleted"
+	projectSoftDeleted     = "project_soft_deleted"
+	projectRestoredDeleted = "project_restored_deleted"
+	// version events
+	versionReleased   = "jira:version_released"
+	versionUnreleased = "jira:version_unreleased"
+	versionCreated    = "jira:version_created"
+	versionUpdated    = "jira:version_updated"
+	versionDeleted    = "jira:version_deleted"
 
 	issueEventIDPath     = "issue.id"
-	issuelinkEventIDPath = "issueLink.id"
+	issueLinkEventIDPath = "issueLink.id"
+	projectEventIDPath   = "project.id"
+	versionEventIDPath   = "version.id"
 )
 
 var DefaultSupportedEvents = webhook.Events{
@@ -47,11 +63,51 @@ var DefaultSupportedEvents = webhook.Events{
 		},
 		issueLinkCreated: {
 			Operation: entities.Write,
-			FieldID:   issuelinkEventIDPath,
+			FieldID:   issueLinkEventIDPath,
 		},
 		issueLinkDeleted: {
 			Operation: entities.Delete,
-			FieldID:   issuelinkEventIDPath,
+			FieldID:   issueLinkEventIDPath,
+		},
+		projectCreated: {
+			Operation: entities.Write,
+			FieldID:   projectEventIDPath,
+		},
+		projectUpdated: {
+			Operation: entities.Write,
+			FieldID:   projectEventIDPath,
+		},
+		projectDeleted: {
+			Operation: entities.Delete,
+			FieldID:   projectEventIDPath,
+		},
+		projectSoftDeleted: {
+			Operation: entities.Delete,
+			FieldID:   projectEventIDPath,
+		},
+		projectRestoredDeleted: {
+			Operation: entities.Write,
+			FieldID:   projectEventIDPath,
+		},
+		versionReleased: {
+			Operation: entities.Write,
+			FieldID:   versionEventIDPath,
+		},
+		versionUnreleased: {
+			Operation: entities.Write,
+			FieldID:   versionEventIDPath,
+		},
+		versionCreated: {
+			Operation: entities.Write,
+			FieldID:   versionEventIDPath,
+		},
+		versionUpdated: {
+			Operation: entities.Write,
+			FieldID:   versionEventIDPath,
+		},
+		versionDeleted: {
+			Operation: entities.Delete,
+			FieldID:   versionEventIDPath,
 		},
 	},
 	EventTypeFieldPath: webhookEventPath,
