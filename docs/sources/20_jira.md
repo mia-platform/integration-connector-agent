@@ -57,17 +57,44 @@ For the issue events, it is possible to set a filter to receive only the events 
 
 Example of a filter is `project = "My Project"`.
 
-- issue created: `jira:issue_created`: this event will upsert data on the sink;
-- issue updated: `jira:issue_updated`: this event will upsert data on the sink;
-- issue deleted: `jira:issue_deleted`: this event will delete data on the sink.
+| Event                 | Event Type                 | Example Payload                               | Operation |
+|-----------------------|----------------------------|-----------------------------------------------|-----------|
+|  issue created        | `jira:issue_created`       | [link](#issue-event-payload)                  | Write     |
+|  issue updated        | `jira:issue_updated`       | [link](#issue-event-payload)                  | Write     |
+|  issue deleted        | `jira:issue_deleted`       | [link](#issue-event-payload)                  | Delete    |
+|  issue link created   | `issuelink_created`        | [link](#issue-link-event-payload)             | Write     |
+|  issue link deleted   | `issuelink_deleted`        | [link](#issue-link-event-payload)             | Delete    |
+|  project created      | `project_created`          | [link](#project-event-payload)                | Write     |
+|  project updated      | `project_updated`          | [link](#project-event-payload)                | Write     |
+|  project deleted      | `project_deleted`          | [link](#project-event-payload)                | Delete    |
+|  project soft deleted | `project_soft_deleted`     | [link](#project-event-payload)                | Delete    |
+|  project restore      | `project_restored_deleted` | [link](#project-event-payload)                | Write     |
+|  version created      | `jira:version_created`     | [link](#project-version-event-payload)        | Write     |
+|  version updated      | `jira:version_updated`     | [link](#project-version-event-payload)        | Write     |
+|  version deleted      | `jira:version_deleted`     | [link](#project-version-event-payload)        | Deleted   |
+|  version merged       | `jira:version_deleted`     | [link](#project-version-merged-event-payload) | Deleted   |
+|  version released     | `jira:version_released`    | [link](#project-version-event-payload)        | Write     |
+|  version unreleased   | `jira:version_unreleased`  | [link](#project-version-event-payload)        | Write     |
+
+
+The operation will be used by the sink which supports the upsert of the data to decide if
+the event should be inserted/updated or deleted.
 
 :::info
 The **event ID** used in the webhook payload is extracted from the `issue.id` field.
 :::
 
+#### Known Issues
+
+- The archived version is not correctly handled by the Webhook, so when archiving a version the WebHook is correctly
+triggered but the `archived` field is always `false`. [Here the opened issue](https://jira.atlassian.com/browse/JRASERVER-71000).
+
 #### Issue Event payload
 
-The issue event payload is something like:
+The following is an example of an issue event payload.
+
+<details>
+<summary>Issue Event Payload</summary>
 
 ```json
 {
@@ -154,3 +181,152 @@ The issue event payload is something like:
   "webhookEvent": "jira:issue_updated"
 }
 ```
+
+</details>
+
+#### Issue link Event payload
+
+The following is an example of an issue link event payload.
+
+<details>
+<summary>Issue link Event Payload</summary>
+
+```json
+{
+  "timestamp": 1525698237764,
+  "id":                 876,
+  "sourceIssueId":      222,
+  "destinationIssueId": 333,
+  "issueLinkType": {
+    "id":                111,
+    "name":              "Link name",
+    "outwardName":       "executes Test",
+    "inwardName":        "is executed by",
+    "isSubTaskLinkType": false,
+    "isSystemLinkType":  false,
+  },
+  "systemLink": false,
+}
+```
+
+</details>
+
+#### Project Event payload
+
+The following is an example of a project event payload.
+
+<details>
+<summary>Project Event Payload</summary>
+
+```json
+{
+  "timestamp": 1525698237764,
+  "webhookEvent": "project_created",
+  "project": {
+    "self": "https://jira.atlassian.com/rest/api/2/project/12345",
+    "id": 12345,
+    "key": "ACTP",
+    "name": "Agent Connector Test Project",
+    "avatarUrls": {
+      "16x16": "https://jira.atlassian.com/secure/useravatar?size=small&avatarId=10605",
+      "48x48": "https://jira.atlassian.com/secure/useravatar?avatarId=10605"
+    },
+    "projectCategory": {
+      "self": "https://jira.atlassian.com/rest/api/2/projectCategory/65432",
+      "id": 65432,
+      "name": "category name",
+      "description": ""
+    },
+    "projectLead": {
+      "self": "https://jira.atlassian.com/rest/api/2/user?accountId=some-id",
+      "accountId": "some-id",
+      "avatarUrls": {
+        "16x16": "https://jira.atlassian.com/secure/useravatar?size=small&avatarId=10605",
+        "48x48": "https://jira.atlassian.com/secure/useravatar?avatarId=10605"
+      },
+      "displayName": "The Lead Name",
+      "active": true,
+      "timeZone": "Europe/Rome",
+      "accountType": "..."
+    },
+    "assigneeType": "admin.assignee.type.unassigned"
+  }
+}
+```
+
+</details>
+
+#### Project Version Event payload
+
+The following is an example of a project version event payload.
+
+<details>
+<summary>Project Version Event Payload</summary>
+
+```json
+{
+  "timestamp": 1732615465165,
+  "webhookEvent": "jira:version_created",
+  "version": {
+    "self": "https://jira.atlassian.com/rest/api/2/version/65456",
+    "id": "65456",
+    "description": "This is the description",
+    "name": "v1",
+    "archived": false,
+    "released": false,
+    "startDate": "2024-11-26",
+    "releaseDate": "2024-11-30",
+    "overdue": false,
+    "userStartDate": "26/Nov/24",
+    "userReleaseDate": "30/Nov/24",
+    "projectId": 12345
+  }
+}
+```
+
+</details>
+
+##### Project Version Merged Event Payload
+
+The `jira:version_deleted` event is used to also notify that a version has been merged into another one.
+In this case, a flag `mergedTo` is added to the payload with the information of the version where the version has been merged.
+
+<details>
+<summary>Project Version Merged Event Payload</summary>
+
+```json
+{
+  "timestamp": 1732615465165,
+  "webhookEvent": "jira:version_deleted",
+  "version": {
+    "self": "https://jira.atlassian.com/rest/api/2/version/65456",
+    "id": "65456",
+    "description": "This is the description",
+    "name": "v1-rc.0",
+    "archived": false,
+    "released": false,
+    "startDate": "2024-11-26",
+    "releaseDate": "2024-11-30",
+    "overdue": false,
+    "userStartDate": "26/Nov/24",
+    "userReleaseDate": "30/Nov/24",
+    "projectId": 12345
+  },
+  "mergedTo": {
+    "self": "https://jira.atlassian.com/rest/api/2/version/99991",
+    "id": "99991",
+    "description": "This is the version description",
+    "name": "v1",
+    "archived": false,
+    "released": false,
+    "startDate": "2024-11-26",
+    "releaseDate": "2024-11-30",
+    "overdue": false,
+    "userStartDate": "26/Nov/24",
+    "userReleaseDate": "30/Nov/24",
+    "projectId": 12345
+  }
+}
+```
+
+</details>
