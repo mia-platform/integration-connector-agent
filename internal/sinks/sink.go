@@ -44,6 +44,7 @@ const (
 	Mongo          = "mongo"
 	CRUDService    = "crud-service"
 	ConsoleCatalog = "console-catalog"
+	Kafka          = "kafka"
 
 	// Fake is a fake writer used for testing purposes
 	Fake = "fake"

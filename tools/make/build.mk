@@ -41,7 +41,7 @@ go/build/%:
 	$(eval ARM:= $(word 3,$(subst /, ,$*)))
 	$(info Building image for $(OS) $(ARCH) $(ARM))
 
-	GOOS=$(OS) GOARCH=$(ARCH) GOARM=$(ARM) CGO_ENABLED=0 go build -trimpath \
+	GOOS=$(OS) GOARCH=$(ARCH) GOARM=$(ARM) go build -trimpath \
 		-ldflags "$(GO_LDFLAGS)" $(BUILD_PATH)
 
 else
