@@ -49,14 +49,6 @@ as the one set in the authentication configuration.
 
 The Jira source supports the following webhook events:
 
-- [issue events](#issue-events)
-
-### Issue Events
-
-For the issue events, it is possible to set a filter to receive only the events related to the issues that match the filter.
-
-Example of a filter is `project = "My Project"`.
-
 | Event                 | Event Type                 | Example Payload                               | Operation |
 |-----------------------|----------------------------|-----------------------------------------------|-----------|
 |  issue created        | `jira:issue_created`       | [link](#issue-event-payload)                  | Write     |
@@ -76,7 +68,6 @@ Example of a filter is `project = "My Project"`.
 |  version released     | `jira:version_released`    | [link](#project-version-event-payload)        | Write     |
 |  version unreleased   | `jira:version_unreleased`  | [link](#project-version-event-payload)        | Write     |
 
-
 The operation will be used by the sink which supports the upsert of the data to decide if
 the event should be inserted/updated or deleted.
 
@@ -84,10 +75,16 @@ the event should be inserted/updated or deleted.
 The **event ID** used in the webhook payload is extracted from the `issue.id` field.
 :::
 
-#### Known Issues
+### Known Issues
 
 - The archived version is not correctly handled by the Webhook, so when archiving a version the WebHook is correctly
 triggered but the `archived` field is always `false`. [Here the opened issue](https://jira.atlassian.com/browse/JRASERVER-71000).
+
+### Issue Events
+
+For the issue events, it is possible to set a filter to receive only the events related to the issues that match the filter.
+
+Example of a filter is `project = "My Project"`.
 
 #### Issue Event payload
 
@@ -210,6 +207,10 @@ The following is an example of an issue link event payload.
 ```
 
 </details>
+
+### Projects Events
+
+For the project events, the following are some example payloads.
 
 #### Project Event payload
 
