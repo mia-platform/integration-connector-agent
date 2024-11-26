@@ -9,8 +9,6 @@ builds:
     {{- with .Arm }}v{{ . }}/{{ end }}
     {{- .ProjectName }}
   no_unique_dist_dir: true
-  env:
-  - CGO_ENABLED=0
   flags:
   - -trimpath
   ldflags:
@@ -24,6 +22,8 @@ builds:
   goarch:
   - amd64
   - arm64
+  tags:
+  - musl
 
 archives:
 - format: binary
