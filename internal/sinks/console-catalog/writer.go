@@ -68,6 +68,10 @@ func (w *Writer[T]) WriteData(ctx context.Context, event T) error {
 	return nil
 }
 
+func (w *Writer[T]) Close(_ context.Context) error {
+	return nil
+}
+
 func (w *Writer[T]) createCatalogItem(event T) (*consoleclient.MarketplaceResource[any], error) {
 	res := make(map[string]any)
 	if err := json.Unmarshal(event.Data(), &res); err != nil {

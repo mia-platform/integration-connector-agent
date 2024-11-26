@@ -61,7 +61,7 @@ docker/%/multiarch:
 		$(IMAGE_TAGS) \
 		$(DOCKER_LABELS) \
 		$(DOCKER_ANNOTATIONS) \
-		--file ./Dockerfile . $(ADDITIONAL_PARAMETER)
+		--file ./Dockerfile $(ADDITIONAL_PARAMETER) $(BUILD_PATH)
 
 .PHONY: docker/build/%
 docker/build/%:
@@ -75,7 +75,7 @@ docker/build/%:
 		$(IMAGE_TAGS) \
 		$(DOCKER_LABELS) \
 		$(DOCKER_ANNOTATIONS) \
-		--file ./Dockerfile .
+		--file ./Dockerfile $(BUILD_PATH)
 
 .PHONY: docker/setup/multiarch
 docker/setup/multiarch:
@@ -91,13 +91,13 @@ docker/buildx/teardown:
 	docker buildx rm $(BUILDX_CONTEXT)
 
 .PHONY: docker-build
-docker-build: go/build/$(DEFAULT_DOCKER_PLATFORM) docker/build/$(DEFAULT_DOCKER_PLATFORM)
+docker-build: docker/build/$(DEFAULT_DOCKER_PLATFORM)
 
 .PHONY: docker-setup-multiarch
 docker-setup-multiarch: docker/setup/multiarch
 
 .PHONY: docker-build-multiarch
-docker-build-multiarch: build-multiarch docker/buildx/setup docker/build/multiarch docker/buildx/teardown
+docker-build-multiarch: docker/buildx/setup docker/build/multiarch docker/buildx/teardown
 
 .PHONY: ci-docker
 ci-docker: docker/push/multiarch

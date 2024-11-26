@@ -25,6 +25,7 @@ func init() {
 	gob.RegisterName("entities.Event", Event{})
 }
 
+//go:generate ${TOOLS_BIN}/stringer -type=Operation
 type Operation int
 
 const (

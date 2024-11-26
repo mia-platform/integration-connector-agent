@@ -27,6 +27,7 @@ import (
 	consolecatalog "github.com/mia-platform/integration-connector-agent/internal/sinks/console-catalog"
 	crudservice "github.com/mia-platform/integration-connector-agent/internal/sinks/crud-service"
 	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks/kafka"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
 	awssqs "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs"
@@ -54,9 +55,9 @@ func (i *Integration) appendCloseableSource(source sources.CloseableSource) {
 	i.sourcesToClose = append(i.sourcesToClose, source)
 }
 
-func (i Integration) Close() error {
+func (i Integration) Close(ctx context.Context) error {
 	if i.PipelineGroup != nil {
-		return i.PipelineGroup.Close()
+		return i.PipelineGroup.Close(ctx)
 	}
 	for _, source := range i.sourcesToClose {
 		if err := source.Close(); err != nil {
@@ -132,7 +133,7 @@ func setupIntegrationPipelines(ctx context.Context, log *logrus.Logger, cfgInteg
 	return pipelines, nil
 }
 
-func setupSinks(ctx context.Context, log *logrus.Logger, writers config.Sinks) ([]sinks.Sink[entities.PipelineEvent], error) {
+func setupSinks(ctx context.Context, log *logrus.Logger, writers config.Sinks) ([]sinks.Sink[entities.PipelineEvent], error) { //nolint: gocyclo
 	var w []sinks.Sink[entities.PipelineEvent]
 	for _, configuredWriter := range writers {
 		switch configuredWriter.Type {
@@ -166,6 +167,16 @@ func setupSinks(ctx context.Context, log *logrus.Logger, writers config.Sinks) (
 				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
 			}
 			w = append(w, consoleCatalogWriter)
+		case sinks.Kafka:
+			config, err := config.GetConfig[*kafka.Config](configuredWriter)
+			if err != nil {
+				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+			}
+			kafkaSink, err := kafka.New[entities.PipelineEvent](config)
+			if err != nil {
+				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+			}
+			w = append(w, kafkaSink)
 		case sinks.Fake:
 			config, err := config.GetConfig[*fakewriter.Config](configuredWriter)
 			if err != nil {

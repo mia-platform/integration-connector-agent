@@ -38,12 +38,15 @@ type Sink[Data DataWithIdentifier] interface {
 	// Data will have the operation to perform (write, delete) and the data to save,
 	// which can be used based on the sink type.
 	WriteData(ctx context.Context, data Data) error
+
+	Close(ctx context.Context) error
 }
 
 const (
 	Mongo          = "mongo"
 	CRUDService    = "crud-service"
 	ConsoleCatalog = "console-catalog"
+	Kafka          = "kafka"
 
 	// Fake is a fake writer used for testing purposes
 	Fake = "fake"
