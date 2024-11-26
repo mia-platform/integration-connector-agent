@@ -109,6 +109,26 @@ func TestMapper(t *testing.T) {
 }`,
 			expectNewError: "error creating operation: unsupported combine template: {{combined}}-{{key}}",
 		},
+		"all event in a subfield": {
+			model: `{
+	"event": "{{@this}}"
+}`,
+			dataToTransform: inputData,
+			expectedTransformedData: map[string]any{
+				"event": map[string]any{
+					"key": "123",
+					"fields": map[string]any{
+						"summary":     "this is the summary",
+						"created":     "2021-01-01",
+						"description": "this is the description",
+						"history": map[string]any{
+							"previous": "something",
+						},
+						"changed": "something else",
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range testCases {
