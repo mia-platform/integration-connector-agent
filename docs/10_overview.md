@@ -90,3 +90,16 @@ to save data into the collection `jira-issues`.
 ```
 
 </details>
+
+## Key Benefits
+The Integration Connector Agent provides the flexibility to retrieve data from any source and deliver it to any sink. This data can then be utilized for various purposes, including:
+* Data Accessibility: Aggregate data from multiple sources by configuring the agent, simplifying data retrieval.
+* Analytics: Centralized data storage enables advanced analytics and the creation of comprehensive scorecards.
+* External Integration: Simplify the development of custom applications by building efficient data pipelines with the agent.
+
+When used alongside Mia-Platform Console, the agent enhances the Console’s extensibility features, enabling users to integrate additional information into their Internal Developer Platform. Examples include:
+* Comprehensive scorecards
+* Software catalog metadata augmentation
+* Custom data visualizations
+
+
