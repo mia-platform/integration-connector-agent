@@ -58,7 +58,7 @@ func webhookHandler(config *Configuration, p *pipeline.Group) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		log := glogrus.FromContext(c.UserContext())
 
-		if err := ValidateWebhookRequest(c, config.Authentication); err != nil {
+		if err := config.CheckSignature(c); err != nil {
 			log.WithError(err).Error("error validating webhook request")
 			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
 		}
