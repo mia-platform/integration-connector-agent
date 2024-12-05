@@ -20,6 +20,12 @@ If the value is false, the event will be filtered out, otherwise the filter is p
 
 It is possible to filter events using the CEL expression language.
 
+CEL expression contains 2 different data which is possible to use:
+
+- `eventType` (*string*): the event type taken from the incoming event;
+- `data` (*object*): the input event. It is possible to access all the fields using the dot notation.
+
+
 The following are a set of examples which could be useful to filter events.
 
 #### String equality
@@ -55,5 +61,15 @@ In the following example, the filter processor will filter out all events that d
 {
   "type": "filter",
   "celExpression": "eventType.startsWith('my')"
+}
+```
+#### Data field equality
+
+In the following example, the filter processor will filter out all events which have the `parentId` field different from `my-parent`.
+
+```json
+{
+  "type": "filter",
+  "celExpression": "data.parentId == 'my-parent'"
 }
 ```
