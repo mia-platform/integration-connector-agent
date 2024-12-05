@@ -22,6 +22,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/mia-platform/integration-connector-agent/internal/config"
 )
 
 const (
@@ -32,21 +34,24 @@ const (
 	invalidSignatureError              = "invalid signature in request"
 )
 
-type ValidatingRequest interface {
-	GetReqHeaders() map[string][]string
-	Body() []byte
+type HMAC struct {
+	Secret     config.SecretSource `json:"secret"`
+	HeaderName string              `json:"headerName"`
 }
 
-// ValidateWebhookRequest will read the webhook signature header and the given secret for validating the webhook
+// CheckSignature will read the webhook signature header and the given secret for validating the webhook
 // payload. It will fail if there is a mismatch in the signatures and if a signature or a secret is provided and the
 // other is not present.
-func ValidateWebhookRequest(req ValidatingRequest, authentication Authentication) error {
-	secret := authentication.Secret.String()
-	if secret != "" && authentication.HeaderName == "" {
+func (h HMAC) CheckSignature(req ValidatingRequest) error {
+	if req == nil {
+		return fmt.Errorf("%s: request is nil", invalidWebhookAuthenticationConfig)
+	}
+	secret := h.Secret.String()
+	if secret != "" && h.HeaderName == "" {
 		return fmt.Errorf("%s: secret is set but headerName not present", invalidWebhookAuthenticationConfig)
 	}
 
-	headerValues := req.GetReqHeaders()[authentication.HeaderName]
+	headerValues := req.GetReqHeaders()[h.HeaderName]
 	switch {
 	case len(headerValues) == 0 && len(secret) == 0:
 		return nil
