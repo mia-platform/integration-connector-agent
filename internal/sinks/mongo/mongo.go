@@ -172,10 +172,9 @@ func (w *Writer[T]) Delete(ctx context.Context, data T) error {
 		return err
 	}
 
-	opts := options.Delete()
 	result, err := w.client.Database(w.database).
 		Collection(w.collection).
-		DeleteOne(ctxWithCancel, queryFilter, opts)
+		DeleteOne(ctxWithCancel, queryFilter)
 	if err != nil {
 		return err
 	}

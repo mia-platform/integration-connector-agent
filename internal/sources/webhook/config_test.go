@@ -28,7 +28,7 @@ func TestValidateConfiguration(t *testing.T) {
 		expectedErr string
 	}{
 		"empty configuration": {
-			expectedErr: "webhook path is empty",
+			expectedErr: "webhook path is required",
 		},
 		"empty events": {
 			config: Configuration{

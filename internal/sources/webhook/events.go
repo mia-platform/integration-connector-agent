@@ -35,7 +35,16 @@ type Events struct {
 
 type Event struct {
 	Operation entities.Operation
-	FieldID   string
+	// TODO: improve to use on from FieldID and GetFieldID. Maybe creating a factory function?
+	FieldID    string
+	GetFieldID func(parsedData gjson.Result) string
+}
+
+func (e *Event) GetID(parsedData gjson.Result) string {
+	if e.GetFieldID != nil {
+		return e.GetFieldID(parsedData)
+	}
+	return parsedData.Get(e.FieldID).String()
 }
 
 func (e *Events) getPipelineEvent(logger *logrus.Entry, rawData []byte) (entities.PipelineEvent, error) {
@@ -51,7 +60,7 @@ func (e *Events) getPipelineEvent(logger *logrus.Entry, rawData []byte) (entitie
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedWebhookEvent, webhookEvent)
 	}
 
-	id := parsed.Get(event.FieldID).String()
+	id := event.GetID(parsed)
 	if id == "" {
 		logger.WithFields(logrus.Fields{
 			"webhookEvent": webhookEvent,

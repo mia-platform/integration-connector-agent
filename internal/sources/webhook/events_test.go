@@ -22,6 +22,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/tidwall/gjson"
 
 	"github.com/stretchr/testify/require"
 )
@@ -89,6 +90,23 @@ func TestEvent(t *testing.T) {
 
 			expectError:  fmt.Sprintf("%s: %s", ErrUnsupportedWebhookEvent, "unsupported"),
 			expectedType: "unsupported",
+		},
+		"with custom GetFieldID": {
+			rawData: `{"issue":{"tag":"my-id","projectId":"prj-1","parentId":"my-parent-id"},"webhookEvent": "my-event"}`,
+			events: &Events{
+				Supported: map[string]Event{
+					"my-event": {
+						GetFieldID: func(parsedData gjson.Result) string {
+							return fmt.Sprintf("parent:\"%s\"-project:\"%s\"", parsedData.Get("issue.parentId").String(), parsedData.Get("issue.projectId").String())
+						},
+					},
+				},
+				EventTypeFieldPath: "webhookEvent",
+			},
+
+			expectedID:            `parent:"my-parent-id"-project:"prj-1"`,
+			expectedType:          "my-event",
+			expectedOperationType: entities.Write,
 		},
 	}
 

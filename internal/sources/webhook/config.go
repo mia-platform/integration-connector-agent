@@ -16,7 +16,12 @@
 package webhook
 
 import (
+	"errors"
 	"fmt"
+)
+
+var (
+	ErrWebhookPathRequired = errors.New("webhook path is required")
 )
 
 type ValidatingRequest interface {
@@ -39,7 +44,7 @@ type Configuration struct {
 
 func (c *Configuration) Validate() error {
 	if c.WebhookPath == "" {
-		return fmt.Errorf("webhook path is empty")
+		return ErrWebhookPathRequired
 	}
 
 	if c.Events == nil {

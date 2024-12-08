@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jira
+package console
 
 import (
 	"context"
@@ -27,15 +27,15 @@ import (
 )
 
 const (
-	defaultWebhookPath = "/jira/webhook"
-	authHeaderName     = "X-Hub-Signature"
+	defaultWebhookPath = "/console/webhook"
+	authHeaderName     = "X-Mia-Signature"
 
-	webhookEventPath = "webhookEvent"
+	webhookEventPath = "eventName"
 )
 
 type Config struct {
-	Authentication webhook.HMAC `json:"authentication"`
-	WebhookPath    string       `json:"webhookPath"`
+	Authentication ValidationConfig `json:"authentication"`
+	WebhookPath    string           `json:"webhookPath"`
 }
 
 func (c *Config) withDefault() *Config {
@@ -73,12 +73,12 @@ func AddSourceToRouter(
 	pg *pipeline.Group,
 	router *swagger.Router[fiber.Handler, fiber.Router],
 ) error {
-	jiraConfig, err := config.GetConfig[*Config](cfg)
+	consoleConfig, err := config.GetConfig[*Config](cfg)
 	if err != nil {
 		return err
 	}
 
-	webhookConfig, err := jiraConfig.getWebhookConfig()
+	webhookConfig, err := consoleConfig.getWebhookConfig()
 	if err != nil {
 		return err
 	}

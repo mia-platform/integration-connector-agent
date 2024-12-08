@@ -113,6 +113,7 @@ func New(logger *logrus.Logger, p *processors.Processors, sinks sinks.Sink[entit
 	return pipeline, nil
 }
 
+// TODO: set as utils and reuse it in CheckSignature
 func isNil(i any) bool {
 	return i == nil || (reflect.ValueOf(i).Kind() == reflect.Ptr && reflect.ValueOf(i).IsNil())
 }

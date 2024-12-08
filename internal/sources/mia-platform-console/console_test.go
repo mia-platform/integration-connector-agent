@@ -13,12 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jira
+package console
 
 import (
 	"bytes"
 	"context"
-	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -51,7 +50,7 @@ func TestValidateConfig(t *testing.T) {
 			config: &Config{},
 			expectedConfig: &Config{
 				WebhookPath: defaultWebhookPath,
-				Authentication: webhook.HMAC{
+				Authentication: ValidationConfig{
 					HeaderName: authHeaderName,
 				},
 			},
@@ -59,14 +58,14 @@ func TestValidateConfig(t *testing.T) {
 		"with custom values": {
 			config: &Config{
 				WebhookPath: "/custom/webhook",
-				Authentication: webhook.HMAC{
+				Authentication: ValidationConfig{
 					HeaderName: "X-Custom-Header",
 					Secret:     config.SecretSource("secret"),
 				},
 			},
 			expectedConfig: &Config{
 				WebhookPath: "/custom/webhook",
-				Authentication: webhook.HMAC{
+				Authentication: ValidationConfig{
 					HeaderName: "X-Custom-Header",
 					Secret:     config.SecretSource("secret"),
 				},
@@ -96,7 +95,7 @@ func TestValidateConfig(t *testing.T) {
 
 		require.Equal(t, &Config{
 			WebhookPath: "/webhook",
-			Authentication: webhook.HMAC{
+			Authentication: ValidationConfig{
 				HeaderName: authHeaderName,
 				Secret:     config.SecretSource("SECRET_VALUE"),
 			},
@@ -117,33 +116,36 @@ func TestGetWebhookConfig(t *testing.T) {
 			},
 			expectedConfig: &webhook.Configuration{
 				WebhookPath:    "/webhook",
-				Authentication: webhook.HMAC{},
+				Authentication: ValidationConfig{},
 				Events:         &DefaultSupportedEvents,
 			},
 		},
 		"valid config with authentication": {
 			config: &Config{
 				WebhookPath: "/webhook",
-				Authentication: webhook.HMAC{
+				Authentication: ValidationConfig{
 					HeaderName: "X-Custom-Header",
 					Secret:     config.SecretSource("secret"),
 				},
 			},
 			expectedConfig: &webhook.Configuration{
 				WebhookPath: "/webhook",
-				Authentication: webhook.HMAC{
+				Authentication: ValidationConfig{
 					HeaderName: "X-Custom-Header",
 					Secret:     config.SecretSource("secret"),
 				},
 				Events: &DefaultSupportedEvents,
 			},
 		},
+		"error on invalid config": {
+			config:        &Config{},
+			expectedError: webhook.ErrWebhookPathRequired.Error(),
+		},
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			webhookConfig, err := tc.config.getWebhookConfig()
-			require.NoError(t, err)
 
 			if tc.expectedError != "" {
 				require.EqualError(t, err, tc.expectedError)
@@ -178,6 +180,9 @@ func TestAddSourceToRouter(t *testing.T) {
 		err = AddSourceToRouter(ctx, cfg, pg, router)
 		require.NoError(t, err)
 
+		tenantID := "my-tenant-id"
+		projectID := "my-prj-id"
+
 		testCases := []struct {
 			eventName string
 			body      string
@@ -186,84 +191,43 @@ func TestAddSourceToRouter(t *testing.T) {
 			expectedOperation entities.Operation
 		}{
 			{
-				eventName:  issueCreated,
-				body:       getIssueBody(issueCreated, "12345"),
-				expectedID: "12345",
+				eventName: projectCreatedEvent,
+				body:      fmt.Sprintf(`{"eventName":"%s","payload":{"projectId":"%s","tenantId":"%s"}}`, projectCreatedEvent, projectID, tenantID),
+
+				expectedID: getFieldID([]pkFields{
+					{"tenantId", tenantID},
+					{"projectId", projectID},
+				}),
 			},
 			{
-				eventName:  issueUpdated,
-				body:       getIssueBody(issueUpdated, "12345"),
-				expectedID: "12345",
+				eventName: serviceCreatedEvent,
+				body:      fmt.Sprintf(`{"eventName":"%s","payload":{"projectId":"%s","tenantId":"%s","serviceName":"my-service"}}`, serviceCreatedEvent, projectID, tenantID),
+
+				expectedID: getFieldID([]pkFields{
+					{"tenantId", tenantID},
+					{"projectId", projectID},
+					{"serviceName", "my-service"},
+				}),
 			},
 			{
-				eventName:         issueDeleted,
-				body:              getIssueBody(issueDeleted, "12345"),
-				expectedID:        "12345",
-				expectedOperation: entities.Delete,
+				eventName: configurationSavedEvent,
+				body:      fmt.Sprintf(`{"eventName":"%s","payload":{"tenantId":"%s","projectId":"%s","revisionName":"my-revision"}}`, configurationSavedEvent, tenantID, projectID),
+
+				expectedID: getFieldID([]pkFields{
+					{"tenantId", tenantID},
+					{"projectId", projectID},
+					{"revisionName", "my-revision"},
+				}),
 			},
 			{
-				eventName:  issueLinkCreated,
-				body:       getIssueLinkBody(issueLinkCreated, "12345"),
-				expectedID: "12345",
-			},
-			{
-				eventName:         issueLinkDeleted,
-				body:              getIssueLinkBody(issueLinkDeleted, "12345"),
-				expectedID:        "12345",
-				expectedOperation: entities.Delete,
-			},
-			{
-				eventName:  projectCreated,
-				body:       getProjectBody(projectCreated, "12345"),
-				expectedID: "12345",
-			},
-			{
-				eventName:  projectUpdated,
-				body:       getProjectBody(projectUpdated, "12345"),
-				expectedID: "12345",
-			},
-			{
-				eventName:         projectDeleted,
-				body:              getProjectBody(projectDeleted, "12345"),
-				expectedID:        "12345",
-				expectedOperation: entities.Delete,
-			},
-			{
-				eventName:         projectSoftDeleted,
-				body:              getProjectBody(projectSoftDeleted, "12345"),
-				expectedID:        "12345",
-				expectedOperation: entities.Delete,
-			},
-			{
-				eventName:  projectRestoredDeleted,
-				body:       getProjectBody(projectRestoredDeleted, "12345"),
-				expectedID: "12345",
-			},
-			{
-				eventName:  versionReleased,
-				body:       getVersionBody(versionReleased, "12345"),
-				expectedID: "12345",
-			},
-			{
-				eventName:  versionUnreleased,
-				body:       getVersionBody(versionUnreleased, "12345"),
-				expectedID: "12345",
-			},
-			{
-				eventName:  versionCreated,
-				body:       getVersionBody(versionCreated, "12345"),
-				expectedID: "12345",
-			},
-			{
-				eventName:  versionUpdated,
-				body:       getVersionBody(versionUpdated, "12345"),
-				expectedID: "12345",
-			},
-			{
-				eventName:         versionDeleted,
-				body:              getVersionBody(versionDeleted, "12345"),
-				expectedID:        "12345",
-				expectedOperation: entities.Delete,
+				eventName: tagCreatedEvent,
+				body:      fmt.Sprintf(`{"eventName":"%s","payload":{"projectId":"%s","tenantId":"%s","tagName":"my-tag"}}`, tagCreatedEvent, projectID, tenantID),
+
+				expectedID: getFieldID([]pkFields{
+					{"tenantId", tenantID},
+					{"projectId", projectID},
+					{"tagName", "my-tag"},
+				}),
 			},
 		}
 
@@ -302,23 +266,8 @@ func getWebhookRequest(body *bytes.Buffer) *http.Request {
 }
 
 func getHMACValidationHeader(secret string, body []byte) string {
-	hasher := hmac.New(sha256.New, []byte(secret))
+	hasher := sha256.New()
 	hasher.Write(body)
+	hasher.Write([]byte(secret))
 	return hex.EncodeToString(hasher.Sum(nil))
-}
-
-func getIssueBody(eventName, id string) string {
-	return fmt.Sprintf(`{"webhookEvent":"%s","issue": {"id":%s,"key": "TEST-123"}}`, eventName, id)
-}
-
-func getIssueLinkBody(eventName, id string) string {
-	return fmt.Sprintf(`{"webhookEvent":"%s","issueLink": {"id":%s}}`, eventName, id)
-}
-
-func getProjectBody(eventName, id string) string {
-	return fmt.Sprintf(`{"webhookEvent":"%s","project": {"id":%s}}`, eventName, id)
-}
-
-func getVersionBody(eventName, id string) string {
-	return fmt.Sprintf(`{"webhookEvent":"%s","version": {"id":%s}}`, eventName, id)
 }

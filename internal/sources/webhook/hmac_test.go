@@ -44,14 +44,14 @@ func TestCheckHMACSignature(t *testing.T) {
 					webhookSignatureHeader: {"signature"},
 				},
 			},
-			expectedErr: errors.New(signatureHeaderButNoSecretError),
+			expectedErr: errors.New(SignatureHeaderButNoSecretError),
 		},
 		"missing header return error": {
 			authentication: &HMAC{
 				HeaderName: webhookSignatureHeader,
 				Secret:     "secret",
 			},
-			expectedErr: errors.New(noSignatureHeaderButSecretError),
+			expectedErr: errors.New(NoSignatureHeaderButSecretError),
 		},
 		"multiple header return error": {
 			authentication: &HMAC{
@@ -63,7 +63,7 @@ func TestCheckHMACSignature(t *testing.T) {
 					webhookSignatureHeader: {"signature", "other"},
 				},
 			},
-			expectedErr: errors.New(multipleSignatureHeadersError),
+			expectedErr: errors.New(MultipleSignatureHeadersError),
 		},
 		"valid signature return nil": {
 			authentication: &HMAC{
@@ -88,7 +88,7 @@ func TestCheckHMACSignature(t *testing.T) {
 					webhookSignatureHeader: {"sha256=a4771c39fbe90f317c7824e83ddef3caae9cb3d976c214ace1f2937e133263c9"},
 				},
 			},
-			expectedErr: errors.New(invalidSignatureError),
+			expectedErr: errors.New(InvalidSignatureError),
 		},
 	}
 
@@ -99,8 +99,6 @@ func TestCheckHMACSignature(t *testing.T) {
 		})
 	}
 }
-
-var _ ValidatingRequest = fakeValidatingRequest{}
 
 type fakeValidatingRequest struct {
 	headers map[string][]string

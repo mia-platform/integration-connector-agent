@@ -27,11 +27,11 @@ import (
 )
 
 const (
-	invalidWebhookAuthenticationConfig = "invalid webhook authentication configuration"
-	signatureHeaderButNoSecretError    = "secret not configured for validating webhook signature"
-	noSignatureHeaderButSecretError    = "missing webhook signature"
-	multipleSignatureHeadersError      = "multiple signature headers found"
-	invalidSignatureError              = "invalid signature in request"
+	InvalidWebhookAuthenticationConfig = "invalid webhook authentication configuration"
+	SignatureHeaderButNoSecretError    = "secret not configured for validating webhook signature"
+	NoSignatureHeaderButSecretError    = "missing webhook signature"
+	MultipleSignatureHeadersError      = "multiple signature headers found"
+	InvalidSignatureError              = "invalid signature in request"
 )
 
 type HMAC struct {
@@ -44,28 +44,24 @@ type HMAC struct {
 // other is not present.
 func (h HMAC) CheckSignature(req ValidatingRequest) error {
 	if req == nil {
-		return fmt.Errorf("%s: request is nil", invalidWebhookAuthenticationConfig)
+		return fmt.Errorf("%s: request is nil", InvalidWebhookAuthenticationConfig)
 	}
 	secret := h.Secret.String()
 	if secret != "" && h.HeaderName == "" {
-		return fmt.Errorf("%s: secret is set but headerName not present", invalidWebhookAuthenticationConfig)
+		return fmt.Errorf("%s: secret is set but headerName not present", InvalidWebhookAuthenticationConfig)
 	}
 
-	headerValues := req.GetReqHeaders()[h.HeaderName]
-	switch {
-	case len(headerValues) == 0 && len(secret) == 0:
+	headerValues, err := GetHeaderValues(req, h.HeaderName, secret)
+	if err != nil {
+		return err
+	}
+	if headerValues == nil {
 		return nil
-	case len(headerValues) == 0 && len(secret) != 0:
-		return errors.New(noSignatureHeaderButSecretError)
-	case len(headerValues) != 0 && len(secret) == 0:
-		return errors.New(signatureHeaderButNoSecretError)
-	case len(headerValues) > 1:
-		return errors.New(multipleSignatureHeadersError)
 	}
 
 	signature, _ := strings.CutPrefix(headerValues[0], "sha256=")
 	if !validateBody(req.Body(), secret, signature) {
-		return errors.New(invalidSignatureError)
+		return errors.New(InvalidSignatureError)
 	}
 
 	return nil
@@ -83,4 +79,20 @@ func validateBody(bodyData []byte, secret, expectedSignature string) bool {
 	}
 
 	return hmac.Equal(generatedMAC, expectedMac)
+}
+
+func GetHeaderValues(req ValidatingRequest, headerName, secret string) ([]string, error) {
+	headerValues := req.GetReqHeaders()[headerName]
+	switch {
+	case len(headerValues) == 0 && len(secret) == 0:
+		return nil, nil
+	case len(headerValues) == 0 && len(secret) != 0:
+		return nil, errors.New(NoSignatureHeaderButSecretError)
+	case len(headerValues) != 0 && len(secret) == 0:
+		return nil, errors.New(SignatureHeaderButNoSecretError)
+	case len(headerValues) > 1:
+		return nil, errors.New(MultipleSignatureHeadersError)
+	}
+
+	return headerValues, nil
 }

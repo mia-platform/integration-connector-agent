@@ -78,7 +78,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 				require.NoError(t, json.NewDecoder(body).Decode(&expectedBody))
 				require.Equal(t, utils.HTTPError{
 					Error:   "Validation Error",
-					Message: noSignatureHeaderButSecretError,
+					Message: NoSignatureHeaderButSecretError,
 				}, expectedBody)
 			},
 		},
