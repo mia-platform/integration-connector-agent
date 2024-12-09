@@ -175,6 +175,7 @@ func TestAddSourceToRouter(t *testing.T) {
 
 		pg := pipeline.NewGroup(logger, p1)
 
+		id := "12345"
 		err = AddSourceToRouter(ctx, cfg, pg, router)
 		require.NoError(t, err)
 
@@ -187,82 +188,82 @@ func TestAddSourceToRouter(t *testing.T) {
 		}{
 			{
 				eventName:  issueCreated,
-				body:       getIssueBody(issueCreated, "12345"),
-				expectedID: "12345",
+				body:       getIssueBody(issueCreated, id),
+				expectedID: id,
 			},
 			{
 				eventName:  issueUpdated,
-				body:       getIssueBody(issueUpdated, "12345"),
-				expectedID: "12345",
+				body:       getIssueBody(issueUpdated, id),
+				expectedID: id,
 			},
 			{
 				eventName:         issueDeleted,
-				body:              getIssueBody(issueDeleted, "12345"),
-				expectedID:        "12345",
+				body:              getIssueBody(issueDeleted, id),
+				expectedID:        id,
 				expectedOperation: entities.Delete,
 			},
 			{
 				eventName:  issueLinkCreated,
-				body:       getIssueLinkBody(issueLinkCreated, "12345"),
-				expectedID: "12345",
+				body:       getIssueLinkBody(issueLinkCreated, id),
+				expectedID: id,
 			},
 			{
 				eventName:         issueLinkDeleted,
-				body:              getIssueLinkBody(issueLinkDeleted, "12345"),
-				expectedID:        "12345",
+				body:              getIssueLinkBody(issueLinkDeleted, id),
+				expectedID:        id,
 				expectedOperation: entities.Delete,
 			},
 			{
 				eventName:  projectCreated,
-				body:       getProjectBody(projectCreated, "12345"),
-				expectedID: "12345",
+				body:       getProjectBody(projectCreated, id),
+				expectedID: id,
 			},
 			{
 				eventName:  projectUpdated,
-				body:       getProjectBody(projectUpdated, "12345"),
-				expectedID: "12345",
+				body:       getProjectBody(projectUpdated, id),
+				expectedID: id,
 			},
 			{
 				eventName:         projectDeleted,
-				body:              getProjectBody(projectDeleted, "12345"),
-				expectedID:        "12345",
+				body:              getProjectBody(projectDeleted, id),
+				expectedID:        id,
 				expectedOperation: entities.Delete,
 			},
 			{
 				eventName:         projectSoftDeleted,
-				body:              getProjectBody(projectSoftDeleted, "12345"),
-				expectedID:        "12345",
+				body:              getProjectBody(projectSoftDeleted, id),
+				expectedID:        id,
 				expectedOperation: entities.Delete,
 			},
 			{
 				eventName:  projectRestoredDeleted,
-				body:       getProjectBody(projectRestoredDeleted, "12345"),
-				expectedID: "12345",
+				body:       getProjectBody(projectRestoredDeleted, id),
+				expectedID: id,
 			},
 			{
 				eventName:  versionReleased,
-				body:       getVersionBody(versionReleased, "12345"),
-				expectedID: "12345",
+				body:       getVersionBody(versionReleased, id),
+				expectedID: id,
 			},
 			{
 				eventName:  versionUnreleased,
-				body:       getVersionBody(versionUnreleased, "12345"),
-				expectedID: "12345",
+				body:       getVersionBody(versionUnreleased, id),
+				expectedID: id,
 			},
 			{
 				eventName:  versionCreated,
-				body:       getVersionBody(versionCreated, "12345"),
-				expectedID: "12345",
+				body:       getVersionBody(versionCreated, id),
+				expectedID: id,
 			},
 			{
 				eventName:  versionUpdated,
-				body:       getVersionBody(versionUpdated, "12345"),
-				expectedID: "12345",
+				body:       getVersionBody(versionUpdated, id),
+				expectedID: id,
 			},
 			{
 				eventName:         versionDeleted,
-				body:              getVersionBody(versionDeleted, "12345"),
-				expectedID:        "12345",
+				body:              getVersionBody(versionDeleted, id),
+				expectedID:        id,
 				expectedOperation: entities.Delete,
 			},
 		}
