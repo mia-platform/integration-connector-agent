@@ -113,7 +113,3 @@ to save data into the collection `jira-issues`.
 ```
 
 </details>
-
-
-
-
