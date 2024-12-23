@@ -23,13 +23,12 @@ When used alongside Mia-Platform Console, the agent enhances the Console’s ext
 * Custom data visualizations
 
 ## Supported Sinks and Sources
+
 At the moment the supported **Sources** are the following:
 * Jira
-* Mia-Platform Console Webhooks
 
 The supported Sinks are the following:
 * MongoDB
-* Kafka
 
 More sources and sinks are planned for future releases.
 
@@ -51,7 +50,7 @@ processors and must have one or more sinks.
 
 ### Use Cases
 
-You can fins some use cases with the related configuration file here below.
+You can find some use cases with the related configuration file here below.
 
 #### Integration with Jira as Source and MongoDB as Sink
 
