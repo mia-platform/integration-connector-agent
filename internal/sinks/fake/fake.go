@@ -110,3 +110,7 @@ func (f *Writer) WriteData(_ context.Context, data entities.PipelineEvent) error
 	}
 	return nil
 }
+
+func (f *Writer) Close(_ context.Context) error {
+	return nil
+}
