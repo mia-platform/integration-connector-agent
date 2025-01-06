@@ -1,0 +1,9 @@
+{
+  "type": "vm",
+  "authentication": {
+    "secret": {
+      "fromFile": "testdata/secret"
+    }
+  },
+  "webhookPath": "/vm/webhook"
+}
