@@ -17,4 +17,5 @@ package sources
 
 const (
 	Jira = "jira"
+	VM   = "vm"
 )

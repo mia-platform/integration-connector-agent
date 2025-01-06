@@ -28,6 +28,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/vm"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 
 	swagger "github.com/davidebianchi/gswagger"
@@ -74,6 +75,15 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 			}
 
 			if err := webhook.SetupService(ctx, oasRouter, &jiraConfig.Configuration, pg); err != nil {
+				return fmt.Errorf("%w: %s", errSetupSource, err)
+			}
+		case "vm":
+			vmConfig, err := config.GetConfig[*vm.Config](cfgIntegration.Source)
+			if err != nil {
+				return err
+			}
+
+			if err := webhook.SetupService(ctx, oasRouter, &vmConfig.Configuration, pg); err != nil {
 				return fmt.Errorf("%w: %s", errSetupSource, err)
 			}
 
