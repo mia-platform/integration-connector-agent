@@ -18,12 +18,12 @@ package pipeline
 import (
 	"context"
 	"errors"
-	"reflect"
 
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"
+	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	"github.com/sirupsen/logrus"
 )
@@ -45,7 +45,7 @@ func (p Pipeline) AddMessage(data entities.PipelineEvent) {
 }
 
 func (p Pipeline) Start(ctx context.Context) error {
-	if isNil(p.sinks) {
+	if utils.IsNil(p.sinks) {
 		return ErrWriterNotDefined
 	}
 
@@ -111,9 +111,4 @@ func New(logger *logrus.Logger, p *processors.Processors, sinks sinks.Sink[entit
 	}
 
 	return pipeline, nil
-}
-
-// TODO: set as utils and reuse it in CheckSignature
-func isNil(i any) bool {
-	return i == nil || (reflect.ValueOf(i).Kind() == reflect.Ptr && reflect.ValueOf(i).IsNil())
 }

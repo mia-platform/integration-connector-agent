@@ -19,11 +19,11 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	"github.com/mia-platform/integration-connector-agent/internal/utils"
 )
 
 type ValidationConfig struct {
@@ -34,7 +34,7 @@ type ValidationConfig struct {
 // CheckSignature will read the webhook signature header and the given secret for validating the webhook
 // payload.
 func (h ValidationConfig) CheckSignature(req webhook.ValidatingRequest) error {
-	if req == nil || reflect.ValueOf(req).IsNil() {
+	if utils.IsNil(req) {
 		return fmt.Errorf("request is nil")
 	}
 	secret := h.Secret.String()
