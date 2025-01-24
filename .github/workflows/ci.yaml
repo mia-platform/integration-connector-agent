@@ -117,6 +117,8 @@ jobs:
         echo "SNAPSHOT_RELEASE=1" >> $GITHUB_ENV
     - name: Run Goreleaser
       run: make ci-release SNAPSHOT_RELEASE=${SNAPSHOT_RELEASE}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Upload Binaries Artifacts
       uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
       with:
