@@ -37,7 +37,7 @@ func TestImplementWriter(t *testing.T) {
 		f := New(config)
 
 		event := &entities.Event{
-			ID:            "id",
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
 			OperationType: entities.Write,
 		}
 		err := f.WriteData(context.Background(), event)
@@ -54,7 +54,7 @@ func TestImplementWriter(t *testing.T) {
 		f := New(config)
 
 		event := &entities.Event{
-			ID:            "id",
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
 			OperationType: entities.Delete,
 		}
 		err := f.WriteData(context.Background(), event)
@@ -71,7 +71,7 @@ func TestImplementWriter(t *testing.T) {
 		f := New(config)
 
 		event := &entities.Event{
-			ID:            "id",
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
 			OperationType: entities.Write,
 		}
 		err := f.WriteData(context.Background(), event)
@@ -86,7 +86,7 @@ func TestImplementWriter(t *testing.T) {
 		f := New(config)
 
 		event := &entities.Event{
-			ID:            "id",
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
 			OperationType: entities.Write,
 		}
 		f.AddMock(Mock{
@@ -106,7 +106,7 @@ func TestImplementWriter(t *testing.T) {
 		f := New(config)
 
 		event := &entities.Event{
-			ID:            "id",
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
 			OperationType: entities.Delete,
 		}
 		f.AddMock(Mock{

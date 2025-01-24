@@ -16,9 +16,6 @@
 package console
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 
@@ -47,79 +44,58 @@ var DefaultSupportedEvents = webhook.Events{
 	Supported: map[string]webhook.Event{
 		projectCreatedEvent: {
 			Operation: entities.Write,
-			GetFieldID: func(parsedData gjson.Result) string {
+			GetFieldID: func(parsedData gjson.Result) entities.PkFields {
 				projectID := parsedData.Get(projectIDEventPath).String()
 				tenantID := parsedData.Get(tenantIDEventPath).String()
 
-				return getFieldID([]pkFields{
-					{key: tenantIDKey, value: tenantID},
-					{key: projectIDKey, value: projectID},
-				})
+				return entities.PkFields{
+					entities.PkField{Key: tenantIDKey, Value: tenantID},
+					entities.PkField{Key: projectIDKey, Value: projectID},
+				}
 			},
 		},
 		serviceCreatedEvent: {
 			Operation: entities.Write,
-			GetFieldID: func(parsedData gjson.Result) string {
+			GetFieldID: func(parsedData gjson.Result) entities.PkFields {
 				projectID := parsedData.Get(projectIDEventPath).String()
 				serviceName := parsedData.Get(serviceNameEventPath).String()
 				tenantID := parsedData.Get(tenantIDEventPath).String()
 
-				return getFieldID([]pkFields{
-					{key: tenantIDKey, value: tenantID},
-					{key: projectIDKey, value: projectID},
-					{key: serviceNameKey, value: serviceName},
-				})
+				return entities.PkFields{
+					entities.PkField{Key: tenantIDKey, Value: tenantID},
+					entities.PkField{Key: projectIDKey, Value: projectID},
+					entities.PkField{Key: serviceNameKey, Value: serviceName},
+				}
 			},
 		},
 		configurationSavedEvent: {
 			Operation: entities.Write,
-			GetFieldID: func(parsedData gjson.Result) string {
+			GetFieldID: func(parsedData gjson.Result) entities.PkFields {
 				tenantID := parsedData.Get(tenantIDEventPath).String()
 				projectID := parsedData.Get(projectIDEventPath).String()
 				revisionName := parsedData.Get(revisionNameEventPath).String()
 
-				return getFieldID([]pkFields{
-					{key: tenantIDKey, value: tenantID},
-					{key: projectIDKey, value: projectID},
-					{key: revisionNameKey, value: revisionName},
-				})
+				return entities.PkFields{
+					entities.PkField{Key: tenantIDKey, Value: tenantID},
+					entities.PkField{Key: projectIDKey, Value: projectID},
+					entities.PkField{Key: revisionNameKey, Value: revisionName},
+				}
 			},
 		},
 		tagCreatedEvent: {
 			Operation: entities.Write,
-			GetFieldID: func(parsedData gjson.Result) string {
+			GetFieldID: func(parsedData gjson.Result) entities.PkFields {
 				tenantID := parsedData.Get(tenantIDEventPath).String()
 				projectID := parsedData.Get(projectIDEventPath).String()
 				tagName := parsedData.Get(tagNameEventPath).String()
 
-				return getFieldID([]pkFields{
-					{key: tenantIDKey, value: tenantID},
-					{key: projectIDKey, value: projectID},
-					{key: "tagName", value: tagName},
-				})
+				return entities.PkFields{
+					entities.PkField{Key: tenantIDKey, Value: tenantID},
+					entities.PkField{Key: projectIDKey, Value: projectID},
+					entities.PkField{Key: "tagName", Value: tagName},
+				}
 			},
 		},
 	},
 	EventTypeFieldPath: webhookEventPath,
-}
-
-type pkFields struct {
-	key   string
-	value string
-}
-
-func getFieldID(keyMap []pkFields) string {
-	keys := []string{}
-	for _, kv := range keyMap {
-		keys = append(keys, fmt.Sprintf("%s:\"%s\"", kv.key, kv.value))
-	}
-	key := strings.Join(keys, ",")
-
-	return key
-
-	// TODO: it's not easy to debug with hash. Should I plain string?
-	// hasher := sha256.New()
-	// hasher.Write([]byte(key))
-
-	// return hex.EncodeToString(hasher.Sum(nil))
 }

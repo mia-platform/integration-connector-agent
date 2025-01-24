@@ -82,7 +82,7 @@ loop:
 			if err := p.sinks.WriteData(ctx, processedMessage); err != nil {
 				// TODO: manage failure in writing message. DLQ?
 				p.logger.WithError(err).WithFields(logrus.Fields{
-					"id":               processedMessage.GetID(),
+					"id":               processedMessage.GetPrimaryKeys().Map(),
 					"data":             string(processedMessage.Data()),
 					"messageOperation": processedMessage.Operation(),
 				}).Error("error writing data")

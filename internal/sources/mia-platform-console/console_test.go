@@ -188,47 +188,47 @@ func TestAddSourceToRouter(t *testing.T) {
 			eventName string
 			body      string
 
-			expectedID        string
+			expectedPk        entities.PkFields
 			expectedOperation entities.Operation
 		}{
 			{
 				eventName: projectCreatedEvent,
 				body:      fmt.Sprintf(`{"eventName":"%s","payload":{"projectId":"%s","tenantId":"%s"}}`, projectCreatedEvent, projectID, tenantID),
 
-				expectedID: getFieldID([]pkFields{
-					{"tenantId", tenantID},
-					{"projectId", projectID},
-				}),
+				expectedPk: entities.PkFields{
+					entities.PkField{Key: "tenantId", Value: tenantID},
+					entities.PkField{Key: "projectId", Value: projectID},
+				},
 			},
 			{
 				eventName: serviceCreatedEvent,
 				body:      fmt.Sprintf(`{"eventName":"%s","payload":{"projectId":"%s","tenantId":"%s","serviceName":"my-service"}}`, serviceCreatedEvent, projectID, tenantID),
 
-				expectedID: getFieldID([]pkFields{
-					{"tenantId", tenantID},
-					{"projectId", projectID},
-					{"serviceName", "my-service"},
-				}),
+				expectedPk: entities.PkFields{
+					entities.PkField{Key: "tenantId", Value: tenantID},
+					entities.PkField{Key: "projectId", Value: projectID},
+					entities.PkField{Key: "serviceName", Value: "my-service"},
+				},
 			},
 			{
 				eventName: configurationSavedEvent,
 				body:      fmt.Sprintf(`{"eventName":"%s","payload":{"tenantId":"%s","projectId":"%s","revisionName":"my-revision"}}`, configurationSavedEvent, tenantID, projectID),
 
-				expectedID: getFieldID([]pkFields{
-					{"tenantId", tenantID},
-					{"projectId", projectID},
-					{"revisionName", "my-revision"},
-				}),
+				expectedPk: entities.PkFields{
+					entities.PkField{Key: "tenantId", Value: tenantID},
+					entities.PkField{Key: "projectId", Value: projectID},
+					entities.PkField{Key: "revisionName", Value: "my-revision"},
+				},
 			},
 			{
 				eventName: tagCreatedEvent,
 				body:      fmt.Sprintf(`{"eventName":"%s","payload":{"projectId":"%s","tenantId":"%s","tagName":"my-tag"}}`, tagCreatedEvent, projectID, tenantID),
 
-				expectedID: getFieldID([]pkFields{
-					{"tenantId", tenantID},
-					{"projectId", projectID},
-					{"tagName", "my-tag"},
-				}),
+				expectedPk: entities.PkFields{
+					entities.PkField{Key: "tenantId", Value: tenantID},
+					entities.PkField{Key: "projectId", Value: projectID},
+					entities.PkField{Key: "tagName", Value: "my-tag"},
+				},
 			},
 		}
 
@@ -248,7 +248,7 @@ func TestAddSourceToRouter(t *testing.T) {
 				require.Equal(t, fakewriter.Call{
 					Operation: tc.expectedOperation,
 					Data: &entities.Event{
-						ID:            tc.expectedID,
+						PrimaryKeys:   tc.expectedPk,
 						Type:          tc.eventName,
 						OperationType: tc.expectedOperation,
 						OriginalRaw:   []byte(tc.body),

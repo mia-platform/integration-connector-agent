@@ -35,35 +35,35 @@ func TestEvent(t *testing.T) {
 		events  *Events
 
 		expectError           string
-		expectedID            string
+		expectedPk            entities.PkFields
 		expectedType          string
 		expectedOperationType entities.Operation
 	}{
-		"without id": {
+		"without id in the event": {
 			rawData: `{"webhookEvent": "my-event"}`,
 			events: &Events{
 				Supported: map[string]Event{
 					"my-event": {
-						FieldID:   "issue.id",
-						Operation: entities.Write,
+						GetFieldID: GetPrimaryKeyByPath("issue.id"),
+						Operation:  entities.Write,
 					},
 				},
 				EventTypeFieldPath: "webhookEvent",
 			},
-			expectError: "missing id field in event: issue.id",
+			expectError: "missing id field in event: my-event",
 		},
 		"supported write event": {
 			rawData: `{"issue":{"id":"my-id"},"webhookEvent": "my-event"}`,
 			events: &Events{
 				Supported: map[string]Event{
 					"my-event": {
-						FieldID:   "issue.id",
-						Operation: entities.Write,
+						GetFieldID: GetPrimaryKeyByPath("issue.id"),
+						Operation:  entities.Write,
 					},
 				},
 				EventTypeFieldPath: "webhookEvent",
 			},
-			expectedID:            "my-id",
+			expectedPk:            entities.PkFields{{Key: "issue.id", Value: "my-id"}},
 			expectedType:          "my-event",
 			expectedOperationType: entities.Write,
 		},
@@ -72,15 +72,15 @@ func TestEvent(t *testing.T) {
 			events: &Events{
 				Supported: map[string]Event{
 					"my-event": {
-						FieldID:   "issue.id",
-						Operation: entities.Delete,
+						GetFieldID: GetPrimaryKeyByPath("issue.id"),
+						Operation:  entities.Delete,
 					},
 				},
 				EventTypeFieldPath: "webhookEvent",
 			},
 			expectedOperationType: entities.Delete,
 			expectedType:          "my-event",
-			expectedID:            "my-id",
+			expectedPk:            entities.PkFields{{Key: "issue.id", Value: "my-id"}},
 		},
 		"unsupported_event": {
 			rawData: `{"issue": {"id": "my-id", "key": "TEST-1"}, "webhookEvent": "unsupported"}`,
@@ -96,17 +96,31 @@ func TestEvent(t *testing.T) {
 			events: &Events{
 				Supported: map[string]Event{
 					"my-event": {
-						GetFieldID: func(parsedData gjson.Result) string {
-							return fmt.Sprintf("parent:\"%s\"-project:\"%s\"", parsedData.Get("issue.parentId").String(), parsedData.Get("issue.projectId").String())
+						GetFieldID: func(parsedData gjson.Result) entities.PkFields {
+							return entities.PkFields{
+								{Key: "parent", Value: parsedData.Get("issue.parentId").String()},
+								{Key: "project", Value: parsedData.Get("issue.projectId").String()},
+							}
 						},
 					},
 				},
 				EventTypeFieldPath: "webhookEvent",
 			},
 
-			expectedID:            `parent:"my-parent-id"-project:"prj-1"`,
+			expectedPk:            entities.PkFields{{Key: "parent", Value: "my-parent-id"}, {Key: "project", Value: "prj-1"}},
 			expectedType:          "my-event",
 			expectedOperationType: entities.Write,
+		},
+		"without GetFieldID": {
+			rawData: `{"issue":{"tag":"my-id","projectId":"prj-1","parentId":"my-parent-id"},"webhookEvent": "my-event"}`,
+			events: &Events{
+				Supported: map[string]Event{
+					"my-event": {},
+				},
+				EventTypeFieldPath: "webhookEvent",
+			},
+
+			expectError: fmt.Sprintf("%s: my-event missing GetFieldID function", ErrUnsupportedWebhookEvent),
 		},
 	}
 
@@ -120,7 +134,7 @@ func TestEvent(t *testing.T) {
 				require.NoError(t, err)
 
 				require.Equal(t, &entities.Event{
-					ID:            tc.expectedID,
+					PrimaryKeys:   tc.expectedPk,
 					OperationType: tc.expectedOperationType,
 					Type:          tc.expectedType,
 

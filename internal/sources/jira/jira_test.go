@@ -183,87 +183,87 @@ func TestAddSourceToRouter(t *testing.T) {
 			eventName string
 			body      string
 
-			expectedID        string
+			expectedPk        entities.PkFields
 			expectedOperation entities.Operation
 		}{
 			{
 				eventName:  issueCreated,
 				body:       getIssueBody(issueCreated, id),
-				expectedID: id,
+				expectedPk: entities.PkFields{{Key: "issue.id", Value: id}},
 			},
 			{
 				eventName:  issueUpdated,
 				body:       getIssueBody(issueUpdated, id),
-				expectedID: id,
+				expectedPk: entities.PkFields{{Key: "issue.id", Value: id}},
 			},
 			{
 				eventName:         issueDeleted,
 				body:              getIssueBody(issueDeleted, id),
-				expectedID:        id,
+				expectedPk:        entities.PkFields{{Key: "issue.id", Value: id}},
 				expectedOperation: entities.Delete,
 			},
 			{
 				eventName:  issueLinkCreated,
 				body:       getIssueLinkBody(issueLinkCreated, id),
-				expectedID: id,
+				expectedPk: entities.PkFields{{Key: "issueLink.id", Value: id}},
 			},
 			{
 				eventName:         issueLinkDeleted,
 				body:              getIssueLinkBody(issueLinkDeleted, id),
-				expectedID:        id,
+				expectedPk:        entities.PkFields{{Key: "issueLink.id", Value: id}},
 				expectedOperation: entities.Delete,
 			},
 			{
 				eventName:  projectCreated,
 				body:       getProjectBody(projectCreated, id),
-				expectedID: id,
+				expectedPk: entities.PkFields{{Key: "project.id", Value: id}},
 			},
 			{
 				eventName:  projectUpdated,
 				body:       getProjectBody(projectUpdated, id),
-				expectedID: id,
+				expectedPk: entities.PkFields{{Key: "project.id", Value: id}},
 			},
 			{
 				eventName:         projectDeleted,
 				body:              getProjectBody(projectDeleted, id),
-				expectedID:        id,
+				expectedPk:        entities.PkFields{{Key: "project.id", Value: id}},
 				expectedOperation: entities.Delete,
 			},
 			{
 				eventName:         projectSoftDeleted,
 				body:              getProjectBody(projectSoftDeleted, id),
-				expectedID:        id,
+				expectedPk:        entities.PkFields{{Key: "project.id", Value: id}},
 				expectedOperation: entities.Delete,
 			},
 			{
 				eventName:  projectRestoredDeleted,
 				body:       getProjectBody(projectRestoredDeleted, id),
-				expectedID: id,
+				expectedPk: entities.PkFields{{Key: "project.id", Value: id}},
 			},
 			{
 				eventName:  versionReleased,
 				body:       getVersionBody(versionReleased, id),
-				expectedID: id,
+				expectedPk: entities.PkFields{{Key: "version.id", Value: id}},
 			},
 			{
 				eventName:  versionUnreleased,
 				body:       getVersionBody(versionUnreleased, id),
-				expectedID: id,
+				expectedPk: entities.PkFields{{Key: "version.id", Value: id}},
 			},
 			{
 				eventName:  versionCreated,
 				body:       getVersionBody(versionCreated, id),
-				expectedID: id,
+				expectedPk: entities.PkFields{{Key: "version.id", Value: id}},
 			},
 			{
 				eventName:  versionUpdated,
 				body:       getVersionBody(versionUpdated, id),
-				expectedID: id,
+				expectedPk: entities.PkFields{{Key: "version.id", Value: id}},
 			},
 			{
 				eventName:         versionDeleted,
 				body:              getVersionBody(versionDeleted, id),
-				expectedID:        id,
+				expectedPk:        entities.PkFields{{Key: "version.id", Value: id}},
 				expectedOperation: entities.Delete,
 			},
 		}
@@ -284,7 +284,7 @@ func TestAddSourceToRouter(t *testing.T) {
 				require.Equal(t, fakewriter.Call{
 					Operation: tc.expectedOperation,
 					Data: &entities.Event{
-						ID:            tc.expectedID,
+						PrimaryKeys:   tc.expectedPk,
 						Type:          tc.eventName,
 						OperationType: tc.expectedOperation,
 						OriginalRaw:   []byte(tc.body),

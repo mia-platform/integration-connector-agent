@@ -88,8 +88,8 @@ func TestSetupServiceWithConfig(t *testing.T) {
 				Events: &Events{
 					Supported: map[string]Event{
 						"jira:issue_updated": {
-							FieldID:   "issue.id",
-							Operation: entities.Write,
+							GetFieldID: GetPrimaryKeyByPath("issue.id"),
+							Operation:  entities.Write,
 						},
 					},
 					EventTypeFieldPath: "webhookEvent",
