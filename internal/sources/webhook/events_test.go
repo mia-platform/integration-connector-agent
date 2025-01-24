@@ -144,3 +144,19 @@ func TestEvent(t *testing.T) {
 		})
 	}
 }
+
+func TestGetPrimaryKeyByPath(t *testing.T) {
+	t.Run("ok", func(t *testing.T) {
+		getFieldID := GetPrimaryKeyByPath("issue.id")
+		parsed := gjson.ParseBytes([]byte(`{"issue": {"id": "my-id"}}`))
+
+		require.Equal(t, entities.PkFields{{Key: "issue.id", Value: "my-id"}}, getFieldID(parsed))
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		getFieldID := GetPrimaryKeyByPath("issue.id")
+		parsed := gjson.ParseBytes([]byte(`{}`))
+
+		require.Nil(t, getFieldID(parsed))
+	})
+}
