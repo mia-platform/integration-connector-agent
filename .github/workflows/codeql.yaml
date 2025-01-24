@@ -29,17 +29,17 @@ jobs:
       with:
         show-progress: false
     - name: Setup Golang
-      uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # v5.1.0
+      uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
       with:
         go-version-file: go.mod
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@662472033e021d55d94146f66f6058822b0b39fd # v3.27.0
+      uses: github/codeql-action/init@ee117c905ab18f32fa0f66c2fe40ecc8013f3e04 # v3.28.4
       with:
         languages: go
         build-mode: manual
     - name: Run Build
       run: go build .
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@662472033e021d55d94146f66f6058822b0b39fd # v3.27.0
+      uses: github/codeql-action/analyze@ee117c905ab18f32fa0f66c2fe40ecc8013f3e04 # v3.28.4
       with:
         category: "/language:go"
