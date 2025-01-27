@@ -24,17 +24,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	fakesink "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
+	"github.com/mia-platform/integration-connector-agent/internal/testutils"
 	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
-	swagger "github.com/davidebianchi/gswagger"
-	oasfiber "github.com/davidebianchi/gswagger/support/fiber"
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
@@ -65,8 +61,8 @@ func TestSetupServiceWithConfig(t *testing.T) {
 		"fails validation": {
 			config: &Configuration{
 				WebhookPath: defaultWebhookEndpoint,
-				Authentication: Authentication{
-					Secret:     config.SecretSource("SECRET"),
+				Authentication: HMAC{
+					Secret:     "SECRET",
 					HeaderName: "X-Hub-Signature",
 				},
 				Events: &Events{},
@@ -82,7 +78,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 				require.NoError(t, json.NewDecoder(body).Decode(&expectedBody))
 				require.Equal(t, utils.HTTPError{
 					Error:   "Validation Error",
-					Message: noSignatureHeaderButSecretError,
+					Message: NoSignatureHeaderButSecretError,
 				}, expectedBody)
 			},
 		},
@@ -92,8 +88,8 @@ func TestSetupServiceWithConfig(t *testing.T) {
 				Events: &Events{
 					Supported: map[string]Event{
 						"jira:issue_updated": {
-							FieldID:   "issue.id",
-							Operation: entities.Write,
+							GetFieldID: GetPrimaryKeyByPath("issue.id"),
+							Operation:  entities.Write,
 						},
 					},
 					EventTypeFieldPath: "webhookEvent",
@@ -121,7 +117,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			app, router := getRouter(t)
+			app, router := testutils.GetTestRouter(t)
 
 			proc := &processors.Processors{}
 			s := fakesink.New(nil)
@@ -144,22 +140,4 @@ func TestSetupServiceWithConfig(t *testing.T) {
 			}
 		})
 	}
-}
-
-func getRouter(t *testing.T) (*fiber.App, *swagger.Router[fiber.Handler, fiber.Router]) {
-	t.Helper()
-
-	app := fiber.New()
-	router, err := swagger.NewRouter(oasfiber.NewRouter(app), swagger.Options{
-		Openapi: &openapi3.T{
-			OpenAPI: "3.1.0",
-			Info: &openapi3.Info{
-				Title:   "Test",
-				Version: "test-version",
-			},
-		},
-	})
-	require.NoError(t, err)
-
-	return app, router
 }

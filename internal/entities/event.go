@@ -15,7 +15,9 @@
 
 package entities
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type Operation int
 
@@ -24,8 +26,27 @@ const (
 	Delete
 )
 
+type PkField struct {
+	Key   string
+	Value string
+}
+
+type PkFields []PkField
+
+func (fields PkFields) Map() map[string]string {
+	m := map[string]string{}
+	for _, f := range fields {
+		m[f.Key] = f.Value
+	}
+	return m
+}
+
+func (fields PkFields) IsEmpty() bool {
+	return len(fields) == 0
+}
+
 type PipelineEvent interface {
-	GetID() string
+	GetPrimaryKeys() PkFields
 	GetType() string
 
 	Data() []byte
@@ -36,7 +57,7 @@ type PipelineEvent interface {
 }
 
 type Event struct {
-	ID            string
+	PrimaryKeys   PkFields
 	Type          string
 	OperationType Operation
 
@@ -44,8 +65,8 @@ type Event struct {
 	jsonData    map[string]any
 }
 
-func (e Event) GetID() string {
-	return e.ID
+func (e Event) GetPrimaryKeys() PkFields {
+	return e.PrimaryKeys
 }
 
 func (e Event) Data() []byte {
@@ -74,7 +95,7 @@ func (e *Event) WithData(raw []byte) {
 
 func (e *Event) Clone() PipelineEvent {
 	return &Event{
-		ID:            e.ID,
+		PrimaryKeys:   e.PrimaryKeys,
 		OperationType: e.OperationType,
 		OriginalRaw:   e.OriginalRaw,
 		Type:          e.Type,

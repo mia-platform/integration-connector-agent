@@ -88,6 +88,13 @@ func (f *Writer) Calls() Calls {
 	return f.stub
 }
 
+func (f *Writer) ResetCalls() {
+	f.mtx.Lock()
+	defer f.mtx.Unlock()
+
+	f.stub = Calls{}
+}
+
 func (f *Writer) AddMock(mock Mock) {
 	f.mtx.Lock()
 	defer f.mtx.Unlock()

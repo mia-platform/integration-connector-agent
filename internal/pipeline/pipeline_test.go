@@ -50,21 +50,21 @@ func TestPipeline(t *testing.T) {
 		}{
 			"default operation": {
 				event: &entities.Event{
-					ID:            id,
+					PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 					OperationType: entities.Write,
 				},
 				expectedOperation: entities.Write,
 			},
 			"write operation": {
 				event: &entities.Event{
-					ID:            id,
+					PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 					OperationType: entities.Write,
 				},
 				expectedOperation: entities.Write,
 			},
 			"delete operation": {
 				event: &entities.Event{
-					ID:            id,
+					PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 					OperationType: entities.Delete,
 				},
 				expectedOperation: entities.Delete,
@@ -79,7 +79,7 @@ func TestPipeline(t *testing.T) {
 
 				require.Eventually(t, func() bool {
 					data := &entities.Event{
-						ID:            id,
+						PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 						OperationType: tc.expectedOperation,
 						OriginalRaw:   []byte(`{}`),
 					}
@@ -144,14 +144,14 @@ func TestPipeline(t *testing.T) {
 
 		id := "fake event"
 		p.AddMessage(&entities.Event{
-			ID:            id,
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 			OperationType: entities.Write,
 			OriginalRaw:   []byte(`{}`),
 		})
 
 		require.Eventually(t, func() bool {
 			event := &entities.Event{
-				ID:            id,
+				PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 				OperationType: entities.Write,
 				OriginalRaw:   []byte(`{}`),
 			}
@@ -180,7 +180,7 @@ func TestPipeline(t *testing.T) {
 
 		id := "fake event"
 		p.AddMessage(&entities.Event{
-			ID:            id,
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 			OperationType: entities.Delete,
 		})
 
@@ -188,7 +188,7 @@ func TestPipeline(t *testing.T) {
 			require.Equal(t, fakesink.Call{
 				Operation: entities.Delete,
 				Data: &entities.Event{
-					ID:            id,
+					PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 					OperationType: entities.Delete,
 				},
 			}, w.Calls().LastCall())
@@ -213,7 +213,7 @@ func TestPipeline(t *testing.T) {
 		runPipeline(t, p)
 
 		p.AddMessage(&entities.Event{
-			ID:            "fake event",
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "fake event"}},
 			Type:          "event-type",
 			OperationType: entities.Write,
 

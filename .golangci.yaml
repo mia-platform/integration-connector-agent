@@ -40,7 +40,6 @@ linters:
   - tenv
   - thelper
   - unconvert
-  - unparam
   - unused
   - usestdlibvars
   - whitespace
@@ -59,8 +58,6 @@ linters-settings:
         yaml: camel
   tenv:
     all: true
-  unparam:
-    check-exported: false
   mnd:
     checks:
     - case

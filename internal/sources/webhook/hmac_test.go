@@ -19,11 +19,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestValidateWebhookRequest(t *testing.T) {
+func TestCheckHMACSignature(t *testing.T) {
 	t.Parallel()
 
 	webhookSignatureHeader := "X-Hub-Signature"
@@ -33,9 +32,11 @@ func TestValidateWebhookRequest(t *testing.T) {
 		authentication Authentication
 		expectedErr    error
 	}{
-		"no header and no secret return no error": {},
+		"no header and no secret return no error": {
+			authentication: &HMAC{},
+		},
 		"missing secret return error": {
-			authentication: Authentication{
+			authentication: &HMAC{
 				HeaderName: webhookSignatureHeader,
 			},
 			request: fakeValidatingRequest{
@@ -43,31 +44,31 @@ func TestValidateWebhookRequest(t *testing.T) {
 					webhookSignatureHeader: {"signature"},
 				},
 			},
-			expectedErr: errors.New(signatureHeaderButNoSecretError),
+			expectedErr: errors.New(SignatureHeaderButNoSecretError),
 		},
 		"missing header return error": {
-			authentication: Authentication{
+			authentication: &HMAC{
 				HeaderName: webhookSignatureHeader,
-				Secret:     config.SecretSource("secret"),
+				Secret:     "secret",
 			},
-			expectedErr: errors.New(noSignatureHeaderButSecretError),
+			expectedErr: errors.New(NoSignatureHeaderButSecretError),
 		},
 		"multiple header return error": {
-			authentication: Authentication{
+			authentication: &HMAC{
 				HeaderName: webhookSignatureHeader,
-				Secret:     config.SecretSource("secret"),
+				Secret:     "secret",
 			},
 			request: fakeValidatingRequest{
 				headers: map[string][]string{
 					webhookSignatureHeader: {"signature", "other"},
 				},
 			},
-			expectedErr: errors.New(multipleSignatureHeadersError),
+			expectedErr: errors.New(MultipleSignatureHeadersError),
 		},
 		"valid signature return nil": {
-			authentication: Authentication{
+			authentication: &HMAC{
 				HeaderName: webhookSignatureHeader,
-				Secret:     config.SecretSource("It's a Secret to Everybody"),
+				Secret:     "It's a Secret to Everybody",
 			},
 			request: fakeValidatingRequest{
 				body: []byte("Hello World!"),
@@ -77,9 +78,9 @@ func TestValidateWebhookRequest(t *testing.T) {
 			},
 		},
 		"invalid signature return error": {
-			authentication: Authentication{
+			authentication: &HMAC{
 				HeaderName: webhookSignatureHeader,
-				Secret:     config.SecretSource("It's a Secret to Everybody"),
+				Secret:     "It's a Secret to Everybody",
 			},
 			request: fakeValidatingRequest{
 				body: []byte("tampered body"),
@@ -87,19 +88,17 @@ func TestValidateWebhookRequest(t *testing.T) {
 					webhookSignatureHeader: {"sha256=a4771c39fbe90f317c7824e83ddef3caae9cb3d976c214ace1f2937e133263c9"},
 				},
 			},
-			expectedErr: errors.New(invalidSignatureError),
+			expectedErr: errors.New(InvalidSignatureError),
 		},
 	}
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			err := ValidateWebhookRequest(test.request, test.authentication)
+			err := test.authentication.CheckSignature(test.request)
 			assert.Equal(t, test.expectedErr, err)
 		})
 	}
 }
-
-var _ ValidatingRequest = fakeValidatingRequest{}
 
 type fakeValidatingRequest struct {
 	headers map[string][]string

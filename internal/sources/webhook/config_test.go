@@ -28,7 +28,7 @@ func TestValidateConfiguration(t *testing.T) {
 		expectedErr string
 	}{
 		"empty configuration": {
-			expectedErr: "webhook path is empty",
+			expectedErr: "webhook path is required",
 		},
 		"empty events": {
 			config: Configuration{
@@ -47,6 +47,53 @@ func TestValidateConfiguration(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			err := tc.config.Validate()
+			if tc.expectedErr != "" {
+				require.EqualError(t, err, tc.expectedErr)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
+type fakeRequest struct {
+	body    []byte
+	headers map[string][]string
+}
+
+func (f fakeRequest) GetReqHeaders() map[string][]string {
+	return f.headers
+}
+func (f fakeRequest) Body() []byte {
+	return f.body
+}
+
+func TestCheckSignature(t *testing.T) {
+	testCases := map[string]struct {
+		config Configuration
+		req    ValidatingRequest
+
+		expectedErr string
+	}{
+		"no authentication": {},
+		"request is nil": {
+			config: Configuration{
+				Authentication: &HMAC{},
+			},
+			expectedErr: "invalid webhook authentication configuration: request is nil",
+		},
+		"ok": {
+			config: Configuration{},
+			req: &fakeRequest{
+				body:    []byte("body"),
+				headers: map[string][]string{"header": {"sha256=signature"}},
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			err := tc.config.CheckSignature(tc.req)
 			if tc.expectedErr != "" {
 				require.EqualError(t, err, tc.expectedErr)
 				return
