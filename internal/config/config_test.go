@@ -16,6 +16,7 @@
 package config
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -72,11 +73,40 @@ func TestLoadServiceConfiguration(t *testing.T) {
 			},
 			expectedSinkConfig:      getExpectedSinkConfig(t),
 			expectedProcessorConfig: getExpectedProcessorConfig(t),
-			expectedSourceConfig:    getExpectedSourceConfig(t),
+			expectedSourceConfig:    getExpectedSourceConfig(t, "jira"),
 		},
 		"invalid config if integrations is empty": {
 			path:          "./testdata/empty-integrations.json",
 			expectedError: "configuration not valid: json schema validation errors:",
+		},
+		"console config is parsed correctly": {
+			path: "./testdata/console-config.json",
+			expectedContent: &Configuration{
+				Integrations: []Integration{
+					{
+						Source: GenericConfig{
+							Type: "console",
+						},
+						Pipelines: []Pipeline{
+							{
+								Processors: Processors{
+									{
+										Type: "mapper",
+									},
+								},
+								Sinks: Sinks{
+									{
+										Type: "mongo",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedSinkConfig:      getExpectedSinkConfig(t),
+			expectedProcessorConfig: getExpectedProcessorConfig(t),
+			expectedSourceConfig:    getExpectedSourceConfig(t, "console"),
 		},
 	}
 
@@ -178,16 +208,16 @@ func getExpectedProcessorConfig(t *testing.T) string {
 }`
 }
 
-func getExpectedSourceConfig(t *testing.T) string {
+func getExpectedSourceConfig(t *testing.T, sourceType string) string {
 	t.Helper()
 
-	return `{
-	"type": "jira",
+	return fmt.Sprintf(`{
+	"type": "%s",
 	"webhookPath": "/custom-webhook-path",
 	"authentication": {
 		"secret": {
 			"fromFile": "testdata/secret"
 		}
 	}
-}`
+}`, sourceType)
 }

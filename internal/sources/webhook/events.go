@@ -34,8 +34,19 @@ type Events struct {
 }
 
 type Event struct {
-	Operation entities.Operation
-	FieldID   string
+	Operation  entities.Operation
+	GetFieldID func(parsedData gjson.Result) entities.PkFields
+}
+
+func GetPrimaryKeyByPath(path string) func(parsedData gjson.Result) entities.PkFields {
+	return func(parsedData gjson.Result) entities.PkFields {
+		value := parsedData.Get(path).String()
+		if value == "" {
+			return nil
+		}
+
+		return entities.PkFields{{Key: path, Value: value}}
+	}
 }
 
 func (e *Events) getPipelineEvent(logger *logrus.Entry, rawData []byte) (entities.PipelineEvent, error) {
@@ -51,17 +62,25 @@ func (e *Events) getPipelineEvent(logger *logrus.Entry, rawData []byte) (entitie
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedWebhookEvent, webhookEvent)
 	}
 
-	id := parsed.Get(event.FieldID).String()
-	if id == "" {
+	if event.GetFieldID == nil {
+		logger.WithFields(logrus.Fields{
+			"webhookEvent": webhookEvent,
+			"event":        string(rawData),
+		}).Trace("missing GetFieldID function")
+		return nil, fmt.Errorf("%w: %s missing GetFieldID function", ErrUnsupportedWebhookEvent, webhookEvent)
+	}
+
+	pk := event.GetFieldID(parsed)
+	if pk.IsEmpty() {
 		logger.WithFields(logrus.Fields{
 			"webhookEvent": webhookEvent,
 			"event":        string(rawData),
 		}).Trace("unsupported webhook event")
-		return nil, fmt.Errorf("%w: %s", ErrMissingFieldID, event.FieldID)
+		return nil, fmt.Errorf("%w: %s", ErrMissingFieldID, webhookEvent)
 	}
 
 	return &entities.Event{
-		ID:            id,
+		PrimaryKeys:   pk,
 		OperationType: event.Operation,
 		Type:          webhookEvent,
 

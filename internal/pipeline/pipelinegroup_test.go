@@ -63,7 +63,7 @@ func TestPipelineGroup(t *testing.T) {
 		pg.Start(ctx)
 
 		event := &entities.Event{
-			ID:          "123",
+			PrimaryKeys: entities.PkFields{{Key: "id", Value: "123"}},
 			OriginalRaw: []byte(`{"id":"123"}`),
 		}
 		pg.AddMessage(event)

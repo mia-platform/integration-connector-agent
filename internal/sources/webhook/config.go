@@ -16,14 +16,21 @@
 package webhook
 
 import (
+	"errors"
 	"fmt"
-
-	"github.com/mia-platform/integration-connector-agent/internal/config"
 )
 
-type Authentication struct {
-	Secret     config.SecretSource `json:"secret"`
-	HeaderName string              `json:"headerName"`
+var (
+	ErrWebhookPathRequired = errors.New("webhook path is required")
+)
+
+type ValidatingRequest interface {
+	GetReqHeaders() map[string][]string
+	Body() []byte
+}
+
+type Authentication interface {
+	CheckSignature(req ValidatingRequest) error
 }
 
 // Configuration is the representation of the configuration for a Jira Cloud webhook
@@ -37,7 +44,7 @@ type Configuration struct {
 
 func (c *Configuration) Validate() error {
 	if c.WebhookPath == "" {
-		return fmt.Errorf("webhook path is empty")
+		return ErrWebhookPathRequired
 	}
 
 	if c.Events == nil {
@@ -45,4 +52,11 @@ func (c *Configuration) Validate() error {
 	}
 
 	return nil
+}
+
+func (c *Configuration) CheckSignature(req ValidatingRequest) error {
+	if c == nil || c.Authentication == nil {
+		return nil
+	}
+	return c.Authentication.CheckSignature(req)
 }

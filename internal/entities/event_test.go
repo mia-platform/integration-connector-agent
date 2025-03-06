@@ -23,7 +23,7 @@ import (
 
 func TestEvent(t *testing.T) {
 	e := &Event{
-		ID:            "test",
+		PrimaryKeys:   PkFields{{Key: "test", Value: "test"}},
 		OperationType: Write,
 		OriginalRaw:   []byte(`{"test": "test"}`),
 	}
@@ -31,7 +31,7 @@ func TestEvent(t *testing.T) {
 	eventCloned := e.Clone()
 
 	require.Implements(t, (*PipelineEvent)(nil), e)
-	require.Equal(t, "test", e.GetID())
+	require.Equal(t, e.PrimaryKeys, e.GetPrimaryKeys())
 	require.Equal(t, []byte(`{"test": "test"}`), e.Data())
 	require.Equal(t, Write, e.Operation())
 	e.WithData([]byte(`{"test": "test2"}`))
@@ -40,11 +40,46 @@ func TestEvent(t *testing.T) {
 	require.Equal(t, map[string]any{"test": "test2"}, parsed)
 	require.NoError(t, err)
 	require.Equal(t, &Event{
-		ID:            "test",
+		PrimaryKeys:   PkFields{{Key: "test", Value: "test"}},
 		OperationType: Write,
 		OriginalRaw:   []byte(`{"test": "test"}`),
 	}, eventCloned)
 	cloneParsed, err := e.JSON()
 	require.Equal(t, map[string]any{"test": "test2"}, cloneParsed)
 	require.NoError(t, err)
+}
+
+func TestPkField(t *testing.T) {
+	t.Run("isEmpty", func(t *testing.T) {
+		pk := PkFields{}
+		require.True(t, pk.IsEmpty())
+
+		pk = PkFields{{Key: "test", Value: "test"}}
+		require.False(t, pk.IsEmpty())
+	})
+
+	t.Run("map", func(t *testing.T) {
+		t.Run("ok", func(t *testing.T) {
+			pk := PkFields{{Key: "test", Value: "test"}, {Key: "test2", Value: "test2"}}
+			require.Equal(t, map[string]string{
+				"test":  "test",
+				"test2": "test2",
+			}, pk.Map())
+		})
+
+		t.Run("empty", func(t *testing.T) {
+			pk := PkFields{}
+			require.Equal(t, map[string]string{}, pk.Map())
+		})
+
+		t.Run("duplicated keys", func(t *testing.T) {
+			pk := PkFields{
+				{Key: "test", Value: "test"},
+				{Key: "test", Value: "test2"},
+			}
+			require.Equal(t, map[string]string{
+				"test": "test2",
+			}, pk.Map())
+		})
+	})
 }

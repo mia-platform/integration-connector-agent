@@ -27,7 +27,7 @@ var (
 )
 
 type DataWithIdentifier interface {
-	GetID() string
+	GetPrimaryKeys() entities.PkFields
 	Operation() entities.Operation
 }
 
