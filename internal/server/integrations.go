@@ -74,7 +74,7 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 			// do nothing only for testing
 			return nil
 		default:
-			return errUnsupportedIntegrationType
+			return fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)
 		}
 	}
 
