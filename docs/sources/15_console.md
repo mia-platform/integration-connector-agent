@@ -64,4 +64,5 @@ The **event ID** used in the webhook payload is extracted from the fields descri
 
 ### Events
 
-On [this page](https://docs.mia-platform.eu/docs/console/company-configuration/events), the events are listed with payload examples and the JSON schema.
+On [this page](https://docs.mia-platform.eu/docs/console/company-configuration/events),
+the events are listed with payload examples and the JSON schema.
