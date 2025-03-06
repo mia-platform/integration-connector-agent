@@ -28,6 +28,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
+	console "github.com/mia-platform/integration-connector-agent/internal/sources/mia-platform-console"
 
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
@@ -68,6 +69,10 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 		switch source.Type {
 		case sources.Jira:
 			if err := jira.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
+				return fmt.Errorf("%w: %s", errSetupSource, err)
+			}
+		case sources.Console:
+			if err := console.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
 				return fmt.Errorf("%w: %s", errSetupSource, err)
 			}
 		case "test":

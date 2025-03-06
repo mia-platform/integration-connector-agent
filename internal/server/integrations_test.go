@@ -72,6 +72,8 @@ func TestSetupWriters(t *testing.T) {
 func TestSetupIntegrations(t *testing.T) {
 	testCases := map[string]struct {
 		cfg config.Configuration
+		// Use jsonCfg to test the real test cases, because the GenericConfig to work correctly needs to be unmarshaled
+		jsonCfg string
 
 		expectError string
 	}{
@@ -149,7 +151,13 @@ func TestSetupIntegrations(t *testing.T) {
 					},
 				},
 			},
-			expectError: "unsupported integration type",
+			expectError: "unsupported integration type: unsupported",
+		},
+		"jira integration type": {
+			jsonCfg: `{"integrations":[{"source":{"type":"jira"},"pipelines":[{"sinks":[{"type":"fake","raw":{}}]}]}]}`,
+		},
+		"console integration type": {
+			jsonCfg: `{"integrations":[{"source":{"type":"console"},"pipelines":[{"sinks":[{"type":"fake","raw":{}}]}]}]}`,
 		},
 	}
 
