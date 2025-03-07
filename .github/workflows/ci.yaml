@@ -204,7 +204,7 @@ jobs:
     - name: Scan image
       uses: sysdiglabs/scan-action@0065d3b93bd4115371b55720251adb1d228fe188 # v5.1.1
       with:
-        image-tag: nexus.mia-platform.eu/plugins/integration-connector-agent:${{ steps.meta.outputs.version.main }}
+        image-tag: nexus.mia-platform.eu/plugins/integration-connector-agent:${{ steps.meta.output.version.main }}
         sysdig-secure-url: "https://eu1.app.sysdig.com"
         sysdig-secure-token: ${{ secrets.SYSDIG_SECURE_TOKEN }}
         registry-user: ${{ secrets.NEXUS_USER }}
@@ -216,7 +216,7 @@ jobs:
       with:
         artifact-name: integration-connector-agent-sbom.spdx.json
         output-file: ./integration-connector-agent-sbom.spdx.json
-        image: nexus.mia-platform.eu/plugins/integration-connector-agent:${{ steps.meta.outputs.version.main }}
+        image: nexus.mia-platform.eu/plugins/integration-connector-agent:${{ steps.meta.output.version.main }}
         upload-release-assets: true
     - name: GCP Auth
       uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935 # v2.1.8
@@ -235,8 +235,8 @@ jobs:
         done
       env:
         TAGS: |
-          ghcr.io/mia-platform/integration-connector-agent:${{ steps.meta.outputs.version.main }}
-          docker.io/miaplatform/integration-connector-agent:${{ steps.meta.outputs.version.main }}
-          nexus.mia-platform.eu/plugins/integration-connector-agent:${{ steps.meta.outputs.version.main }}
+          ghcr.io/mia-platform/integration-connector-agent:${{ steps.meta.output.version.main }}
+          docker.io/miaplatform/integration-connector-agent:${{ steps.meta.output.version.main }}
+          nexus.mia-platform.eu/plugins/integration-connector-agent:${{ steps.meta.output.version.main }}
         DIGEST: ${{ steps.docker-build.outputs.digest }}
         COSIGN_PRIVATE_KEY: ${{ secrets.MIA_PLATFORM_KEY_KMS }}
