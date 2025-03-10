@@ -127,6 +127,11 @@ jobs:
 
   publish-docker:
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+      packages: write
+      id-token: write
     needs:
     - publish-release
     steps:

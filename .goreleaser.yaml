@@ -41,16 +41,7 @@ snapshot:
   version_template: "{{ .ShortCommit }}"
 
 changelog:
-  sort: asc
-  groups:
-  - title: Features
-    regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
-    order: 0
-  - title: Bug Fixes
-    regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
-    order: 1
-  - title: Others
-    order: 999
+  use: github-native
 
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
