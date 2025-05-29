@@ -22,7 +22,10 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
@@ -30,6 +33,7 @@ import (
 	fakesink "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 	"github.com/mia-platform/integration-connector-agent/internal/testutils"
 	"github.com/mia-platform/integration-connector-agent/internal/utils"
+	"github.com/tidwall/gjson"
 
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
@@ -140,4 +144,55 @@ func TestSetupServiceWithConfig(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestWebhookHandler_GitHubFormURLEncoded(t *testing.T) {
+	logger, _ := test.NewNullLogger()
+	ctx := context.Background()
+	fakeSink := fakesink.New(nil)
+	proc := &processors.Processors{}
+	p, err := pipeline.New(logger, proc, fakeSink)
+	require.NoError(t, err)
+	pg := pipeline.NewGroup(logger, p)
+
+	config := &Configuration{
+		WebhookPath:    "/github/webhook",
+		Authentication: HMAC{},
+		Events: &Events{
+			Supported: map[string]Event{
+				"pull_request": {
+					Operation: entities.Write,
+					GetFieldID: func(parsedData gjson.Result) entities.PkFields {
+						id := parsedData.Get("pull_request.id").String()
+						if id == "" {
+							return nil
+						}
+						return entities.PkFields{{Key: "pull_request.id", Value: id}}
+					},
+				},
+			},
+			EventTypeFieldPath: "_github_event_type",
+		},
+	}
+
+	app, router := testutils.GetTestRouter(t)
+	SetupService(ctx, router, config, pg)
+
+	// Simulate GitHub's application/x-www-form-urlencoded payload
+	jsonPayload := `{"action":"opened","pull_request":{"id":123,"title":"Test PR","user":{"login":"octocat"}}}`
+	formBody := "payload=" + url.QueryEscape(jsonPayload)
+	req := httptest.NewRequest(http.MethodPost, "/github/webhook", strings.NewReader(formBody))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("X-GitHub-Event", "pull_request")
+
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	require.Eventually(t, func() bool {
+		return len(fakeSink.Calls()) == 1
+	}, 1*time.Second, 10*time.Millisecond)
+	call := fakeSink.Calls().LastCall()
+	require.Equal(t, entities.PkFields{{Key: "pull_request.id", Value: "123"}}, call.Data.GetPrimaryKeys())
+	require.Equal(t, "pull_request", call.Data.GetType())
 }

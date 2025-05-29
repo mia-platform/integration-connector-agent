@@ -64,9 +64,28 @@ func webhookHandler(config *Configuration, p *pipeline.Group) fiber.Handler {
 		}
 
 		body := bytes.Clone(c.Body())
+		// Handle GitHub's application/x-www-form-urlencoded payload
+		if c.Get("content-type") == "application/x-www-form-urlencoded" {
+			// GitHub sends payload as: payload=<json>
+			form, err := c.MultipartForm()
+			if err == nil && form != nil && len(form.Value["payload"]) > 0 {
+				body = []byte(form.Value["payload"][0])
+			} else if v := c.FormValue("payload"); v != "" {
+				body = []byte(v)
+			}
+		}
+
 		if len(body) == 0 {
 			log.Error("empty request body")
 			return c.SendStatus(http.StatusOK)
+		}
+
+		// Inject GitHub event type from header if present
+		if eventType := c.Get("X-GitHub-Event"); eventType != "" {
+			// inject as a synthetic field
+			if body[len(body)-1] == '}' {
+				body = append(body[:len(body)-1], []byte(",\"_github_event_type\":\""+eventType+"\"}")...)
+			}
 		}
 
 		event, err := config.Events.getPipelineEvent(log, body)

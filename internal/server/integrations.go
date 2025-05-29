@@ -27,6 +27,7 @@ import (
 	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/github"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
 	console "github.com/mia-platform/integration-connector-agent/internal/sources/mia-platform-console"
 
@@ -86,6 +87,10 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 		case sources.Console:
 			if err := console.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+			}
+		case sources.Github:
+			if err := github.AddSourceToRouter(ctx, source.Raw, pg, oasRouter); err != nil {
+				return fmt.Errorf("%w: %s", errSetupSource, err)
 			}
 		case "test":
 			// skip this source as it is only used for test

@@ -18,4 +18,5 @@ package sources
 const (
 	Jira    = "jira"
 	Console = "console"
+	Github  = "github"
 )
