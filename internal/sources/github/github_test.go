@@ -29,6 +29,9 @@ import (
 
 func TestValidateConfig(t *testing.T) {
 	t.Run("unmarshal config", func(t *testing.T) {
+		os.Setenv("GITHUB_WEBHOOK_SECRET", "GITHUB_WEBHOOK_SECRET")
+		t.Cleanup(func() { os.Unsetenv("GITHUB_WEBHOOK_SECRET") })
+
 		rawConfig, err := os.ReadFile("testdata/config.json")
 		require.NoError(t, err)
 
@@ -47,6 +50,9 @@ func TestValidateConfig(t *testing.T) {
 }
 
 func TestAddSourceToRouter_PullRequest(t *testing.T) {
+	os.Setenv("GITHUB_WEBHOOK_SECRET", "GITHUB_WEBHOOK_SECRET")
+	t.Cleanup(func() { os.Unsetenv("GITHUB_WEBHOOK_SECRET") })
+
 	logger, _ := test.NewNullLogger()
 	ctx := context.Background()
 
@@ -75,15 +81,14 @@ func TestAddSourceToRouter_PullRequest(t *testing.T) {
 			return len(s.Calls()) == 1
 		}, 1*time.Second, 10*time.Millisecond)
 		call := s.Calls().LastCall()
-		require.Equal(t, fakewriter.Call{
-			Operation: entities.Write,
-			Data: &entities.Event{
-				PrimaryKeys:   entities.PkFields{{Key: "pull_request.id", Value: "123456"}},
-				Type:          "pull_request",
-				OperationType: entities.Write,
-				OriginalRaw:   body,
-			},
-		}, call)
+		require.Equal(t, entities.Write, call.Operation)
+		actualEvent, ok := call.Data.(*entities.Event)
+		require.True(t, ok)
+		require.Equal(t, entities.PkFields{{Key: "pull_request.id", Value: "123456"}}, actualEvent.PrimaryKeys)
+		require.Equal(t, "pull_request", actualEvent.Type)
+		require.Equal(t, entities.Write, actualEvent.OperationType)
+		// Check that the injected event type is present in the raw payload
+		require.Contains(t, string(actualEvent.OriginalRaw), "\"_github_event_type\":\"pull_request\"")
 	})
 }
 
@@ -92,6 +97,7 @@ func getWebhookRequest(body *bytes.Buffer) *http.Request {
 	hmac := getHMACValidationHeader(secret, body.Bytes())
 	req := httptest.NewRequest(http.MethodPost, "/github/webhook", body)
 	req.Header.Add("X-Hub-Signature-256", fmt.Sprintf("sha256=%s", hmac))
+	req.Header.Add("X-GitHub-Event", "pull_request")
 	return req
 }
 

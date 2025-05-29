@@ -82,9 +82,10 @@ func webhookHandler(config *Configuration, p *pipeline.Group) fiber.Handler {
 
 		// Inject GitHub event type from header if present
 		if eventType := c.Get("X-GitHub-Event"); eventType != "" {
-			// inject as a synthetic field
-			if body[len(body)-1] == '}' {
-				body = append(body[:len(body)-1], []byte(",\"_github_event_type\":\""+eventType+"\"}")...)
+			trimmed := bytes.TrimRight(body, " \n\r\t")
+			if len(trimmed) > 0 && trimmed[len(trimmed)-1] == '}' {
+				trimmed = append(trimmed[:len(trimmed)-1], []byte(",\"_github_event_type\":\""+eventType+"\"}")...)
+				body = trimmed
 			}
 		}
 
