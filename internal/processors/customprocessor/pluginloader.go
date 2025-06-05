@@ -63,16 +63,5 @@ func New(cfg Config) (*Plugin, error) {
 }
 
 func (p *Plugin) Process(event entities.PipelineEvent) (entities.PipelineEvent, error) {
-	// symbol, err := p.module.Lookup("Process")
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to lookup Process function: %w", err)
-	// }
-
-	// processFunc, ok := symbol.(func(entities.PipelineEvent) (entities.PipelineEvent, error))
-	// if !ok {
-	// 	return nil, fmt.Errorf("Process function has wrong signature")
-	// }
-
-	// return processFunc(event)
 	return p.proc.Process(event)
 }
