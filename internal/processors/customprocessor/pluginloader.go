@@ -31,6 +31,7 @@ var (
 
 type Plugin struct {
 	module *plugin.Plugin
+	proc   entities.Processor
 }
 
 func New(cfg Config) (*Plugin, error) {
@@ -43,7 +44,7 @@ func New(cfg Config) (*Plugin, error) {
 	if err != nil {
 		return nil, err
 	}
-	initFunc, ok := symbol.(func([]byte) error)
+	initFunc, ok := symbol.(func([]byte) (entities.Processor, error))
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrInvalidPluginSignture, "Initialize function has wrong signature")
 	}
@@ -52,23 +53,26 @@ func New(cfg Config) (*Plugin, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal plugin options: %w", err)
 	}
-	if err := initFunc(options); err != nil {
+
+	proc, err := initFunc(options)
+	if err != nil {
 		return nil, err
 	}
 
-	return &Plugin{module}, nil
+	return &Plugin{module, proc}, nil
 }
 
 func (p *Plugin) Process(event entities.PipelineEvent) (entities.PipelineEvent, error) {
-	symbol, err := p.module.Lookup("Process")
-	if err != nil {
-		return nil, fmt.Errorf("failed to lookup Process function: %w", err)
-	}
+	// symbol, err := p.module.Lookup("Process")
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to lookup Process function: %w", err)
+	// }
 
-	processFunc, ok := symbol.(func(entities.PipelineEvent) (entities.PipelineEvent, error))
-	if !ok {
-		return nil, fmt.Errorf("Process function has wrong signature")
-	}
+	// processFunc, ok := symbol.(func(entities.PipelineEvent) (entities.PipelineEvent, error))
+	// if !ok {
+	// 	return nil, fmt.Errorf("Process function has wrong signature")
+	// }
 
-	return processFunc(event)
+	// return processFunc(event)
+	return p.proc.Process(event)
 }

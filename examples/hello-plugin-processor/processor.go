@@ -30,21 +30,17 @@ type Processor struct {
 	cfg Config
 }
 
-var processor *Processor
-
-func Initialize(rawConfig []byte) error {
+func Initialize(rawConfig []byte) (entities.Processor, error) {
 	var cfg Config
 	if err := json.Unmarshal(rawConfig, &cfg); err != nil {
-		return err
+		return nil, err
 	}
 
 	fmt.Printf("Plugin initialized with cfg: %+v\n", string(rawConfig))
-	processor = &Processor{cfg: cfg}
-
-	return nil
+	return &Processor{cfg: cfg}, nil
 }
 
-func Process(data entities.PipelineEvent) (entities.PipelineEvent, error) {
+func (p *Processor) Process(data entities.PipelineEvent) (entities.PipelineEvent, error) {
 	fmt.Printf("Plugin processor event data: %s\n", string(data.Data()))
 	return data, nil
 }
