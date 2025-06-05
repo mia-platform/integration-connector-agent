@@ -19,10 +19,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/mapper"
+	"github.com/mia-platform/integration-connector-agent/internal/processors/plugin"
 )
 
 type Processor interface {
@@ -36,6 +37,7 @@ var (
 const (
 	Mapper = "mapper"
 	Filter = "filter"
+	Plugin = "plugin"
 )
 
 type Processors struct {
@@ -79,6 +81,16 @@ func New(cfg config.Processors) (*Processors, error) {
 				return nil, err
 			}
 			p.processors = append(p.processors, f)
+		case Plugin:
+			config, err := config.GetConfig[plugin.Config](processor)
+			if err != nil {
+				return nil, err
+			}
+			pl, err := plugin.New(config)
+			if err != nil {
+				return nil, err
+			}
+			p.processors = append(p.processors, pl)
 		default:
 			return nil, ErrProcessorNotSupported
 		}

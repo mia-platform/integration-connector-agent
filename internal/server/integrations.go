@@ -19,8 +19,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"

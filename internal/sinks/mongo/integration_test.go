@@ -23,8 +23,8 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/testutils"
 
 	"github.com/stretchr/testify/require"

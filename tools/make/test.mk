@@ -22,6 +22,11 @@ else
 GO_TEST_DEBUG_FLAG:=
 endif
 
+.PHONY: test/build-plugin-so
+test/build-plugin-so:
+	$(info Building plugin shared object...)
+	go build -buildmode=plugin -race -o ./internal/processors/plugin/testdata/example-valid-plugin.so ./examples/hello-plugin-processor/processor.go
+
 .PHONY: test/unit
 test/unit:
 	$(info Running tests...)
@@ -59,22 +64,22 @@ test/show/coverage:
 	go tool cover -func=coverage.txt
 
 .PHONY: test
-test: test/unit
+test: test/build-plugin-so test/unit
 
 .PHONY: test-coverage
-test-coverage: test/coverage
+test-coverage: test/build-plugin-so test/coverage
 
 .PHONY: test-integration
-test-integration: test/integration/setup test/integration test/integration/teardown
+test-integration: test/build-plugin-so test/integration/setup test/integration test/integration/teardown
 
 .PHONY: test-integration-coverage
-test-integration-coverage: test/integration/setup test/integration/coverage test/integration/teardown
+test-integration-coverage: test/build-plugin-so test/integration/setup test/integration/coverage test/integration/teardown
 
 .PHONY: test-conformance
-test-conformance: test/conformance/setup test/conformance test/conformance/teardown
+test-conformance: test/build-plugin-so test/conformance/setup test/conformance test/conformance/teardown
 
 .PHONY: show-coverage
-show-coverage: test-coverage test/show/coverage
+show-coverage: test/build-plugin-so test-coverage test/show/coverage
 
 .PHONY: show-integration-coverage
-show-integration-coverage: test-integration-coverage test/show/coverage
+show-integration-coverage: test/build-plugin-so test-integration-coverage test/show/coverage
