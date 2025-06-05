@@ -44,7 +44,7 @@ func Initialize(rawConfig []byte) error {
 	return nil
 }
 
-func (p *Processor) Process(data entities.PipelineEvent) (entities.PipelineEvent, error) {
+func Process(data entities.PipelineEvent) (entities.PipelineEvent, error) {
 	fmt.Printf("Plugin processor event data: %s\n", string(data.Data()))
 	return data, nil
 }
