@@ -38,14 +38,14 @@ func Initialize(rawConfig []byte) error {
 		return err
 	}
 
+	fmt.Printf("Plugin initialized with cfg: %+v\n", string(rawConfig))
 	processor = &Processor{cfg: cfg}
 
 	return nil
 }
 
-func Process(data entities.PipelineEvent) (entities.PipelineEvent, error) {
-	fmt.Printf("Hello from plugin processor! MyField: %s\n", processor.cfg.MyField)
-	fmt.Printf("event data: %s\n", string(data.Data()))
+func (p *Processor) Process(data entities.PipelineEvent) (entities.PipelineEvent, error) {
+	fmt.Printf("Plugin processor event data: %s\n", string(data.Data()))
 	return data, nil
 }
 

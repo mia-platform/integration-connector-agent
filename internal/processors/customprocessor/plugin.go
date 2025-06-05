@@ -13,13 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package plugin
+package customprocessor
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	gp "plugin"
+	"plugin"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
@@ -30,11 +30,11 @@ var (
 )
 
 type Plugin struct {
-	module *gp.Plugin
+	module *plugin.Plugin
 }
 
 func New(cfg Config) (*Plugin, error) {
-	module, err := gp.Open(cfg.ModulePath)
+	module, err := plugin.Open(cfg.ModulePath)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrPluginLoadFailed, err)
 	}

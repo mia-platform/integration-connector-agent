@@ -25,7 +25,7 @@ endif
 .PHONY: test/build-plugin-so
 test/build-plugin-so:
 	$(info Building plugin shared object...)
-	go build -buildmode=plugin -race -o ./internal/processors/plugin/testdata/example-valid-plugin.so ./examples/hello-plugin-processor/processor.go
+	go build -buildmode=plugin -race -o ./internal/processors/customprocessor/testdata/example-valid-plugin.so ./examples/hello-plugin-processor/processor.go
 
 .PHONY: test/unit
 test/unit:

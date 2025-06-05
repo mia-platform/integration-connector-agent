@@ -17,6 +17,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
@@ -159,6 +160,9 @@ func TestSetupIntegrations(t *testing.T) {
 		"console integration type": {
 			jsonCfg: `{"integrations":[{"source":{"type":"console"},"pipelines":[{"sinks":[{"type":"fake","raw":{}}]}]}]}`,
 		},
+		"dynamic plugin integration type": {
+			jsonCfg: `{"integrations":[{"source":{"type":"jira"},"pipelines":[{"processors":[{"type":"customprocessor","modulePath":"../processors/customprocessor/testdata/example-valid-plugin.so","initOptions":{"myField":"hello"}}],"sinks":[{"type":"fake","raw":{}}]}]}]}`,
+		},
 	}
 
 	for name, tc := range testCases {
@@ -166,6 +170,11 @@ func TestSetupIntegrations(t *testing.T) {
 			ctx := context.Background()
 			log, _ := test.NewNullLogger()
 			router := getRouter(t)
+
+			cfg := &tc.cfg
+			if tc.jsonCfg != "" {
+				require.NoError(t, json.Unmarshal([]byte(tc.jsonCfg), &cfg))
+			}
 
 			err := setupPipelines(ctx, log, &tc.cfg, router)
 			if tc.expectError != "" {
