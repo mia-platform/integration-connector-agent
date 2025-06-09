@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"plugin"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
@@ -35,6 +36,11 @@ type Plugin struct {
 }
 
 func New(cfg Config) (*Plugin, error) {
+	fmt.Printf("Loading plugin from %s with options: %v\n", cfg.ModulePath, cfg.InitOptions)
+	fileexists, err := os.Stat(cfg.ModulePath)
+	fmt.Printf("File exists: %v, error: %v\n", fileexists != nil, err)
+	fmt.Printf("FILE INfo %+v\n", fileexists)
+
 	module, err := plugin.Open(cfg.ModulePath)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrPluginLoadFailed, err)
