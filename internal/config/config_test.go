@@ -108,6 +108,35 @@ func TestLoadServiceConfiguration(t *testing.T) {
 			expectedProcessorConfig: getExpectedProcessorConfig(t),
 			expectedSourceConfig:    getExpectedSourceConfig(t, "console"),
 		},
+		"custom processor config is parsed correctly": {
+			path: "./testdata/custom-processor-config.json",
+			expectedContent: &Configuration{
+				Integrations: []Integration{
+					{
+						Source: GenericConfig{
+							Type: "jira",
+						},
+						Pipelines: []Pipeline{
+							{
+								Processors: Processors{
+									{
+										Type: "customprocessor",
+									},
+								},
+								Sinks: Sinks{
+									{
+										Type: "mongo",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedSinkConfig:      getExpectedSinkConfig(t),
+			expectedProcessorConfig: getExpectedCustomProcessorConfig(t),
+			expectedSourceConfig:    getExpectedSourceConfig(t, "jira"),
+		},
 	}
 
 	for testName, test := range tests {
@@ -204,6 +233,18 @@ func getExpectedProcessorConfig(t *testing.T) string {
 		"summary": "{{ issue.fields.summary }}",
 		"createdAt": "{{ issue.fields.created }}",
 		"description": "{{ issue.fields.description }}"
+	}
+}`
+}
+
+func getExpectedCustomProcessorConfig(t *testing.T) string {
+	t.Helper()
+
+	return `{
+	"type": "customprocessor",
+	"modulePath": "testdata/customprocessor",
+	"initOptions": {
+		"some": "value"
 	}
 }`
 }
