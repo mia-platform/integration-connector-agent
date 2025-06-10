@@ -10,7 +10,7 @@ builds:
     {{- .ProjectName }}
   no_unique_dist_dir: true
   env:
-  - CGO_ENABLED=0
+  - CGO_ENABLED=1
   flags:
   - -trimpath
   ldflags:

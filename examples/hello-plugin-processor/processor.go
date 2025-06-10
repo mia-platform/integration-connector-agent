@@ -13,44 +13,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+package main
 
 import (
-	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
-	"github.com/sirupsen/logrus"
 )
 
-type Group struct {
-	pipelines []IPipeline
-	logger    *logrus.Logger
-	errors    []error
+type Config struct {
+	MyField string `json:"myField"`
 }
 
-func NewGroup(logger *logrus.Logger, pipelines ...IPipeline) *Group {
-	return &Group{
-		pipelines: pipelines,
-		logger:    logger,
-		errors:    make([]error, 0),
-	}
+type Processor struct {
+	cfg Config
 }
 
-func (pg *Group) Start(ctx context.Context) {
-	for _, p := range pg.pipelines {
-		go func(p IPipeline) {
-			err := p.Start(ctx)
-			if err != nil {
-				pg.logger.WithError(err).Error("error starting pipeline")
-				// TODO: manage error
-				panic(err)
-			}
-		}(p)
+func Initialize(rawConfig []byte) (entities.Processor, error) {
+	var cfg Config
+	if err := json.Unmarshal(rawConfig, &cfg); err != nil {
+		return nil, err
 	}
+
+	fmt.Printf("Plugin initialized with cfg: %+v\n", string(rawConfig))
+	return &Processor{cfg: cfg}, nil
 }
 
-func (pg *Group) AddMessage(event entities.PipelineEvent) {
-	for _, p := range pg.pipelines {
-		p.AddMessage(event.Clone())
-	}
+func (p *Processor) Process(data entities.PipelineEvent) (entities.PipelineEvent, error) {
+	fmt.Printf("Plugin processor event data: %s\n", string(data.Data()))
+	return data, nil
 }
+
+func main() {}
