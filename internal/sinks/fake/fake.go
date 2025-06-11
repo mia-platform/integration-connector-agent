@@ -19,7 +19,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
 type Config struct {

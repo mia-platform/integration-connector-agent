@@ -19,7 +19,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"

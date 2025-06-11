@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
 
 	"github.com/stretchr/testify/require"
@@ -39,13 +39,13 @@ func (m *mockProcessor) Process(data entities.PipelineEvent) (entities.PipelineE
 func TestProcessors_Process(t *testing.T) {
 	tests := map[string]struct {
 		name        string
-		processors  []Processor
+		processors  []entities.Processor
 		input       entities.PipelineEvent
 		expected    entities.PipelineEvent
 		expectedErr string
 	}{
 		"successful processing": {
-			processors: []Processor{
+			processors: []entities.Processor{
 				&mockProcessor{
 					processFunc: func(event entities.PipelineEvent) (entities.PipelineEvent, error) {
 						event.WithData(append(event.Data(), []byte(" processed")...))
@@ -57,7 +57,7 @@ func TestProcessors_Process(t *testing.T) {
 			expected: &entities.Event{OriginalRaw: []byte("test processed")},
 		},
 		"processor error": {
-			processors: []Processor{
+			processors: []entities.Processor{
 				&mockProcessor{
 					processFunc: func(_ entities.PipelineEvent) (entities.PipelineEvent, error) {
 						return nil, errors.New("processing error")
@@ -68,7 +68,7 @@ func TestProcessors_Process(t *testing.T) {
 			expectedErr: "processing error",
 		},
 		"successful filter": {
-			processors: []Processor{
+			processors: []entities.Processor{
 				&mockProcessor{
 					processFunc: func(event entities.PipelineEvent) (entities.PipelineEvent, error) {
 						return event, fmt.Errorf("%w: event filtered", filter.ErrEventToFilter)
