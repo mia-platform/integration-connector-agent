@@ -1,0 +1,21 @@
+{
+  "action": "opened",
+  "number": 2,
+  "pull_request": {
+    "id": 123456,
+    "title": "Update the README with new information",
+    "user": {
+      "login": "octocat"
+    },
+    "body": "This is a pretty simple change that we need to pull into master.",
+    "created_at": "2020-01-01T00:00:00Z"
+  },
+  "repository": {
+    "id": 987654,
+    "name": "Hello-World",
+    "full_name": "octocat/Hello-World"
+  },
+  "sender": {
+    "login": "octocat"
+  }
+}

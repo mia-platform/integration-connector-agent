@@ -3,6 +3,8 @@
 bin/
 coverage.txt
 
+local/
+
 # End of Custom gitignore rules
 
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,linux,windows,macos,go
