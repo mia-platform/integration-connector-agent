@@ -30,8 +30,9 @@ var (
 )
 
 const (
-	Mapper = "mapper"
-	Filter = "filter"
+	Mapper            = "mapper"
+	Filter            = "filter"
+	HashicorpGoPlugin = "go-plugin"
 )
 
 type Processors struct {
@@ -75,6 +76,8 @@ func New(cfg config.Processors) (*Processors, error) {
 				return nil, err
 			}
 			p.processors = append(p.processors, f)
+		case HashicorpGoPlugin:
+
 		default:
 			return nil, ErrProcessorNotSupported
 		}

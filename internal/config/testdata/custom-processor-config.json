@@ -1,0 +1,37 @@
+{
+  "integrations": [
+    {
+      "source": {
+        "type": "jira",
+        "webhookPath": "/custom-webhook-path",
+        "authentication": {
+          "secret": {
+            "fromFile": "testdata/secret"
+          }
+        }
+      },
+      "pipelines": [
+        {
+          "processors": [
+            {
+              "type": "customprocessor",
+              "modulePath": "testdata/customprocessor",
+			  "initOptions": {
+				"some": "value"
+			  }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "mongo",
+              "url": {
+                "fromEnv": "TEST_LOAD_SERVICE_MONGO_URL"
+              },
+              "collection": "my-collection"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
