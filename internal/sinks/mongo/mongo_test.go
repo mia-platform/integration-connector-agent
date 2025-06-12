@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

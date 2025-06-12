@@ -18,7 +18,7 @@ package webhook
 import (
 	"fmt"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tidwall/gjson"

@@ -19,27 +19,25 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
+	"github.com/mia-platform/integration-connector-agent/internal/processors/hcgp"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/mapper"
 )
-
-type Processor interface {
-	Process(data entities.PipelineEvent) (entities.PipelineEvent, error)
-}
 
 var (
 	ErrProcessorNotSupported = fmt.Errorf("processor not supported")
 )
 
 const (
-	Mapper = "mapper"
-	Filter = "filter"
+	Mapper            = "mapper"
+	Filter            = "filter"
+	HashicorpGoPlugin = "go-plugin"
 )
 
 type Processors struct {
-	processors []Processor
+	processors []entities.Processor
 }
 
 func (p *Processors) Process(_ context.Context, message entities.PipelineEvent) (entities.PipelineEvent, error) {
@@ -79,6 +77,16 @@ func New(cfg config.Processors) (*Processors, error) {
 				return nil, err
 			}
 			p.processors = append(p.processors, f)
+		case HashicorpGoPlugin:
+			config, err := config.GetConfig[hcgp.Config](processor)
+			if err != nil {
+				return nil, err
+			}
+			h, err := hcgp.New(config)
+			if err != nil {
+				return nil, err
+			}
+			p.processors = append(p.processors, h)
 		default:
 			return nil, ErrProcessorNotSupported
 		}

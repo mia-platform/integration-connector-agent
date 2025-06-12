@@ -18,7 +18,7 @@ package pipeline
 import (
 	"context"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/sirupsen/logrus"
 )
 

@@ -13,15 +13,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+package main
 
 import (
-	"context"
+	"os"
 
-	"github.com/mia-platform/integration-connector-agent/entities"
+	"github.com/hashicorp/go-hclog"
+	rpcprocessor "github.com/mia-platform/integration-connector-agent/adapters/rpc-processor"
 )
 
-type IPipeline interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context) error
+func main() {
+	logger := hclog.New(&hclog.LoggerOptions{
+		Level:      hclog.Trace,
+		Output:     os.Stderr,
+		JSONFormat: true,
+	})
+
+	processor := &MockProcessor{
+		logger: logger,
+	}
+	rpcprocessor.Serve(&rpcprocessor.Config{
+		Processor: processor,
+		Logger:    logger,
+	})
 }
