@@ -23,7 +23,7 @@ import (
 )
 
 type Config struct {
-	Processors map[string]entities.InitializableProcessor
+	Processor entities.InitializableProcessor
 	// TODO: wrap logger
 	Logger hclog.Logger
 }
@@ -39,9 +39,8 @@ var handshakeConfig = plugin.HandshakeConfig{
 }
 
 func Serve(config *Config) {
-	var pluginMap = map[string]plugin.Plugin{}
-	for name, processor := range config.Processors {
-		pluginMap[name] = &hcgp.PluginAdapter{Impl: processor}
+	var pluginMap = map[string]plugin.Plugin{
+		"processor": &hcgp.PluginAdapter{Impl: config.Processor},
 	}
 
 	plugin.Serve(&plugin.ServeConfig{

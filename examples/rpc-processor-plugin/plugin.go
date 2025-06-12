@@ -17,7 +17,6 @@ package main
 
 import (
 	rpcprocessor "github.com/mia-platform/integration-connector-agent/adapters/rpc-processor"
-	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
 func main() {
@@ -31,9 +30,7 @@ func main() {
 		// logger: logger,
 	}
 	rpcprocessor.Serve(&rpcprocessor.Config{
-		Processors: map[string]entities.InitializableProcessor{
-			"processor": processor,
-		},
-		Logger: nil, // logger,
+		Processor: processor,
+		Logger:    nil, // logger,
 	})
 }
