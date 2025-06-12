@@ -16,16 +16,18 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/hashicorp/go-hclog"
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
-type CustomProcessor struct {
+type MockProcessor struct {
 	logger hclog.Logger
 }
 
-func (g *CustomProcessor) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
-	g.logger.Info("CustomProcessor running process for input", "input", input)
+func (g *MockProcessor) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
+	g.logger.Trace("MockProcessor running process for input", "input", input)
 
 	output := input.Clone()
 	output.WithData([]byte(`{"data":"processed by CustomProcessor"}`))
@@ -33,9 +35,13 @@ func (g *CustomProcessor) Process(input entities.PipelineEvent) (entities.Pipeli
 	return output, nil
 }
 
-func (g *CustomProcessor) Init(config map[string]interface{}) error {
+func (g *MockProcessor) Init(config map[string]interface{}) error {
 	// Here you can initialize your processor with the provided configuration
 	// For example, you might want to set up connections, load resources, etc.
-	g.logger.Info("CustomProcessor initialized with config", "config", config)
+	g.logger.Trace("MockProcessor initialized with config", "config", config)
+
+	if config["fail"] != nil && config["fail"].(bool) {
+		return fmt.Errorf("MockProcessor initialization failed due to configuration")
+	}
 	return nil
 }

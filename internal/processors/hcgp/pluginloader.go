@@ -49,7 +49,7 @@ var handshakeConfig = plugin.HandshakeConfig{
 
 // pluginMap is the map of plugins we can dispense.
 var pluginMap = map[string]plugin.Plugin{
-	"processor": &hashicorpplugin.ProcessorAdapter{},
+	"processor": &hashicorpplugin.PluginAdapter{},
 }
 
 func New(cfg Config) (entities.Processor, error) {
@@ -62,15 +62,14 @@ func New(cfg Config) (entities.Processor, error) {
 	})
 
 	client := plugin.NewClient(&plugin.ClientConfig{
+		// #nosec:G204: this is path is configuration based and only used at service bootstrap
+		Cmd:             exec.Command(cfg.ModulePath),
 		Logger:          logger,
 		Plugins:         pluginMap,
 		HandshakeConfig: handshakeConfig,
-
-		// #nosec:G204: this is path is configuration based and only used at service bootstrap
-		Cmd: exec.Command(cfg.ModulePath),
-		// UnixSocketConfig: &plugin.UnixSocketConfig{
-		// 	TempDir: cfg.TempDir,
-		// },
+		UnixSocketConfig: &plugin.UnixSocketConfig{
+			TempDir: cfg.PluginSocketTmpDir,
+		},
 	})
 
 	// TODO: We don't have a "stop" processor interface
@@ -81,10 +80,33 @@ func New(cfg Config) (entities.Processor, error) {
 		return nil, fmt.Errorf("%w: %s", ErrPluginInitialization, err)
 	}
 	// defer rpcClient.Close()
-	return &Plugin{
+
+	p := &Plugin{
 		client:    client,
 		rpcClient: rpcClient,
-	}, nil
+	}
+
+	return p.Init(cfg.InitOptions)
+}
+
+func (p *Plugin) Init(initOptions map[string]interface{}) (entities.Processor, error) {
+	if len(initOptions) == 0 {
+		return p, nil
+	}
+
+	raw, err := p.rpcClient.Dispense("processor")
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrPluginDispense, err)
+	}
+	processorAdapter, ok := raw.(entities.Initializable)
+	if !ok {
+		return nil, fmt.Errorf("invalid interface type, expected entities.Initializable")
+	}
+
+	if err := processorAdapter.Init(initOptions); err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrPluginInitialization, err)
+	}
+	return p, nil
 }
 
 func (p *Plugin) Process(event entities.PipelineEvent) (entities.PipelineEvent, error) {
@@ -95,9 +117,9 @@ func (p *Plugin) Process(event entities.PipelineEvent) (entities.PipelineEvent, 
 
 	processorAdapter, ok := raw.(entities.Processor)
 	if !ok {
-		return nil, fmt.Errorf("%w: invalid interface type", ErrPluginDispense)
+		return nil, fmt.Errorf("invalid interface type, expected entities.Processor")
 	}
-	fmt.Printf("PROCESSOR WRAPPER STARTING PROCESS\n")
+
 	return processorAdapter.Process(event)
 }
 

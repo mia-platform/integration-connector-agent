@@ -16,8 +16,9 @@
 package hcgp
 
 type Config struct {
-	ModulePath  string                 `json:"modulePath"`
-	InitOptions map[string]interface{} `json:"initOptions,omitempty"`
+	ModulePath         string                 `json:"modulePath"`
+	PluginSocketTmpDir string                 `json:"pluginSocketTmpDir,omitempty"`
+	InitOptions        map[string]interface{} `json:"initOptions,omitempty"`
 }
 
 func (c Config) Validate() error {

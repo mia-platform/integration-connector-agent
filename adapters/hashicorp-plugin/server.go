@@ -16,20 +16,33 @@
 package hashicorpplugin
 
 import (
-	"net/rpc"
+	"fmt"
 
-	"github.com/hashicorp/go-plugin"
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
-type PluginAdapter struct {
+// Server used by the plugin to invoke the plugin processor when integration connector agent calls the plugin.
+type RPCServer struct {
 	Impl entities.InitializableProcessor
 }
 
-func (p *PluginAdapter) Server(*plugin.MuxBroker) (interface{}, error) {
-	return &RPCServer{Impl: p.Impl}, nil
+func (g *RPCServer) Process(input entities.Event, output *entities.Event) error {
+	result, err := g.Impl.Process(&input)
+	if err != nil {
+		return err
+	}
+	concreteResult, ok := result.(*entities.Event)
+	if !ok {
+		return fmt.Errorf("expected *entities.Event, got %T", result)
+	}
+	*output = *concreteResult
+	return nil
 }
 
-func (PluginAdapter) Client(_ *plugin.MuxBroker, c *rpc.Client) (interface{}, error) {
-	return &RPCClient{client: c}, nil
+func (g *RPCServer) Init(options map[string]interface{}, _ *struct{}) error {
+	fmt.Printf("PLUGIN INIT!!!!!!")
+	if err := g.Impl.Init(options); err != nil {
+		return fmt.Errorf("plugin initialization error: %w", err)
+	}
+	return nil
 }

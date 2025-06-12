@@ -13,29 +13,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package hashicorpplugin
 
 import (
-	"github.com/hashicorp/go-hclog"
+	"net/rpc"
+
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
-type CustomProcessor struct {
-	logger hclog.Logger
+const (
+	ProcessRPCMethodName = "Plugin.Process"
+	InitRPCMethodName    = "Plugin.Init"
+)
+
+// Client used by the integration connecter agent to call the plugin.
+type RPCClient struct{ client *rpc.Client }
+
+func (g *RPCClient) Process(event entities.PipelineEvent) (entities.PipelineEvent, error) {
+	var resp entities.Event
+
+	if err := g.client.Call(ProcessRPCMethodName, event, &resp); err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
 }
 
-func (g *CustomProcessor) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
-	g.logger.Info("CustomProcessor running process for input", "input", input)
-
-	output := input.Clone()
-	output.WithData([]byte(`{"data":"processed by CustomProcessor"}`))
-
-	return output, nil
-}
-
-func (g *CustomProcessor) Init(config map[string]interface{}) error {
-	// Here you can initialize your processor with the provided configuration
-	// For example, you might want to set up connections, load resources, etc.
-	g.logger.Info("CustomProcessor initialized with config", "config", config)
+func (g *RPCClient) Init(options map[string]interface{}) error {
+	resp := struct{}{}
+	if err := g.client.Call(InitRPCMethodName, options, &resp); err != nil {
+		return err
+	}
 	return nil
 }

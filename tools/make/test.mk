@@ -22,6 +22,12 @@ else
 GO_TEST_DEBUG_FLAG:=
 endif
 
+.PHONY: test/build-plugin
+test/build-plugin:
+	$(info Building HCGP test plugin...)
+	go build -o ./internal/processors/hcgp/testdata/mockplugin/mockplugin ./internal/processors/hcgp/testdata/mockplugin/*.go
+
+
 .PHONY: test/unit
 test/unit:
 	$(info Running tests...)
@@ -59,22 +65,22 @@ test/show/coverage:
 	go tool cover -func=coverage.txt
 
 .PHONY: test
-test: test/unit
+test: test/build-plugin test/unit
 
 .PHONY: test-coverage
-test-coverage: test/coverage
+test-coverage: test/build-plugin test/coverage
 
 .PHONY: test-integration
-test-integration: test/integration/setup test/integration test/integration/teardown
+test-integration: test/build-plugin test/integration/setup test/integration test/integration/teardown
 
 .PHONY: test-integration-coverage
-test-integration-coverage: test/integration/setup test/integration/coverage test/integration/teardown
+test-integration-coverage: test/build-plugin test/integration/setup test/integration/coverage test/integration/teardown
 
 .PHONY: test-conformance
-test-conformance: test/conformance/setup test/conformance test/conformance/teardown
+test-conformance: test/build-plugin test/conformance/setup test/conformance test/conformance/teardown
 
 .PHONY: show-coverage
-show-coverage: test-coverage test/show/coverage
+show-coverage: test/build-plugin test-coverage test/show/coverage
 
 .PHONY: show-integration-coverage
-show-integration-coverage: test-integration-coverage test/show/coverage
+show-integration-coverage: test/build-plugin test-integration-coverage test/show/coverage

@@ -14,11 +14,11 @@
         {
           "processors": [
             {
-              "type": "customprocessor",
+              "type": "go-plugin",
               "modulePath": "testdata/customprocessor",
-			  "initOptions": {
-				"some": "value"
-			  }
+			  			"initOptions": {
+								"some": "value"
+			  			}
             }
           ],
           "sinks": [

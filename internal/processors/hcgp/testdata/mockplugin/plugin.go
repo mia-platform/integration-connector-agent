@@ -40,7 +40,7 @@ func main() {
 		JSONFormat: true,
 	})
 
-	processor := &CustomProcessor{
+	processor := &MockProcessor{
 		logger: logger,
 	}
 	// pluginMap is the map of plugins we can dispense.

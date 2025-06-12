@@ -18,3 +18,12 @@ package entities
 type Processor interface {
 	Process(data PipelineEvent) (PipelineEvent, error)
 }
+
+type Initializable interface {
+	Init(config map[string]interface{}) error
+}
+
+type InitializableProcessor interface {
+	Processor
+	Initializable
+}

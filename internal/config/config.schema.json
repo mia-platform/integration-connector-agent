@@ -92,6 +92,7 @@
 														"additionalProperties": true
 													}
                         },
+												"additionalProperties": true,
                         "required": [
                           "type",
                           "modulePath"

@@ -23,13 +23,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const validPluginPath = "../../../examples/hashicorp-plugin/example"
+const validPluginPath = "./testdata/mockplugin/mockplugin"
 
 func TestNewProcessor(t *testing.T) {
 	testCases := map[string]struct {
 		modulePath  string
+		initOptions map[string]interface{}
 		expectError error
-		message     string
 	}{
 		"fail to load plugin on invalid path": {
 			modulePath:  "./invalid/path/to/plugin",
@@ -45,14 +45,20 @@ func TestNewProcessor(t *testing.T) {
 		},
 		"successfully load valid plugin": {
 			modulePath: validPluginPath,
-			message:    "WARN: You need to run make test/build-plugin-so to generate the plugin before running tests",
+		},
+		"with init options": {
+			modulePath: validPluginPath,
+			initOptions: map[string]interface{}{
+				"option1": "value1",
+			},
 		},
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			cfg := Config{
-				ModulePath: tc.modulePath,
+				ModulePath:  tc.modulePath,
+				InitOptions: tc.initOptions,
 			}
 
 			pluginProcessor, err := New(cfg)
@@ -61,7 +67,7 @@ func TestNewProcessor(t *testing.T) {
 				require.Nil(t, pluginProcessor)
 				return
 			}
-			require.NoError(t, err, tc.message)
+			require.NoError(t, err, "WARN: You may need to run make test/build-plugin to generate the plugin before running tests")
 		})
 	}
 }
@@ -81,22 +87,13 @@ func TestProcess(t *testing.T) {
 	testCases := map[string]struct {
 		modulePath   string
 		data         string
-		message      string
 		expectedData map[string]any
 	}{
 		"successfully invoke plugin process function": {
 			modulePath: validPluginPath,
-			message:    "WARN: You need to run make test/build-plugin-so to generate the plugin before running tests",
 			data:       inputData,
 			expectedData: map[string]any{
-				"key": "123",
-				"fields": map[string]any{
-					"summary":     "this is the summary",
-					"created":     "2021-01-01",
-					"description": "this is the description",
-					"history":     map[string]any{"previous": "something"},
-					"changed":     "something else",
-				},
+				"data": "processed by CustomProcessor",
 			},
 		},
 	}
@@ -108,7 +105,7 @@ func TestProcess(t *testing.T) {
 			}
 
 			pluginProcessor, err := New(cfg)
-			require.NoError(t, err, tc.message)
+			require.NoError(t, err, "WARN: You may need to run make test/build-plugin to generate the plugin before running tests")
 
 			// defer pluginProcessor.(*Plugin).Close()
 
