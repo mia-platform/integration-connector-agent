@@ -19,19 +19,9 @@ import (
 	"os"
 
 	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/go-plugin"
-	hashicorpplugin "github.com/mia-platform/integration-connector-agent/adapters/hashicorp-plugin"
+	rpcprocessor "github.com/mia-platform/integration-connector-agent/adapters/rpc-processor"
+	"github.com/mia-platform/integration-connector-agent/entities"
 )
-
-// handshakeConfigs are used to just do a basic handshake between
-// a plugin and host. If the handshake fails, a user friendly error is shown.
-// This prevents users from executing bad plugins or executing a plugin
-// directory. It is a UX feature, not a security feature.
-var handshakeConfig = plugin.HandshakeConfig{
-	ProtocolVersion:  1,
-	MagicCookieKey:   "integration-connector-agent-plugin",
-	MagicCookieValue: "go-plugin",
-}
 
 func main() {
 	logger := hclog.New(&hclog.LoggerOptions{
@@ -43,14 +33,10 @@ func main() {
 	processor := &MockProcessor{
 		logger: logger,
 	}
-	// pluginMap is the map of plugins we can dispense.
-	var pluginMap = map[string]plugin.Plugin{
-		"processor": &hashicorpplugin.PluginAdapter{Impl: processor},
-	}
-
-	logger.Info("plugin started")
-	plugin.Serve(&plugin.ServeConfig{
-		HandshakeConfig: handshakeConfig,
-		Plugins:         pluginMap,
+	rpcprocessor.Serve(&rpcprocessor.Config{
+		Processors: map[string]entities.InitializableProcessor{
+			"processor": processor,
+		},
+		Logger: logger,
 	})
 }

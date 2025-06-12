@@ -22,7 +22,7 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
-	hashicorpplugin "github.com/mia-platform/integration-connector-agent/adapters/hashicorp-plugin"
+	rpcprocessor "github.com/mia-platform/integration-connector-agent/adapters/rpc-processor"
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
@@ -49,7 +49,7 @@ var handshakeConfig = plugin.HandshakeConfig{
 
 // pluginMap is the map of plugins we can dispense.
 var pluginMap = map[string]plugin.Plugin{
-	"processor": &hashicorpplugin.PluginAdapter{},
+	"processor": &rpcprocessor.PluginAdapter{},
 }
 
 func New(cfg Config) (entities.Processor, error) {
