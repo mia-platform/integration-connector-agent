@@ -52,6 +52,13 @@ func TestNewProcessor(t *testing.T) {
 				"option1": "value1",
 			},
 		},
+		"with failing init options": {
+			modulePath: validPluginPath,
+			initOptions: map[string]interface{}{
+				"fail": true,
+			},
+			expectError: ErrPluginInitialization,
+		},
 	}
 
 	for name, tc := range testCases {

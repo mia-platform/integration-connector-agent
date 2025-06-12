@@ -58,7 +58,7 @@ func New(cfg Config) (entities.Processor, error) {
 		Name:       "hc-go-plugin",
 		Output:     os.Stdout,
 		JSONFormat: true,
-		Level:      hclog.Debug,
+		Level:      hclog.Trace,
 	})
 
 	client := plugin.NewClient(&plugin.ClientConfig{
@@ -67,9 +67,6 @@ func New(cfg Config) (entities.Processor, error) {
 		Logger:          logger,
 		Plugins:         pluginMap,
 		HandshakeConfig: handshakeConfig,
-		UnixSocketConfig: &plugin.UnixSocketConfig{
-			TempDir: cfg.PluginSocketTmpDir,
-		},
 	})
 
 	// TODO: We don't have a "stop" processor interface
