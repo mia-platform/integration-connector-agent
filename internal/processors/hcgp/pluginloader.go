@@ -22,7 +22,6 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
-	rpcprocessor "github.com/mia-platform/integration-connector-agent/adapters/rpc-processor"
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
@@ -49,7 +48,7 @@ var handshakeConfig = plugin.HandshakeConfig{
 
 // pluginMap is the map of plugins we can dispense.
 var pluginMap = map[string]plugin.Plugin{
-	"processor": &rpcprocessor.PluginAdapter{},
+	"processor": &PluginAdapter{},
 }
 
 func New(cfg Config) (entities.Processor, error) {
@@ -62,7 +61,7 @@ func New(cfg Config) (entities.Processor, error) {
 	})
 
 	client := plugin.NewClient(&plugin.ClientConfig{
-		// #nosec:G204: this is path is configuration based and only used at service bootstrap
+		// #nosec:G204: this path is configuration based and only used at service bootstrap
 		Cmd:             exec.Command(cfg.ModulePath),
 		Logger:          logger,
 		Plugins:         pluginMap,

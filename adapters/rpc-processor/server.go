@@ -19,6 +19,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 	"github.com/mia-platform/integration-connector-agent/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/processors/hcgp"
 )
 
 type Config struct {
@@ -40,7 +41,7 @@ var handshakeConfig = plugin.HandshakeConfig{
 func Serve(config *Config) {
 	var pluginMap = map[string]plugin.Plugin{}
 	for name, processor := range config.Processors {
-		pluginMap[name] = &PluginAdapter{Impl: processor}
+		pluginMap[name] = &hcgp.PluginAdapter{Impl: processor}
 	}
 
 	plugin.Serve(&plugin.ServeConfig{
