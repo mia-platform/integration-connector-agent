@@ -30,8 +30,9 @@ To implement the `Processor` interface, you need to define a struct that impleme
 configuration options.
 - `Process(input entities.PipelineEvent) (entities.PipelineEvent, error)`: This method is called to process the input event.
 
-> [!TIP]
-> You can find an example implementation of the `Processor` interface in the [examples/rpc-processor-plugin][example] directory.
+:::tip
+You can find an example implementation of the `Processor` interface in the [examples/rpc-processor-plugin][example] directory.
+:::
 
 <details>
 <summary>Example Implementation</summary>
