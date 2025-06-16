@@ -40,7 +40,7 @@ var handshakeConfig = plugin.HandshakeConfig{
 
 func Serve(config *Config) {
 	var pluginMap = map[string]plugin.Plugin{
-		"processor": &hcgp.PluginAdapter{Impl: config.Processor},
+		hcgp.PluginProcessorKey: &hcgp.PluginAdapter{Impl: config.Processor},
 	}
 
 	plugin.Serve(&plugin.ServeConfig{

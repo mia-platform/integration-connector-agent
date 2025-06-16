@@ -25,6 +25,8 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
+const PluginProcessorKey = "processor"
+
 var (
 	ErrPluginDispense       = fmt.Errorf("plugin dispense error")
 	ErrPluginInitialization = fmt.Errorf("plugin initialization error")
@@ -46,11 +48,6 @@ var handshakeConfig = plugin.HandshakeConfig{
 	MagicCookieValue: "go-plugin",
 }
 
-// pluginMap is the map of plugins we can dispense.
-var pluginMap = map[string]plugin.Plugin{
-	"processor": &PluginAdapter{},
-}
-
 func New(cfg Config) (entities.Processor, error) {
 	// TODO: use standard JSON Logger format and set the right log level!
 	logger := hclog.New(&hclog.LoggerOptions{
@@ -59,6 +56,11 @@ func New(cfg Config) (entities.Processor, error) {
 		JSONFormat: true,
 		Level:      hclog.Trace,
 	})
+
+	// pluginMap is the map of plugins we can dispense.
+	var pluginMap = map[string]plugin.Plugin{
+		PluginProcessorKey: &PluginAdapter{},
+	}
 
 	client := plugin.NewClient(&plugin.ClientConfig{
 		// #nosec:G204: this path is configuration based and only used at service bootstrap
@@ -86,7 +88,7 @@ func (p *Plugin) Init(initOptions map[string]interface{}) (entities.Processor, e
 		return p, nil
 	}
 
-	raw, err := p.rpcClient.Dispense("processor")
+	raw, err := p.rpcClient.Dispense(PluginProcessorKey)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrPluginDispense, err)
 	}
@@ -102,7 +104,7 @@ func (p *Plugin) Init(initOptions map[string]interface{}) (entities.Processor, e
 }
 
 func (p *Plugin) Process(event entities.PipelineEvent) (entities.PipelineEvent, error) {
-	raw, err := p.rpcClient.Dispense("processor")
+	raw, err := p.rpcClient.Dispense(PluginProcessorKey)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrPluginDispense, err)
 	}
