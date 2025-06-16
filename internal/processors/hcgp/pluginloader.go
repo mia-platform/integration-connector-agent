@@ -42,7 +42,7 @@ type Plugin struct {
 var handshakeConfig = plugin.HandshakeConfig{
 	ProtocolVersion: 1,
 	MagicCookieKey:  "integration-connector-agent-plugin",
-	// TODO: make this configurable
+	// TODO: make this configurable?
 	MagicCookieValue: "go-plugin",
 }
 
@@ -68,14 +68,10 @@ func New(cfg Config) (entities.Processor, error) {
 		HandshakeConfig: handshakeConfig,
 	})
 
-	// TODO: We don't have a "stop" processor interface
-	// defer client.Kill()
-
 	rpcClient, err := client.Client()
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrPluginInitialization, err)
 	}
-	// defer rpcClient.Close()
 
 	p := &Plugin{
 		client:    client,
