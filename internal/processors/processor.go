@@ -32,9 +32,9 @@ var (
 )
 
 const (
-	Mapper            = "mapper"
-	Filter            = "filter"
-	HashicorpGoPlugin = "rpc-plugin"
+	Mapper = "mapper"
+	Filter = "filter"
+	RPC    = "rpc-plugin"
 )
 
 type Processors struct {
@@ -93,7 +93,7 @@ func New(logger *logrus.Logger, cfg config.Processors) (*Processors, error) {
 				return nil, err
 			}
 			p.processors = append(p.processors, f)
-		case HashicorpGoPlugin:
+		case RPC:
 			config, err := config.GetConfig[hcgp.Config](processor)
 			if err != nil {
 				return nil, err
