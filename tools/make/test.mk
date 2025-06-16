@@ -24,7 +24,7 @@ endif
 
 .PHONY: test/build-plugin
 test/build-plugin:
-	$(info Building HCGP test plugin...)
+	$(info Building RPC mock plugin for tests...)
 	go build -o ./internal/processors/hcgp/testdata/mockplugin/mockplugin ./internal/processors/hcgp/testdata/mockplugin/*.go
 
 
