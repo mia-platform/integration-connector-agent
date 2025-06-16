@@ -16,16 +16,16 @@
 package main
 
 import (
-	"github.com/hashicorp/go-hclog"
+	rpcprocessor "github.com/mia-platform/integration-connector-agent/adapters/rpc-processor"
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
 type CustomProcessor struct {
-	logger hclog.Logger
+	logger rpcprocessor.Logger
 }
 
 func (g *CustomProcessor) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
-	g.logger.Info("CustomProcessor running process for input", "input", input)
+	g.logger.WithField("input", input).Info("CustomProcessor running process for input")
 
 	output := input.Clone()
 	output.WithData([]byte(`{"data":"processed by CustomProcessor"}`))
@@ -36,6 +36,6 @@ func (g *CustomProcessor) Process(input entities.PipelineEvent) (entities.Pipeli
 func (g *CustomProcessor) Init(config map[string]interface{}) error {
 	// Here you can initialize your processor with the provided configuration
 	// For example, you might want to set up connections, load resources, etc.
-	g.logger.Info("CustomProcessor initialized with config", "config", config)
+	g.logger.WithField("config", config).Info("CustomProcessor initialized with config")
 	return nil
 }

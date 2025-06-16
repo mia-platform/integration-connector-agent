@@ -138,7 +138,7 @@ func TestNew(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			proc, err := New(tt.cfg)
+			proc, err := New(nil, tt.cfg)
 			if tt.expectedErr != "" {
 				require.EqualError(t, err, tt.expectedErr)
 				return

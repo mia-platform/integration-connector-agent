@@ -50,7 +50,7 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 			}
 			writer := sinks[0]
 
-			proc, err := processors.New(cfgPipeline.Processors)
+			proc, err := processors.New(log, cfgPipeline.Processors)
 			if err != nil {
 				return err
 			}

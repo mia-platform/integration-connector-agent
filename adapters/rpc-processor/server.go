@@ -16,16 +16,15 @@
 package rpcprocessor
 
 import (
-	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/hcgp"
+	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
 	Processor entities.InitializableProcessor
-	// TODO: wrap logger
-	Logger hclog.Logger
+	Logger    *logrus.Logger
 }
 
 // handshakeConfigs are used to just do a basic handshake between
@@ -46,5 +45,6 @@ func Serve(config *Config) {
 	plugin.Serve(&plugin.ServeConfig{
 		HandshakeConfig: handshakeConfig,
 		Plugins:         pluginMap,
+		Logger:          hcgp.NewLogAdapter(config.Logger),
 	})
 }

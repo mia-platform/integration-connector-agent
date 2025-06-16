@@ -13,25 +13,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package rpcprocessor
 
 import (
-	"log"
-
-	rpcprocessor "github.com/mia-platform/integration-connector-agent/adapters/rpc-processor"
+	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
+	"github.com/sirupsen/logrus"
 )
 
-func main() {
-	l, err := rpcprocessor.NewLogger("trace")
-	if err != nil {
-		log.Fatal(err)
-	}
+type Logger = *logrus.Logger
 
-	processor := &CustomProcessor{
-		logger: l,
-	}
-	rpcprocessor.Serve(&rpcprocessor.Config{
-		Processor: processor,
-		Logger:    l,
+func NewLogger(level string) (*logrus.Logger, error) {
+	l, err := glogrus.InitHelper(glogrus.InitOptions{
+		Level: level,
 	})
+	if err != nil {
+		return nil, err
+	}
+	return l, nil
 }

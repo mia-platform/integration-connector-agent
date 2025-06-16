@@ -16,18 +16,11 @@
 package main
 
 import (
-	"os"
-
-	"github.com/hashicorp/go-hclog"
 	rpcprocessor "github.com/mia-platform/integration-connector-agent/adapters/rpc-processor"
 )
 
 func main() {
-	logger := hclog.New(&hclog.LoggerOptions{
-		Level:      hclog.Trace,
-		Output:     os.Stderr,
-		JSONFormat: true,
-	})
+	logger, _ := rpcprocessor.NewLogger("trace")
 
 	processor := &MockProcessor{
 		logger: logger,

@@ -17,12 +17,11 @@ package hcgp
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 
-	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 	"github.com/mia-platform/integration-connector-agent/entities"
+	"github.com/sirupsen/logrus"
 )
 
 const PluginProcessorKey = "processor"
@@ -48,15 +47,7 @@ var handshakeConfig = plugin.HandshakeConfig{
 	MagicCookieValue: "go-plugin",
 }
 
-func New(cfg Config) (entities.Processor, error) {
-	// TODO: use standard JSON Logger format and set the right log level!
-	logger := hclog.New(&hclog.LoggerOptions{
-		Name:       "hc-go-plugin",
-		Output:     os.Stdout,
-		JSONFormat: true,
-		Level:      hclog.Trace,
-	})
-
+func New(log *logrus.Logger, cfg Config) (entities.Processor, error) {
 	// pluginMap is the map of plugins we can dispense.
 	var pluginMap = map[string]plugin.Plugin{
 		PluginProcessorKey: &PluginAdapter{},
@@ -65,7 +56,7 @@ func New(cfg Config) (entities.Processor, error) {
 	client := plugin.NewClient(&plugin.ClientConfig{
 		// #nosec:G204: this path is configuration based and only used at service bootstrap
 		Cmd:             exec.Command(cfg.ModulePath),
-		Logger:          logger,
+		Logger:          NewLogAdapter(log),
 		Plugins:         pluginMap,
 		HandshakeConfig: handshakeConfig,
 	})

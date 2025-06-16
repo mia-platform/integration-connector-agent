@@ -18,12 +18,12 @@ package main
 import (
 	"fmt"
 
-	"github.com/hashicorp/go-hclog"
+	rpcprocessor "github.com/mia-platform/integration-connector-agent/adapters/rpc-processor"
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
 type MockProcessor struct {
-	logger hclog.Logger
+	logger rpcprocessor.Logger
 }
 
 func (g *MockProcessor) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {

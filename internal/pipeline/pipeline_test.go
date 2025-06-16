@@ -200,7 +200,7 @@ func TestPipeline(t *testing.T) {
 	t.Run("filter event when filter returns false", func(t *testing.T) {
 		log, hook := test.NewNullLogger()
 		w := fakesink.New(model)
-		proc, err := processors.New(config.Processors{
+		proc, err := processors.New(nil, config.Processors{
 			{
 				Type: processors.Filter,
 				Raw:  []byte(`{"type":"filter","celExpression":"false"}`),

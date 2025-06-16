@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
 
@@ -68,7 +69,8 @@ func TestNewProcessor(t *testing.T) {
 				InitOptions: tc.initOptions,
 			}
 
-			pluginProcessor, err := New(cfg)
+			l, _ := test.NewNullLogger()
+			pluginProcessor, err := New(l, cfg)
 			if tc.expectError != nil {
 				require.ErrorIs(t, err, tc.expectError)
 				require.Nil(t, pluginProcessor)
@@ -111,7 +113,8 @@ func TestProcess(t *testing.T) {
 				ModulePath: tc.modulePath,
 			}
 
-			pluginProcessor, err := New(cfg)
+			l, _ := test.NewNullLogger()
+			pluginProcessor, err := New(l, cfg)
 			require.NoError(t, err, "WARN: You may need to run make test/build-plugin to generate the plugin before running tests")
 
 			defer pluginProcessor.(*Plugin).Close()
