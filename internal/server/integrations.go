@@ -35,29 +35,42 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type Integration struct {
+	Pipelines *pipeline.Group
+}
+
+func (i Integration) Close() error {
+	if i.Pipelines != nil {
+		return i.Pipelines.Close()
+	}
+	return nil
+
+}
+
 // TODO: write an integration test to test this setup
-func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) error {
+func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) ([]Integration, error) {
+	var integrations []Integration
 	for _, cfgIntegration := range cfg.Integrations {
 		var pipelines []pipeline.IPipeline
 
 		for _, cfgPipeline := range cfgIntegration.Pipelines {
 			sinks, err := setupSinks(ctx, cfgPipeline.Sinks)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if len(sinks) != 1 {
-				return fmt.Errorf("only 1 writer is supported, now there are %d", len(sinks))
+				return nil, fmt.Errorf("only 1 writer is supported, now there are %d", len(sinks))
 			}
 			writer := sinks[0]
 
 			proc, err := processors.New(log, cfgPipeline.Processors)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			pip, err := pipeline.New(log, proc, writer)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			pipelines = append(pipelines, pip)
@@ -69,21 +82,24 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 		switch source.Type {
 		case sources.Jira:
 			if err := jira.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
-				return fmt.Errorf("%w: %s", errSetupSource, err)
+				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
 			}
 		case sources.Console:
 			if err := console.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
-				return fmt.Errorf("%w: %s", errSetupSource, err)
+				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
 			}
 		case "test":
 			// do nothing only for testing
-			return nil
+			return nil, nil
 		default:
-			return fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)
+			return nil, fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)
 		}
+		integrations = append(integrations, Integration{
+			Pipelines: pg,
+		})
 	}
 
-	return nil
+	return integrations, nil
 }
 
 func setupSinks(ctx context.Context, writers config.Sinks) ([]sinks.Sink[entities.PipelineEvent], error) {

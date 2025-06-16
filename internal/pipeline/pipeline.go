@@ -58,6 +58,10 @@ func (p Pipeline) Start(ctx context.Context) error {
 	return nil
 }
 
+func (p Pipeline) Close() error {
+	return p.processors.Close()
+}
+
 func (p Pipeline) runPipeline(ctx context.Context) error {
 loop:
 	for {

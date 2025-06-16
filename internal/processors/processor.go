@@ -53,6 +53,21 @@ func (p *Processors) Process(_ context.Context, message entities.PipelineEvent) 
 	return message, nil
 }
 
+type CloseableProcessor interface {
+	Close() error
+}
+
+func (p *Processors) Close() error {
+	for _, processor := range p.processors {
+		if closer, ok := processor.(CloseableProcessor); ok {
+			if err := closer.Close(); err != nil {
+				return fmt.Errorf("error closing processor %T: %w", processor, err)
+			}
+		}
+	}
+	return nil
+}
+
 func New(logger *logrus.Logger, cfg config.Processors) (*Processors, error) {
 	p := new(Processors)
 

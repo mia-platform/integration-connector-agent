@@ -24,4 +24,5 @@ import (
 type IPipeline interface {
 	AddMessage(data entities.PipelineEvent)
 	Start(ctx context.Context) error
+	Close() error
 }
