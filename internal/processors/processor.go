@@ -34,7 +34,7 @@ var (
 const (
 	Mapper            = "mapper"
 	Filter            = "filter"
-	HashicorpGoPlugin = "go-plugin"
+	HashicorpGoPlugin = "rpc-plugin"
 )
 
 type Processors struct {

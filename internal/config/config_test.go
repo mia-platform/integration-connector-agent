@@ -120,7 +120,7 @@ func TestLoadServiceConfiguration(t *testing.T) {
 							{
 								Processors: Processors{
 									{
-										Type: "go-plugin",
+										Type: "rpc-plugin",
 									},
 								},
 								Sinks: Sinks{
@@ -241,7 +241,7 @@ func getExpectedCustomProcessorConfig(t *testing.T) string {
 	t.Helper()
 
 	return `{
-	"type": "go-plugin",
+	"type": "rpc-plugin",
 	"modulePath": "testdata/customprocessor",
 	"initOptions": {
 		"some": "value"

@@ -14,7 +14,7 @@
         {
           "processors": [
             {
-              "type": "go-plugin",
+              "type": "rpc-plugin",
               "modulePath": "testdata/customprocessor",
 			  			"initOptions": {
 								"some": "value"

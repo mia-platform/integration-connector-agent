@@ -25,7 +25,7 @@ type CustomProcessor struct {
 }
 
 func (g *CustomProcessor) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
-	g.logger.WithField("input", input).Info("CustomProcessor running process for input")
+	g.logger.WithFields(map[string]interface{}{"input": input}).Info("CustomProcessor running process for input")
 
 	output := input.Clone()
 	output.WithData([]byte(`{"data":"processed by CustomProcessor"}`))
@@ -36,6 +36,6 @@ func (g *CustomProcessor) Process(input entities.PipelineEvent) (entities.Pipeli
 func (g *CustomProcessor) Init(config map[string]interface{}) error {
 	// Here you can initialize your processor with the provided configuration
 	// For example, you might want to set up connections, load resources, etc.
-	g.logger.WithField("config", config).Info("CustomProcessor initialized with config")
+	g.logger.WithFields(map[string]interface{}{"config": config}).Info("CustomProcessor initialized with config")
 	return nil
 }

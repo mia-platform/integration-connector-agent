@@ -17,15 +17,16 @@ package rpcprocessor
 
 import (
 	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
-	"github.com/sirupsen/logrus"
+	"github.com/mia-platform/integration-connector-agent/internal/processors/hcgp"
 )
 
-type Logger = *logrus.Logger
+type Logger = hcgp.Logger
 
-func NewLogger(level string) (*logrus.Logger, error) {
+func NewLogger(level string) (Logger, error) {
 	l, err := glogrus.InitHelper(glogrus.InitOptions{
 		Level: level,
 	})
+
 	if err != nil {
 		return nil, err
 	}

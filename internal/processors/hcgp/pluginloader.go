@@ -36,15 +36,14 @@ type Plugin struct {
 	rpcClient plugin.ClientProtocol
 }
 
-// handshakeConfigs are used to just do a basic handshake between
+// HandshakeConfig are used to just do a basic handshake between
 // a plugin and host. If the handshake fails, a user friendly error is shown.
 // This prevents users from executing bad plugins or executing a plugin
 // directory. It is a UX feature, not a security feature.
-var handshakeConfig = plugin.HandshakeConfig{
-	ProtocolVersion: 1,
-	MagicCookieKey:  "integration-connector-agent-plugin",
-	// TODO: make this configurable?
-	MagicCookieValue: "go-plugin",
+var HandshakeConfig = plugin.HandshakeConfig{
+	ProtocolVersion:  1,
+	MagicCookieKey:   "integration-connector-agent-plugin",
+	MagicCookieValue: "rpc-plugin",
 }
 
 func New(log *logrus.Logger, cfg Config) (entities.Processor, error) {
@@ -58,7 +57,7 @@ func New(log *logrus.Logger, cfg Config) (entities.Processor, error) {
 		Cmd:             exec.Command(cfg.ModulePath),
 		Logger:          NewLogAdapter(log),
 		Plugins:         pluginMap,
-		HandshakeConfig: handshakeConfig,
+		HandshakeConfig: HandshakeConfig,
 	})
 
 	rpcClient, err := client.Client()

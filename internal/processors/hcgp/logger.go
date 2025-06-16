@@ -26,11 +26,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type Logger = *logrus.Logger
+
 type logAdapter struct {
-	log *logrus.Logger
+	log Logger
 }
 
-func NewLogAdapter(log *logrus.Logger) hclog.Logger {
+func NewLogAdapter(log Logger) hclog.Logger {
 	return &logAdapter{log}
 }
 
@@ -40,11 +42,6 @@ func (l *logAdapter) Debug(msg string, args ...interface{}) {
 
 func (l *logAdapter) Error(msg string, args ...interface{}) {
 	l.log.WithFields(adaptFields(args...)).Error(msg)
-}
-
-// ImpliedArgs is invoked by the .
-func (l *logAdapter) ImpliedArgs() []interface{} {
-	return []interface{}{}
 }
 
 func (l *logAdapter) Info(msg string, args ...interface{}) {
@@ -57,6 +54,10 @@ func (l *logAdapter) Trace(msg string, args ...interface{}) {
 
 func (l *logAdapter) Warn(msg string, args ...interface{}) {
 	l.log.WithFields(adaptFields(args...)).Warn(msg)
+}
+
+func (l *logAdapter) ImpliedArgs() []interface{} {
+	return []interface{}{}
 }
 
 func (l *logAdapter) IsDebug() bool {
@@ -74,14 +75,6 @@ func (l *logAdapter) IsError() bool {
 	switch l.log.Level {
 	case logrus.ErrorLevel:
 		fallthrough
-	case logrus.WarnLevel:
-		fallthrough
-	case logrus.InfoLevel:
-		fallthrough
-	case logrus.TraceLevel:
-		fallthrough
-	case logrus.DebugLevel:
-		return true
 	default:
 		return false
 	}
@@ -92,9 +85,9 @@ func (l *logAdapter) IsInfo() bool {
 	switch l.log.Level {
 	case logrus.InfoLevel:
 		fallthrough
-	case logrus.TraceLevel:
+	case logrus.WarnLevel:
 		fallthrough
-	case logrus.DebugLevel:
+	case logrus.ErrorLevel:
 		return true
 	default:
 		return false
@@ -105,8 +98,6 @@ func (l *logAdapter) IsInfo() bool {
 func (l *logAdapter) IsTrace() bool {
 	switch l.log.Level {
 	case logrus.TraceLevel:
-		fallthrough
-	case logrus.DebugLevel:
 		return true
 	default:
 		return false
@@ -146,15 +137,13 @@ func adaptLevelToLogurs(l hclog.Level) logrus.Level {
 	}
 }
 
-// Log implements hclog.Logger.
 func (l *logAdapter) Log(level hclog.Level, msg string, args ...interface{}) {
-	logArgs := []interface{}{msg}
+	logArgs := []interface{}{"msg", msg}
 	logArgs = append(logArgs, args...)
 
 	l.log.Log(adaptLevelToLogurs(level), logArgs...)
 }
 
-// Name implements hclog.Logger.
 func (l *logAdapter) Name() string {
 	return ""
 }

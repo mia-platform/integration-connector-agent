@@ -82,7 +82,7 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "const": "go-plugin"
+                            "const": "rpc-plugin"
                           },
                           "modulePath": {
                             "type": "string"
