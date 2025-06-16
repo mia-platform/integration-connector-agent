@@ -114,7 +114,7 @@ func TestProcess(t *testing.T) {
 			pluginProcessor, err := New(cfg)
 			require.NoError(t, err, "WARN: You may need to run make test/build-plugin to generate the plugin before running tests")
 
-			// defer pluginProcessor.(*Plugin).Close()
+			defer pluginProcessor.(*Plugin).Close()
 
 			event := entities.PipelineEvent(&entities.Event{
 				OriginalRaw: []byte(tc.data),
