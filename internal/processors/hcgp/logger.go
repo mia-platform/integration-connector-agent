@@ -80,7 +80,6 @@ func (l *logAdapter) IsError() bool {
 	}
 }
 
-// IsInfo implements hclog.Logger.
 func (l *logAdapter) IsInfo() bool {
 	switch l.log.Level {
 	case logrus.InfoLevel:
@@ -94,7 +93,6 @@ func (l *logAdapter) IsInfo() bool {
 	}
 }
 
-// IsTrace implements hclog.Logger.
 func (l *logAdapter) IsTrace() bool {
 	switch l.log.Level {
 	case logrus.TraceLevel:
@@ -104,7 +102,6 @@ func (l *logAdapter) IsTrace() bool {
 	}
 }
 
-// IsWarn implements hclog.Logger.
 func (l *logAdapter) IsWarn() bool {
 	switch l.log.Level {
 	case logrus.WarnLevel:
