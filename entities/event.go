@@ -21,7 +21,6 @@ import (
 )
 
 func init() {
-	// gob.Register(Event{})
 	gob.RegisterName("entities.Event", Event{})
 }
 
