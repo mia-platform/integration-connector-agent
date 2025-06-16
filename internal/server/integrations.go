@@ -49,7 +49,7 @@ func (i Integration) Close() error {
 
 // TODO: write an integration test to test this setup
 func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) ([]Integration, error) {
-	var integrations []Integration
+	integrations := make([]Integration, 0)
 	for _, cfgIntegration := range cfg.Integrations {
 		var pipelines []pipeline.IPipeline
 
