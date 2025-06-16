@@ -15,7 +15,7 @@
           "processors": [
             {
               "type": "rpc-plugin",
-              "modulePath": "./internal/processors/hcgp/testdata/mockplugin/mockplugin",
+              "modulePath": "testdata/customprocessor",
 			  			"initOptions": {
 								"some": "value"
 			  			}
