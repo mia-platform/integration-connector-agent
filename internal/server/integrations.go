@@ -44,7 +44,6 @@ func (i Integration) Close() error {
 		return i.Pipelines.Close()
 	}
 	return nil
-
 }
 
 // TODO: write an integration test to test this setup
