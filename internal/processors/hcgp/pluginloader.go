@@ -47,7 +47,6 @@ var HandshakeConfig = plugin.HandshakeConfig{
 }
 
 func New(log *logrus.Logger, cfg Config) (entities.Processor, error) {
-	// pluginMap is the map of plugins we can dispense.
 	var pluginMap = map[string]plugin.Plugin{
 		PluginProcessorKey: &PluginAdapter{},
 	}
