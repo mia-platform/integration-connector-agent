@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"net/rpc"
 
-	"github.com/hashicorp/go-plugin"
 	"github.com/mia-platform/integration-connector-agent/entities"
+
+	"github.com/hashicorp/go-plugin"
 )
 
 const (

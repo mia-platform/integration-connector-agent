@@ -21,6 +21,7 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+
 	"github.com/stretchr/testify/require"
 )
 

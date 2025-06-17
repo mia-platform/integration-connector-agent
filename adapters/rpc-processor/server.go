@@ -16,9 +16,10 @@
 package rpcprocessor
 
 import (
-	"github.com/hashicorp/go-plugin"
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/hcgp"
+
+	"github.com/hashicorp/go-plugin"
 )
 
 type Config struct {

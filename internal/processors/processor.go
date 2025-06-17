@@ -24,6 +24,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/hcgp"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/mapper"
+
 	"github.com/sirupsen/logrus"
 )
 

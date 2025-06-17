@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/hashicorp/go-plugin"
 	"github.com/mia-platform/integration-connector-agent/entities"
+
+	"github.com/hashicorp/go-plugin"
 	"github.com/sirupsen/logrus"
 )
 

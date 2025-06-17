@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
+
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )

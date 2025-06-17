@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
+
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )

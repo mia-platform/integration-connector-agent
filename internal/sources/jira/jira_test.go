@@ -36,6 +36,7 @@ import (
 	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 	"github.com/mia-platform/integration-connector-agent/internal/testutils"
+
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )

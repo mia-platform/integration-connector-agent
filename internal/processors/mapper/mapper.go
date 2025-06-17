@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
+
 	"github.com/tidwall/gjson"
 )
 

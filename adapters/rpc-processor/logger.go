@@ -16,8 +16,9 @@
 package rpcprocessor
 
 import (
-	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/hcgp"
+
+	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
 )
 
 type Logger = hcgp.Logger
