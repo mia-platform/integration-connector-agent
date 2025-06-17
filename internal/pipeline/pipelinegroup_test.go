@@ -32,7 +32,7 @@ import (
 func TestPipelineGroup(t *testing.T) {
 	logger, _ := test.NewNullLogger()
 
-	proc1, err := processors.New(nil, config.Processors{
+	proc1, err := processors.New(logger, config.Processors{
 		{
 			Type: processors.Mapper,
 			Raw:  []byte(`{"type":"mapper","outputEvent":{"field":"some"}}`),
@@ -40,7 +40,7 @@ func TestPipelineGroup(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	proc2, err := processors.New(nil, config.Processors{
+	proc2, err := processors.New(logger, config.Processors{
 		{
 			Type: processors.Mapper,
 			Raw:  []byte(`{"type":"mapper","outputEvent":{"field":"other"}}`),

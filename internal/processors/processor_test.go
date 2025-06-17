@@ -24,6 +24,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
+	"github.com/sirupsen/logrus/hooks/test"
 
 	"github.com/stretchr/testify/require"
 )
@@ -138,7 +139,9 @@ func TestNew(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			proc, err := New(nil, tt.cfg)
+			log, _ := test.NewNullLogger()
+
+			proc, err := New(log, tt.cfg)
 			if tt.expectedErr != "" {
 				require.EqualError(t, err, tt.expectedErr)
 				return
