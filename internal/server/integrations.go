@@ -90,7 +90,6 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 		case "test":
 			// skip this source as it is only used for test
 			continue
-			// return nil, nil
 		default:
 			return nil, fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)
 		}
