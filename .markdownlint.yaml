@@ -1,7 +1,8 @@
 default: true
 MD003:
   style: atx
-MD010: true
+MD010:
+  code_blocks: false
 MD013:
   line_length: 120
   heading_line_length: 80
@@ -20,5 +21,7 @@ MD033:
   - picture
   - source
   - img
+  - details
+  - summary
 MD046:
   style: fenced

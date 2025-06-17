@@ -20,7 +20,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 
 	"github.com/stretchr/testify/require"

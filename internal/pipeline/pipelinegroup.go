@@ -17,8 +17,11 @@ package pipeline
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -53,4 +56,29 @@ func (pg *Group) AddMessage(event entities.PipelineEvent) {
 	for _, p := range pg.pipelines {
 		p.AddMessage(event.Clone())
 	}
+}
+
+func (pg *Group) Close() error {
+	for _, p := range pg.pipelines {
+		if err := p.Close(); err != nil {
+			pg.errors = append(pg.errors, err)
+		}
+	}
+
+	if len(pg.errors) > 0 {
+		return fmt.Errorf("failed closing processors: %s", joinErrors(pg.errors))
+	}
+
+	return nil
+}
+
+func joinErrors(errors []error) string {
+	var sb strings.Builder
+	for i, err := range errors {
+		if i > 0 {
+			sb.WriteString(", ")
+		}
+		sb.WriteString(err.Error())
+	}
+	return sb.String()
 }

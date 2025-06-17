@@ -13,16 +13,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+package entities
 
-import (
-	"context"
+type Processor interface {
+	Process(data PipelineEvent) (PipelineEvent, error)
+}
 
-	"github.com/mia-platform/integration-connector-agent/entities"
-)
+type Initializable interface {
+	Init(config map[string]interface{}) error
+}
 
-type IPipeline interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context) error
-	Close() error
+type InitializableProcessor interface {
+	Processor
+	Initializable
 }

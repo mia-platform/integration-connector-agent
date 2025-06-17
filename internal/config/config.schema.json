@@ -76,6 +76,27 @@
                           "type",
                           "celExpression"
                         ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "rpc-plugin"
+                          },
+                          "modulePath": {
+                            "type": "string"
+                          },
+                          "initOptions": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "additionalProperties": true,
+                        "required": [
+                          "type",
+                          "modulePath"
+                        ]
                       }
                     ]
                   }

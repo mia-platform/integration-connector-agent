@@ -19,7 +19,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
+
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )

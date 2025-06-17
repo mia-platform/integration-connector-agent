@@ -19,15 +19,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
+	"github.com/mia-platform/integration-connector-agent/internal/processors/hcgp"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/mapper"
-)
 
-type Processor interface {
-	Process(data entities.PipelineEvent) (entities.PipelineEvent, error)
-}
+	"github.com/sirupsen/logrus"
+)
 
 var (
 	ErrProcessorNotSupported = fmt.Errorf("processor not supported")
@@ -36,10 +35,11 @@ var (
 const (
 	Mapper = "mapper"
 	Filter = "filter"
+	RPC    = "rpc-plugin"
 )
 
 type Processors struct {
-	processors []Processor
+	processors []entities.Processor
 }
 
 func (p *Processors) Process(_ context.Context, message entities.PipelineEvent) (entities.PipelineEvent, error) {
@@ -54,7 +54,22 @@ func (p *Processors) Process(_ context.Context, message entities.PipelineEvent) 
 	return message, nil
 }
 
-func New(cfg config.Processors) (*Processors, error) {
+type CloseableProcessor interface {
+	Close() error
+}
+
+func (p *Processors) Close() error {
+	for _, processor := range p.processors {
+		if closer, ok := processor.(CloseableProcessor); ok {
+			if err := closer.Close(); err != nil {
+				return fmt.Errorf("error closing processor %T: %w", processor, err)
+			}
+		}
+	}
+	return nil
+}
+
+func New(logger *logrus.Logger, cfg config.Processors) (*Processors, error) {
 	p := new(Processors)
 
 	for _, processor := range cfg {
@@ -79,6 +94,16 @@ func New(cfg config.Processors) (*Processors, error) {
 				return nil, err
 			}
 			p.processors = append(p.processors, f)
+		case RPC:
+			config, err := config.GetConfig[hcgp.Config](processor)
+			if err != nil {
+				return nil, err
+			}
+			h, err := hcgp.New(logger, config)
+			if err != nil {
+				return nil, err
+			}
+			p.processors = append(p.processors, h)
 		default:
 			return nil, ErrProcessorNotSupported
 		}

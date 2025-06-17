@@ -16,8 +16,13 @@
 package entities
 
 import (
+	"encoding/gob"
 	"encoding/json"
 )
+
+func init() {
+	gob.RegisterName("entities.Event", Event{})
+}
 
 type Operation int
 

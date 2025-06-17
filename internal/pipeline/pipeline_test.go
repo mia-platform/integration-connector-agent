@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	fakesink "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 
@@ -200,7 +200,7 @@ func TestPipeline(t *testing.T) {
 	t.Run("filter event when filter returns false", func(t *testing.T) {
 		log, hook := test.NewNullLogger()
 		w := fakesink.New(model)
-		proc, err := processors.New(config.Processors{
+		proc, err := processors.New(log, config.Processors{
 			{
 				Type: processors.Filter,
 				Raw:  []byte(`{"type":"filter","celExpression":"false"}`),

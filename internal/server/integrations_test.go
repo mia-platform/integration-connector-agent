@@ -75,7 +75,8 @@ func TestSetupIntegrations(t *testing.T) {
 		// Use jsonCfg to test the real test cases, because the GenericConfig to work correctly needs to be unmarshaled
 		jsonCfg string
 
-		expectError string
+		expectError          string
+		expectedIntegrations int
 	}{
 		"more than 1 writers not supported": {
 			cfg: config.Configuration{
@@ -96,6 +97,21 @@ func TestSetupIntegrations(t *testing.T) {
 				},
 			},
 			expectError: "only 1 writer is supported, now there are 2",
+		},
+		"multiple integration sources": {
+			cfg: config.Configuration{
+				Integrations: []config.Integration{
+					{
+						Source:    config.GenericConfig{Type: sources.Jira, Raw: []byte(`{}`)},
+						Pipelines: []config.Pipeline{{Sinks: config.Sinks{getFakeWriter(t)}}},
+					},
+					{
+						Source:    config.GenericConfig{Type: sources.Jira, Raw: []byte(`{}`)},
+						Pipelines: []config.Pipeline{{Sinks: config.Sinks{getFakeWriter(t)}}},
+					},
+				},
+			},
+			expectedIntegrations: 2,
 		},
 		"unsupported writer type": {
 			cfg: config.Configuration{
@@ -167,11 +183,13 @@ func TestSetupIntegrations(t *testing.T) {
 			log, _ := test.NewNullLogger()
 			router := getRouter(t)
 
-			err := setupPipelines(ctx, log, &tc.cfg, router)
+			integrations, err := setupPipelines(ctx, log, &tc.cfg, router)
 			if tc.expectError != "" {
 				require.EqualError(t, err, tc.expectError)
 			} else {
 				require.NoError(t, err)
+				require.NotNil(t, integrations)
+				require.Equal(t, tc.expectedIntegrations, len(integrations))
 			}
 		})
 	}

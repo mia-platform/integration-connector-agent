@@ -19,7 +19,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"
@@ -56,6 +56,10 @@ func (p Pipeline) Start(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (p Pipeline) Close() error {
+	return p.processors.Close()
 }
 
 func (p Pipeline) runPipeline(ctx context.Context) error {

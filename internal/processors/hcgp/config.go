@@ -13,16 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+package hcgp
 
-import (
-	"context"
+type Config struct {
+	ModulePath  string                 `json:"modulePath"`
+	InitOptions map[string]interface{} `json:"initOptions,omitempty"`
+}
 
-	"github.com/mia-platform/integration-connector-agent/entities"
-)
-
-type IPipeline interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context) error
-	Close() error
+func (c Config) Validate() error {
+	return nil
 }

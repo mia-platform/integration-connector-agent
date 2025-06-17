@@ -13,16 +13,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+package main
 
 import (
-	"context"
+	"log"
 
-	"github.com/mia-platform/integration-connector-agent/entities"
+	rpcprocessor "github.com/mia-platform/integration-connector-agent/adapters/rpc-processor"
 )
 
-type IPipeline interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context) error
-	Close() error
+func main() {
+	l, err := rpcprocessor.NewLogger("trace")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	processor := &CustomProcessor{
+		logger: l,
+	}
+	rpcprocessor.Serve(&rpcprocessor.Config{
+		Processor: processor,
+		Logger:    l,
+	})
 }
