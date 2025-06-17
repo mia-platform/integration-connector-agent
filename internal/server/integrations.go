@@ -36,12 +36,12 @@ import (
 )
 
 type Integration struct {
-	Pipelines *pipeline.Group
+	PipelineGroup *pipeline.Group
 }
 
 func (i Integration) Close() error {
-	if i.Pipelines != nil {
-		return i.Pipelines.Close()
+	if i.PipelineGroup != nil {
+		return i.PipelineGroup.Close()
 	}
 	return nil
 }
@@ -94,7 +94,7 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 			return nil, fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)
 		}
 		integrations = append(integrations, Integration{
-			Pipelines: pg,
+			PipelineGroup: pg,
 		})
 	}
 
