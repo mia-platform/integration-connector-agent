@@ -43,7 +43,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-${{ env.GOLANGCILINT_SHA }}
     - name: Run Lint CI
-      run: make ci-lint GOLANGCI_LINT_MODE="colored-line-number"
+      run: make ci-lint
 
   test:
     name: Testing on ${{ matrix.os }}

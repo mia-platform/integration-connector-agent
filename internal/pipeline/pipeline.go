@@ -104,7 +104,7 @@ loop:
 
 func New(logger *logrus.Logger, p *processors.Processors, sinks sinks.Sink[entities.PipelineEvent]) (IPipeline, error) {
 	// TODO: here instead to use a buffer size it should be used a proper queue
-	messageChan := make(chan entities.PipelineEvent, 1000000) //nolint:mnd
+	messageChan := make(chan entities.PipelineEvent, 1000000)
 
 	pipeline := &Pipeline{
 		sinks:      sinks,
