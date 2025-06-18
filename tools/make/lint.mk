@@ -47,10 +47,14 @@ lint: gomod-lint
 gomod-lint:
 	$(info Running go mod tidy)
 # Always keep this version to latest -1 version of Go
-	go mod tidy -compat=1.20
+	go mod tidy -compat=1.23
+
+.PHONY: golangci-lint-version
+golangci-lint-version:
+	$(GOLANGCI_PATH) version
 
 .PHONY: ci-lint
-ci-lint: lint
+ci-lint: golangci-lint-version lint
 # Block the lint during ci if the go.mod and go.sum will be changed by go mod tidy
 	git diff --exit-code go.mod;
 	git diff --exit-code go.sum;
