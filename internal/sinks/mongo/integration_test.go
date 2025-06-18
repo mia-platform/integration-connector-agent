@@ -19,7 +19,6 @@
 package mongo
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -32,7 +31,7 @@ import (
 )
 
 func TestMongoUpsert(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	mongoURL, db := testutils.GenerateMongoURL(t)
 	collection := testutils.RandomString(t, 6)
@@ -76,7 +75,7 @@ func TestMongoUpsert(t *testing.T) {
 }
 
 func TestMongoUpsertWithMultiplePrimaryKeys(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	mongoURL, db := testutils.GenerateMongoURL(t)
 	collection := testutils.RandomString(t, 6)
@@ -123,7 +122,7 @@ func TestMongoUpsertWithMultiplePrimaryKeys(t *testing.T) {
 }
 
 func TestMongoOnlyInsert(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	mongoURL, db := testutils.GenerateMongoURL(t)
 	collection := testutils.RandomString(t, 6)
@@ -190,12 +189,12 @@ func getTestEvent(t *testing.T, pks entities.PkFields, data map[string]any, oper
 
 func findAllDocuments(t *testing.T, coll *mongo.Collection, expectedResults []map[string]any) {
 	t.Helper()
+	ctx := t.Context()
 
-	n, err := coll.CountDocuments(context.Background(), map[string]any{})
+	n, err := coll.CountDocuments(ctx, map[string]any{})
 	require.NoError(t, err)
 	require.Equal(t, int64(len(expectedResults)), n)
 
-	ctx := context.Background()
 	docs, err := coll.Find(ctx, map[string]any{})
 	require.NoError(t, err)
 	results := []map[string]any{}

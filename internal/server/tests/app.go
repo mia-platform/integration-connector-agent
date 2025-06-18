@@ -16,7 +16,6 @@
 package tests
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -55,8 +54,7 @@ func setupApp(tb testing.TB, setupCfg setupServerConfig) (*fiber.App, string, st
 	cfg, err := config.LoadServiceConfiguration(envVars.ConfigurationPath)
 	require.NoError(tb, err)
 
-	ctx := context.Background()
-	app, err := server.NewApp(ctx, envVars, log, cfg)
+	app, err := server.NewApp(tb.Context(), envVars, log, cfg)
 	require.NoError(tb, err)
 
 	return app, mongoURL, db
@@ -66,16 +64,15 @@ func findAllDocuments(t *testing.T, coll *mongo.Collection, expectedResults []ma
 	t.Helper()
 
 	require.Eventuallyf(t, func() bool {
-		n, err := coll.CountDocuments(context.Background(), map[string]any{})
+		n, err := coll.CountDocuments(t.Context(), map[string]any{})
 		require.NoError(t, err)
 		return n == int64(len(expectedResults))
 	}, 10*time.Second, 10*time.Millisecond, "invalid document length")
 
-	ctx := context.Background()
-	docs, err := coll.Find(ctx, map[string]any{})
+	docs, err := coll.Find(t.Context(), map[string]any{})
 	require.NoError(t, err)
 	results := []map[string]any{}
-	err = docs.All(ctx, &results)
+	err = docs.All(t.Context(), &results)
 	require.NoError(t, err)
 
 	ok := assert.Eventuallyf(t, func() bool {

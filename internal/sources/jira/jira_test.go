@@ -17,7 +17,6 @@ package jira
 
 import (
 	"bytes"
-	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -160,7 +159,7 @@ func TestAddSourceToRouter(t *testing.T) {
 	logger, _ := test.NewNullLogger()
 
 	t.Run("setup webhook", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 
 		rawConfig, err := os.ReadFile("testdata/config.json")
 		require.NoError(t, err)

@@ -17,7 +17,6 @@ package webhook
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -160,7 +159,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 
 			pg := pipeline.NewGroup(logger, p1)
 
-			err = SetupService(context.TODO(), router, test.config, pg)
+			err = SetupService(t.Context(), router, test.config, pg)
 			require.NoError(t, err)
 
 			res, err := app.Test(test.req(t))

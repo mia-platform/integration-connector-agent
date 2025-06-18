@@ -16,7 +16,6 @@
 package pipeline
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -57,10 +56,9 @@ func TestPipelineGroup(t *testing.T) {
 		p2, err := New(logger, proc2, sink2)
 		require.NoError(t, err)
 
-		ctx := context.Background()
 		pg := NewGroup(logger, p1, p2)
 
-		pg.Start(ctx)
+		pg.Start(t.Context())
 
 		event := &entities.Event{
 			PrimaryKeys: entities.PkFields{{Key: "id", Value: "123"}},

@@ -95,7 +95,6 @@ func TestPipeline(t *testing.T) {
 	})
 
 	t.Run("on channel closed, the pipeline stops", func(t *testing.T) {
-		ctx := context.Background()
 		w := fakesink.New(model)
 		p, err := New(log, proc, w)
 		require.NoError(t, err)
@@ -108,12 +107,12 @@ func TestPipeline(t *testing.T) {
 			close(eventChannel)
 		}(t)
 
-		err = p.Start(ctx)
+		err = p.Start(t.Context())
 		require.NoError(t, err)
 	})
 
 	t.Run("on context done, close channel", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		w := fakesink.New(model)
 		p, err := New(log, proc, w)
 		require.NoError(t, err)
@@ -248,7 +247,7 @@ func getPipeline(t *testing.T, p IPipeline) *Pipeline {
 func runPipeline(t *testing.T, p IPipeline) {
 	t.Helper()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	go func(t *testing.T) {
 		t.Helper()

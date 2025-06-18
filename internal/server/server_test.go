@@ -39,7 +39,7 @@ func TestServer(t *testing.T) {
 		}
 		cfg := &config.Configuration{}
 
-		ctx := context.TODO()
+		ctx := t.Context()
 		go func() {
 			assert.NoError(t, New(ctx, envVars, cfg, shutdown))
 			assert.ErrorIs(t, ctx.Err(), context.Canceled)
@@ -70,7 +70,7 @@ func TestServer(t *testing.T) {
 		}
 		cfg := &config.Configuration{}
 		go func() {
-			assert.NoError(t, New(context.TODO(), envVars, cfg, shutdown))
+			assert.NoError(t, New(t.Context(), envVars, cfg, shutdown))
 		}()
 		defer func() { shutdown <- struct{}{} }()
 
@@ -100,7 +100,7 @@ func TestShutdown(t *testing.T) {
 			LogLevel:             "error",
 			DelayShutdownSeconds: 3,
 		}
-		assert.NoError(t, New(context.TODO(), envVars, cfg, shutdown))
+		assert.NoError(t, New(t.Context(), envVars, cfg, shutdown))
 		done <- true
 	}()
 
