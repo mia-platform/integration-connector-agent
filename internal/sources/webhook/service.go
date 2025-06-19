@@ -54,6 +54,38 @@ func SetupService(
 	return nil
 }
 
+func extractBodyFromContentType(c *fiber.Ctx, cfg *ContentTypeConfig) []byte {
+	contentType := ""
+	if cfg != nil {
+		contentType = cfg.ContentType
+	} else {
+		contentType = c.Get("content-type")
+	}
+
+	switch contentType {
+	case "application/json":
+		// Default: use whole body
+		return bytes.Clone(c.Body())
+	case "application/x-www-form-urlencoded":
+		// Expect a field to extract (e.g., payload)
+		field := "payload"
+		if cfg != nil && cfg.Field != "" {
+			field = cfg.Field
+		}
+		form, err := c.MultipartForm()
+		if err == nil && form != nil && len(form.Value[field]) > 0 {
+			return []byte(form.Value[field][0])
+		} else if v := c.FormValue(field); v != "" {
+			return []byte(v)
+		}
+		return nil
+	// Add more content types here as needed
+	default:
+		// Unknown or unsupported content type
+		return nil
+	}
+}
+
 func webhookHandler(config *Configuration, p *pipeline.Group) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		log := glogrus.FromContext(c.UserContext())
@@ -63,17 +95,8 @@ func webhookHandler(config *Configuration, p *pipeline.Group) fiber.Handler {
 			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
 		}
 
-		body := bytes.Clone(c.Body())
-		// Handle GitHub's application/x-www-form-urlencoded payload
-		if c.Get("content-type") == "application/x-www-form-urlencoded" {
-			// GitHub sends payload as: payload=<json>
-			form, err := c.MultipartForm()
-			if err == nil && form != nil && len(form.Value["payload"]) > 0 {
-				body = []byte(form.Value["payload"][0])
-			} else if v := c.FormValue("payload"); v != "" {
-				body = []byte(v)
-			}
-		}
+		var body []byte
+		body = extractBodyFromContentType(c, config.ContentTypeConfig)
 
 		if len(body) == 0 {
 			log.Error("empty request body")

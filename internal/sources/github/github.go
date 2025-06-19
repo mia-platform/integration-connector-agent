@@ -46,6 +46,10 @@ func (c *Config) getWebhookConfig() (*webhook.Configuration, error) {
 		WebhookPath:    c.WebhookPath,
 		Authentication: c.Authentication,
 		Events:         &SupportedEvents,
+		ContentTypeConfig: &webhook.ContentTypeConfig{
+			ContentType: "application/x-www-form-urlencoded",
+			Field:       "payload",
+		},
 	}, nil
 }
 

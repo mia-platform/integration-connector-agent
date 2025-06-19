@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -88,7 +89,10 @@ func TestAddSourceToRouter_PullRequest(t *testing.T) {
 	t.Run("pull_request opened event", func(t *testing.T) {
 		body, err := os.ReadFile("testdata/pull_request_opened.json")
 		require.NoError(t, err)
-		req := getWebhookRequest(bytes.NewBuffer(body))
+		form := make(url.Values)
+		form.Set("payload", string(body))
+		req := getWebhookRequest(bytes.NewBufferString(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()

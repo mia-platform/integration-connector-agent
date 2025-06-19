@@ -27,6 +27,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
@@ -173,6 +174,10 @@ func TestWebhookHandler_GitHubFormURLEncoded(t *testing.T) {
 			},
 			EventTypeFieldPath: "_github_event_type",
 		},
+		ContentTypeConfig: &ContentTypeConfig{
+			ContentType: "application/x-www-form-urlencoded",
+			Field:       "payload",
+		},
 	}
 
 	app, router := testutils.GetTestRouter(t)
@@ -195,4 +200,51 @@ func TestWebhookHandler_GitHubFormURLEncoded(t *testing.T) {
 	call := fakeSink.Calls().LastCall()
 	require.Equal(t, entities.PkFields{{Key: "pull_request.id", Value: "123"}}, call.Data.GetPrimaryKeys())
 	require.Equal(t, "pull_request", call.Data.GetType())
+}
+
+func TestExtractBodyFromContentType(t *testing.T) {
+	t.Run("application/json returns whole body", func(t *testing.T) {
+		app, _ := testutils.GetTestRouter(t)
+		jsonBody := `{"foo":"bar"}`
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		var gotBody []byte
+		app.Use(func(c *fiber.Ctx) error {
+			gotBody = extractBodyFromContentType(c, &ContentTypeConfig{ContentType: "application/json"})
+			return nil
+		})
+		_, err := app.Test(req)
+		require.NoError(t, err)
+		require.Equal(t, []byte(jsonBody), gotBody)
+	})
+
+	t.Run("application/x-www-form-urlencoded returns field", func(t *testing.T) {
+		app, _ := testutils.GetTestRouter(t)
+		form := url.Values{}
+		form.Set("payload", `{"foo":"bar"}`)
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		var gotBody []byte
+		app.Use(func(c *fiber.Ctx) error {
+			gotBody = extractBodyFromContentType(c, &ContentTypeConfig{ContentType: "application/x-www-form-urlencoded", Field: "payload"})
+			return nil
+		})
+		_, err := app.Test(req)
+		require.NoError(t, err)
+		require.Equal(t, []byte(`{"foo":"bar"}`), gotBody)
+	})
+
+	t.Run("unsupported content-type returns nil", func(t *testing.T) {
+		app, _ := testutils.GetTestRouter(t)
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader("irrelevant"))
+		req.Header.Set("Content-Type", "text/plain")
+		var gotBody []byte
+		app.Use(func(c *fiber.Ctx) error {
+			gotBody = extractBodyFromContentType(c, &ContentTypeConfig{ContentType: "text/plain"})
+			return nil
+		})
+		_, err := app.Test(req)
+		require.NoError(t, err)
+		require.Nil(t, gotBody)
+	})
 }
