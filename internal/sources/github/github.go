@@ -17,9 +17,9 @@ package github
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 
@@ -73,12 +73,12 @@ var SupportedEvents = webhook.Events{
 
 // This file will contain the implementation for the GitHub webhook source.
 
-func AddSourceToRouter(ctx context.Context, cfg json.RawMessage, pg *pipeline.Group, router *swagger.Router[fiber.Handler, fiber.Router]) error {
-	var c Config
-	if err := json.Unmarshal(cfg, &c); err != nil {
+func AddSourceToRouter(ctx context.Context, cfg config.GenericConfig, pg *pipeline.Group, router *swagger.Router[fiber.Handler, fiber.Router]) error {
+	githubConfig, err := config.GetConfig[*Config](cfg)
+	if err != nil {
 		return err
 	}
-	webhookConfig, err := c.getWebhookConfig()
+	webhookConfig, err := githubConfig.getWebhookConfig()
 	if err != nil {
 		return err
 	}

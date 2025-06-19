@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
@@ -71,6 +72,8 @@ func TestAddSourceToRouter_PullRequest(t *testing.T) {
 
 	rawConfig, err := os.ReadFile("testdata/config.json")
 	require.NoError(t, err)
+	cfg := config.GenericConfig{}
+	require.NoError(t, json.Unmarshal(rawConfig, &cfg))
 
 	app, router := testutils.GetTestRouter(t)
 	proc := &processors.Processors{}
@@ -79,7 +82,7 @@ func TestAddSourceToRouter_PullRequest(t *testing.T) {
 	require.NoError(t, err)
 	pg := pipeline.NewGroup(logger, p1)
 
-	err = AddSourceToRouter(ctx, rawConfig, pg, router)
+	err = AddSourceToRouter(ctx, cfg, pg, router)
 	require.NoError(t, err)
 
 	t.Run("pull_request opened event", func(t *testing.T) {

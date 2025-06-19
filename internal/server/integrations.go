@@ -89,7 +89,7 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
 			}
 		case sources.Github:
-			if err := github.AddSourceToRouter(ctx, source.Raw, pg, oasRouter); err != nil {
+			if err := github.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
 			}
 		case "test":
