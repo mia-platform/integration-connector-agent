@@ -213,8 +213,9 @@ func TestExtractBodyFromContentType(t *testing.T) {
 			gotBody = extractBodyFromContentType(c, &ContentTypeConfig{ContentType: "application/json"})
 			return nil
 		})
-		_, err := app.Test(req)
+		res, err := app.Test(req)
 		require.NoError(t, err)
+		defer res.Body.Close()
 		require.Equal(t, []byte(jsonBody), gotBody)
 	})
 
@@ -229,8 +230,9 @@ func TestExtractBodyFromContentType(t *testing.T) {
 			gotBody = extractBodyFromContentType(c, &ContentTypeConfig{ContentType: "application/x-www-form-urlencoded", Field: "payload"})
 			return nil
 		})
-		_, err := app.Test(req)
+		res, err := app.Test(req)
 		require.NoError(t, err)
+		defer res.Body.Close()
 		require.Equal(t, []byte(`{"foo":"bar"}`), gotBody)
 	})
 
@@ -243,8 +245,9 @@ func TestExtractBodyFromContentType(t *testing.T) {
 			gotBody = extractBodyFromContentType(c, &ContentTypeConfig{ContentType: "text/plain"})
 			return nil
 		})
-		_, err := app.Test(req)
+		res, err := app.Test(req)
 		require.NoError(t, err)
+		defer res.Body.Close()
 		require.Nil(t, gotBody)
 	})
 }
