@@ -19,11 +19,12 @@ import (
 	"context"
 	"encoding/json"
 
-	swagger "github.com/davidebianchi/gswagger"
-	"github.com/gofiber/fiber/v2"
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+
+	swagger "github.com/davidebianchi/gswagger"
+	"github.com/gofiber/fiber/v2"
 	"github.com/tidwall/gjson"
 )
 
