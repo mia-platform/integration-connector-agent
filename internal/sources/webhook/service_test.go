@@ -25,18 +25,17 @@ import (
 	"net/url"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	fakesink "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 	"github.com/mia-platform/integration-connector-agent/internal/testutils"
 	"github.com/mia-platform/integration-connector-agent/internal/utils"
-	"github.com/tidwall/gjson"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -97,7 +96,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 							Operation:  entities.Write,
 						},
 					},
-					EventTypeFieldPath: "webhookEvent",
+					GetEventType: GetEventTypeByPath("webhookEvent"),
 				},
 			},
 			req: func(t *testing.T) *http.Request {
@@ -115,6 +114,34 @@ func TestSetupServiceWithConfig(t *testing.T) {
 				require.NoError(t, err)
 
 				return httptest.NewRequest(http.MethodPost, defaultWebhookEndpoint, bytes.NewBuffer(reqBody))
+			},
+			expectedStatusCode: http.StatusOK,
+		},
+		"handle x-www-form-urlencoded payload": {
+			config: &Configuration{
+				WebhookPath: defaultWebhookEndpoint,
+				Events: &Events{
+					Supported: map[string]Event{
+						"jira:issue_updated": {
+							GetFieldID: GetPrimaryKeyByPath("issue.id"),
+							Operation:  entities.Write,
+						},
+					},
+					GetEventType:   GetEventTypeByPath("webhookEvent"),
+					FormPayloadKey: "payload",
+				},
+			},
+			req: func(t *testing.T) *http.Request {
+				t.Helper()
+
+				form := url.Values{}
+				form.Set("payload", `{"webhookEvent":"jira:issue_updated","issue":{"id":"1","key":"ISSUE-KEY"}}`)
+				form.Encode()
+
+				req := httptest.NewRequest(http.MethodPost, defaultWebhookEndpoint, strings.NewReader(form.Encode()))
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+				return req
 			},
 			expectedStatusCode: http.StatusOK,
 		},
@@ -147,107 +174,148 @@ func TestSetupServiceWithConfig(t *testing.T) {
 	}
 }
 
-func TestWebhookHandler_GitHubFormURLEncoded(t *testing.T) {
-	logger, _ := test.NewNullLogger()
-	ctx := context.Background()
-	fakeSink := fakesink.New(nil)
-	proc := &processors.Processors{}
-	p, err := pipeline.New(logger, proc, fakeSink)
-	require.NoError(t, err)
-	pg := pipeline.NewGroup(logger, p)
+func TestExtractBodyFromContentType(t *testing.T) {
+	tests := []struct {
+		name        string
+		contentType string
+		body        string
+		events      *Events
 
-	config := &Configuration{
-		WebhookPath:    "/github/webhook",
-		Authentication: HMAC{},
-		Events: &Events{
-			Supported: map[string]Event{
-				"pull_request": {
-					Operation: entities.Write,
-					GetFieldID: func(parsedData gjson.Result) entities.PkFields {
-						id := parsedData.Get("pull_request.id").String()
-						if id == "" {
-							return nil
-						}
-						return entities.PkFields{{Key: "pull_request.id", Value: id}}
-					},
-				},
-			},
-			EventTypeFieldPath: "_github_event_type",
+		expectedBody  []byte
+		expectedError error
+	}{
+		{
+			name:          "JSON content type with valid JSON body",
+			contentType:   "application/json",
+			body:          `{"key": "value", "number": 123}`,
+			expectedBody:  []byte(`{"key": "value", "number": 123}`),
+			expectedError: nil,
 		},
-		ContentTypeConfig: &ContentTypeConfig{
-			ContentType: "application/x-www-form-urlencoded",
-			Field:       "payload",
+		{
+			name:          "JSON content type with charset parameter",
+			contentType:   "application/json; charset=utf-8",
+			body:          `{"test": true}`,
+			expectedBody:  []byte(`{"test": true}`),
+			expectedError: nil,
+		},
+		{
+			name:          "JSON content type with trailing semicolon",
+			contentType:   "application/json;",
+			body:          `{"test": true}`,
+			expectedBody:  []byte(`{"test": true}`),
+			expectedError: nil,
+		},
+		{
+			name:        "Form urlencoded content type with payload with json content",
+			contentType: "application/x-www-form-urlencoded",
+			body:        "payload=%7B%22key1%22%3A%22value1%22%2C%22key2%22%3A%22value2%22%7D",
+			events: &Events{
+				FormPayloadKey: "payload",
+			},
+			expectedBody:  []byte(`{"key1":"value1","key2":"value2"}`),
+			expectedError: nil,
+		},
+		{
+			name:        "Unknown content type raise error",
+			contentType: "text/plain",
+			body:        "key=value",
+			expectedBody: func() []byte {
+				expected := map[string]any{
+					"key": "value",
+				}
+				b, _ := json.Marshal(expected)
+				return b
+			}(),
+			expectedError: ErrUnsupportedContentType,
+		},
+		{
+			name:          "Invalid content type header",
+			contentType:   "invalid/content-type-header-with-bad-chars-<>",
+			body:          "test",
+			expectedBody:  nil,
+			expectedError: ErrFailedToParseContentType,
+		},
+		{
+			name:         "empty content type returns body as is",
+			contentType:  "",
+			body:         `{}`,
+			expectedBody: []byte(`{}`),
+		},
+		{
+			name:          "Empty body with JSON content type",
+			contentType:   "application/json",
+			body:          "",
+			expectedBody:  []byte(""),
+			expectedError: nil,
+		},
+		{
+			name:          "JSON content type with empty object",
+			contentType:   "application/json",
+			body:          `{}`,
+			expectedBody:  []byte(`{}`),
+			expectedError: nil,
+		},
+		{
+			name:          "JSON content type with array",
+			contentType:   "application/json",
+			body:          `[1,2,3]`,
+			expectedBody:  []byte(`[1,2,3]`),
+			expectedError: nil,
+		},
+		{
+			name:        "Malformed form body",
+			contentType: "application/x-www-form-urlencoded",
+			events: &Events{
+				FormPayloadKey: "payload",
+			},
+			body:         `malformed data %`,
+			expectedBody: nil,
 		},
 	}
 
-	app, router := testutils.GetTestRouter(t)
-	SetupService(ctx, router, config, pg)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := fiber.New()
 
-	// Simulate GitHub's application/x-www-form-urlencoded payload
-	jsonPayload := `{"action":"opened","pull_request":{"id":123,"title":"Test PR","user":{"login":"octocat"}}}`
-	formBody := "payload=" + url.QueryEscape(jsonPayload)
-	req := httptest.NewRequest(http.MethodPost, "/github/webhook", strings.NewReader(formBody))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("X-GitHub-Event", "pull_request")
+			var actualBody []byte
+			var actualError error
 
-	resp, err := app.Test(req)
-	require.NoError(t, err)
-	defer resp.Body.Close()
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-	require.Eventually(t, func() bool {
-		return len(fakeSink.Calls()) == 1
-	}, 1*time.Second, 10*time.Millisecond)
-	call := fakeSink.Calls().LastCall()
-	require.Equal(t, entities.PkFields{{Key: "pull_request.id", Value: "123"}}, call.Data.GetPrimaryKeys())
-	require.Equal(t, "pull_request", call.Data.GetType())
-}
+			var events = &Events{}
+			if tt.events != nil {
+				events = tt.events
+			}
 
-func TestExtractBodyFromContentType(t *testing.T) {
-	t.Run("application/json returns whole body", func(t *testing.T) {
-		app, _ := testutils.GetTestRouter(t)
-		jsonBody := `{"foo":"bar"}`
-		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(jsonBody))
-		req.Header.Set("Content-Type", "application/json")
-		var gotBody []byte
-		app.Use(func(c *fiber.Ctx) error {
-			gotBody = extractBodyFromContentType(c, &ContentTypeConfig{ContentType: "application/json"})
-			return nil
+			app.Post("/test", func(c *fiber.Ctx) error {
+				actualBody, actualError = extractBodyFromContentType(c, events)
+				return c.SendStatus(200)
+			})
+
+			var reqBody io.Reader
+			if tt.body != "" {
+				reqBody = strings.NewReader(tt.body)
+			}
+
+			req, err := http.NewRequest(http.MethodPost, "/test", reqBody)
+			require.NoError(t, err)
+
+			if tt.contentType != "" {
+				req.Header.Set("Content-Type", tt.contentType)
+			}
+
+			res, err := app.Test(req)
+			require.NoError(t, err)
+			defer res.Body.Close()
+
+			if tt.expectedError != nil {
+				require.Error(t, actualError)
+				assert.ErrorIs(t, actualError, tt.expectedError)
+				assert.Nil(t, actualBody)
+			} else {
+				require.NoError(t, actualError)
+				if string(tt.expectedBody) != "" {
+					assert.JSONEq(t, string(tt.expectedBody), string(actualBody))
+				}
+			}
 		})
-		res, err := app.Test(req)
-		require.NoError(t, err)
-		defer res.Body.Close()
-		require.Equal(t, []byte(jsonBody), gotBody)
-	})
-
-	t.Run("application/x-www-form-urlencoded returns field", func(t *testing.T) {
-		app, _ := testutils.GetTestRouter(t)
-		form := url.Values{}
-		form.Set("payload", `{"foo":"bar"}`)
-		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(form.Encode()))
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		var gotBody []byte
-		app.Use(func(c *fiber.Ctx) error {
-			gotBody = extractBodyFromContentType(c, &ContentTypeConfig{ContentType: "application/x-www-form-urlencoded", Field: "payload"})
-			return nil
-		})
-		res, err := app.Test(req)
-		require.NoError(t, err)
-		defer res.Body.Close()
-		require.Equal(t, []byte(`{"foo":"bar"}`), gotBody)
-	})
-
-	t.Run("unsupported content-type returns nil", func(t *testing.T) {
-		app, _ := testutils.GetTestRouter(t)
-		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader("irrelevant"))
-		req.Header.Set("Content-Type", "text/plain")
-		var gotBody []byte
-		app.Use(func(c *fiber.Ctx) error {
-			gotBody = extractBodyFromContentType(c, &ContentTypeConfig{ContentType: "text/plain"})
-			return nil
-		})
-		res, err := app.Test(req)
-		require.NoError(t, err)
-		defer res.Body.Close()
-		require.Nil(t, gotBody)
-	})
+	}
 }

@@ -23,6 +23,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -43,10 +44,52 @@ import (
 )
 
 func TestValidateConfig(t *testing.T) {
-	t.Run("unmarshal config", func(t *testing.T) {
-		t.Setenv("GITHUB_WEBHOOK_SECRET", "GITHUB_WEBHOOK_SECRET")
-		t.Cleanup(func() { os.Unsetenv("GITHUB_WEBHOOK_SECRET") })
+	testCases := map[string]struct {
+		config *Config
 
+		expectedConfig *Config
+		expectedError  error
+	}{
+		"with default": {
+			config: &Config{},
+			expectedConfig: &Config{
+				WebhookPath: defaultWebhookPath,
+				Authentication: webhook.HMAC{
+					HeaderName: authHeaderName,
+				},
+			},
+		},
+		"with custom values": {
+			config: &Config{
+				WebhookPath: "/custom/webhook",
+				Authentication: webhook.HMAC{
+					HeaderName: "X-Custom-Header",
+					Secret:     config.SecretSource("secret"),
+				},
+			},
+			expectedConfig: &Config{
+				WebhookPath: "/custom/webhook",
+				Authentication: webhook.HMAC{
+					HeaderName: "X-Custom-Header",
+					Secret:     config.SecretSource("secret"),
+				},
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			err := tc.config.Validate()
+			if tc.expectedError != nil {
+				require.EqualError(t, err, tc.expectedError.Error())
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tc.expectedConfig, tc.config)
+		})
+	}
+
+	t.Run("unmarshal config", func(t *testing.T) {
 		rawConfig, err := os.ReadFile("testdata/config.json")
 		require.NoError(t, err)
 
@@ -55,69 +98,127 @@ func TestValidateConfig(t *testing.T) {
 		require.NoError(t, actual.Validate())
 
 		require.Equal(t, &Config{
-			WebhookPath: "/github/webhook",
+			WebhookPath: "/webhook",
 			Authentication: webhook.HMAC{
-				HeaderName: "X-Hub-Signature-256",
-				Secret:     "GITHUB_WEBHOOK_SECRET",
+				HeaderName: authHeaderName,
+				Secret:     config.SecretSource("SECRET_VALUE"),
 			},
 		}, actual)
 	})
 }
 
-func TestAddSourceToRouter_PullRequest(t *testing.T) {
-	t.Setenv("GITHUB_WEBHOOK_SECRET", "GITHUB_WEBHOOK_SECRET")
-	t.Cleanup(func() { os.Unsetenv("GITHUB_WEBHOOK_SECRET") })
-
+func TestAddSourceToRouter(t *testing.T) {
 	logger, _ := test.NewNullLogger()
-	ctx := context.Background()
 
-	rawConfig, err := os.ReadFile("testdata/config.json")
-	require.NoError(t, err)
-	cfg := config.GenericConfig{}
-	require.NoError(t, json.Unmarshal(rawConfig, &cfg))
+	t.Run("setup webhook", func(t *testing.T) {
+		ctx := context.Background()
 
-	app, router := testutils.GetTestRouter(t)
-	proc := &processors.Processors{}
-	s := fakewriter.New(nil)
-	p1, err := pipeline.New(logger, proc, s)
-	require.NoError(t, err)
-	pg := pipeline.NewGroup(logger, p1)
-
-	err = AddSourceToRouter(ctx, cfg, pg, router)
-	require.NoError(t, err)
-
-	t.Run("pull_request opened event", func(t *testing.T) {
-		body, err := os.ReadFile("testdata/pull_request_opened.json")
+		rawConfig, err := os.ReadFile("testdata/config.json")
 		require.NoError(t, err)
-		form := make(url.Values)
-		form.Set("payload", string(body))
-		req := getWebhookRequest(bytes.NewBufferString(form.Encode()))
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		resp, err := app.Test(req)
+		cfg := config.GenericConfig{}
+		require.NoError(t, json.Unmarshal(rawConfig, &cfg))
+
+		app, router := testutils.GetTestRouter(t)
+
+		proc := &processors.Processors{}
+		s := fakewriter.New(nil)
+		p1, err := pipeline.New(logger, proc, s)
 		require.NoError(t, err)
-		defer resp.Body.Close()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-		require.Eventually(t, func() bool {
-			return len(s.Calls()) == 1
-		}, 1*time.Second, 10*time.Millisecond)
-		call := s.Calls().LastCall()
-		require.Equal(t, entities.Write, call.Operation)
-		actualEvent, ok := call.Data.(*entities.Event)
-		require.True(t, ok)
-		require.Equal(t, entities.PkFields{{Key: "pull_request.id", Value: "123456"}}, actualEvent.PrimaryKeys)
-		require.Equal(t, "pull_request", actualEvent.Type)
-		require.Equal(t, entities.Write, actualEvent.OperationType)
-		// Check that the injected event type is present in the raw payload
-		require.Contains(t, string(actualEvent.OriginalRaw), "\"_github_event_type\":\"pull_request\"")
+
+		pg := pipeline.NewGroup(logger, p1)
+
+		id := "12345"
+		err = AddSourceToRouter(ctx, cfg, pg, router)
+		require.NoError(t, err)
+
+		testCases := []struct {
+			eventName   string
+			body        string
+			contentType string
+
+			expectedPk        entities.PkFields
+			expectedOperation entities.Operation
+		}{
+			{
+				eventName:   pullRequestEvent,
+				body:        getPullRequestPayload("opened", id),
+				contentType: "application/json",
+
+				expectedPk:        entities.PkFields{{Key: "pull_request.id", Value: id}},
+				expectedOperation: entities.Write,
+			},
+			{
+				eventName:   pullRequestEvent,
+				body:        getPullRequestPayload("closed", id),
+				contentType: "application/json",
+
+				expectedPk:        entities.PkFields{{Key: "pull_request.id", Value: id}},
+				expectedOperation: entities.Write,
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(fmt.Sprintf("invoke webhook with %s event", tc.eventName), func(t *testing.T) {
+				defer s.ResetCalls()
+
+				req := getWebhookRequest(bytes.NewBufferString(tc.body), tc.eventName)
+
+				resp, err := app.Test(req)
+				require.NoError(t, err)
+				defer resp.Body.Close()
+				body, err := io.ReadAll(resp.Body)
+				require.NoError(t, err)
+				require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+				require.Eventually(t, func() bool {
+					return len(s.Calls()) == 1
+				}, 1*time.Second, 10*time.Millisecond)
+				require.Equal(t, fakewriter.Call{
+					Operation: tc.expectedOperation,
+					Data: &entities.Event{
+						PrimaryKeys:   tc.expectedPk,
+						Type:          tc.eventName,
+						OperationType: tc.expectedOperation,
+						OriginalRaw:   []byte(tc.body),
+					},
+				}, s.Calls().LastCall())
+			})
+
+			t.Run(fmt.Sprintf("invoke webhook with %s event with form body", tc.eventName), func(t *testing.T) {
+				defer s.ResetCalls()
+
+				form := url.Values{}
+				form.Set("payload", tc.body)
+				req := getWebhookRequest(bytes.NewBufferString(form.Encode()), tc.eventName)
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+				resp, err := app.Test(req)
+				require.NoError(t, err)
+				defer resp.Body.Close()
+				body, err := io.ReadAll(resp.Body)
+				require.NoError(t, err)
+				require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+				require.Eventually(t, func() bool {
+					return len(s.Calls()) == 1
+				}, 1*time.Second, 10*time.Millisecond)
+				require.Equal(t, fakewriter.Call{
+					Operation: tc.expectedOperation,
+					Data: &entities.Event{
+						PrimaryKeys:   tc.expectedPk,
+						Type:          tc.eventName,
+						OperationType: tc.expectedOperation,
+						OriginalRaw:   []byte(tc.body),
+					},
+				}, s.Calls().LastCall())
+			})
+		}
 	})
 }
 
-func getWebhookRequest(body *bytes.Buffer) *http.Request {
-	secret := "GITHUB_WEBHOOK_SECRET"
-	hmac := getHMACValidationHeader(secret, body.Bytes())
-	req := httptest.NewRequest(http.MethodPost, "/github/webhook", body)
-	req.Header.Add("X-Hub-Signature-256", fmt.Sprintf("sha256=%s", hmac))
-	req.Header.Add("X-GitHub-Event", "pull_request")
+func getWebhookRequest(body *bytes.Buffer, eventType string) *http.Request {
+	req := httptest.NewRequest(http.MethodPost, "/webhook", body)
+	hmac := getHMACValidationHeader("SECRET_VALUE", body.Bytes())
+	req.Header.Add(authHeaderName, fmt.Sprintf("sha256=%s", hmac))
+	req.Header.Add(githubEventHeader, eventType)
 	return req
 }
 
@@ -125,4 +226,17 @@ func getHMACValidationHeader(secret string, body []byte) string {
 	hasher := hmac.New(sha256.New, []byte(secret))
 	hasher.Write(body)
 	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func getPullRequestPayload(action, id string) string {
+	return fmt.Sprintf(`{
+		"action": "%s",
+		"pull_request": {
+			"id": "%s",
+			"title": "Test PR",
+			"user": {
+				"login": "octocat"
+			}
+		}
+	}`, action, id)
 }

@@ -17,6 +17,7 @@ package webhook
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 
@@ -28,9 +29,15 @@ var (
 	ErrMissingFieldID = fmt.Errorf("missing id field in event")
 )
 
+type EventTypeParam struct {
+	Data    gjson.Result
+	Headers http.Header
+}
+
 type Events struct {
-	Supported          map[string]Event
-	EventTypeFieldPath string
+	Supported      map[string]Event
+	GetEventType   func(data EventTypeParam) string
+	FormPayloadKey string
 }
 
 type Event struct {
@@ -49,9 +56,28 @@ func GetPrimaryKeyByPath(path string) func(parsedData gjson.Result) entities.PkF
 	}
 }
 
-func (e *Events) getPipelineEvent(logger *logrus.Entry, rawData []byte) (entities.PipelineEvent, error) {
+func GetEventTypeByPath(path string) func(data EventTypeParam) string {
+	return func(data EventTypeParam) string {
+		if data.Data.Exists() {
+			return data.Data.Get(path).String()
+		}
+		return ""
+	}
+}
+
+type RequestInfo struct {
+	data    []byte
+	headers http.Header
+}
+
+func (e *Events) getPipelineEvent(logger *logrus.Entry, requestInfo RequestInfo) (entities.PipelineEvent, error) {
+	rawData := requestInfo.data
+
 	parsed := gjson.ParseBytes(rawData)
-	webhookEvent := parsed.Get(e.EventTypeFieldPath).String()
+	webhookEvent := e.GetEventType(EventTypeParam{
+		Data:    parsed,
+		Headers: requestInfo.headers,
+	})
 
 	event, ok := e.Supported[webhookEvent]
 	if !ok {

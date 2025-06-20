@@ -1,7 +1,8 @@
 {
-  "webhookPath": "/github/webhook",
+  "webhookPath": "/webhook",
   "authentication": {
-    "headerName": "X-Hub-Signature-256",
-    "secret": { "fromEnv": "GITHUB_WEBHOOK_SECRET" }
+    "secret": {
+			"fromFile": "testdata/secret"
+		}
   }
 }

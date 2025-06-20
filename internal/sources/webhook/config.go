@@ -46,8 +46,7 @@ type Configuration struct {
 	Authentication Authentication `json:"authentication"`
 	WebhookPath    string         `json:"webhookPath"`
 
-	Events            *Events            `json:"events,omitempty"`
-	ContentTypeConfig *ContentTypeConfig `json:"contentTypeConfig,omitempty"`
+	Events *Events `json:"events,omitempty"`
 }
 
 func (c *Configuration) Validate() error {

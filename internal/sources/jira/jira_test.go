@@ -120,9 +120,6 @@ func TestGetWebhookConfig(t *testing.T) {
 				WebhookPath:    "/webhook",
 				Authentication: webhook.HMAC{},
 				Events:         &DefaultSupportedEvents,
-				ContentTypeConfig: &webhook.ContentTypeConfig{
-					ContentType: "application/json",
-				},
 			},
 		},
 		"valid config with authentication": {
@@ -140,9 +137,6 @@ func TestGetWebhookConfig(t *testing.T) {
 					Secret:     config.SecretSource("secret"),
 				},
 				Events: &DefaultSupportedEvents,
-				ContentTypeConfig: &webhook.ContentTypeConfig{
-					ContentType: "application/json",
-				},
 			},
 		},
 	}

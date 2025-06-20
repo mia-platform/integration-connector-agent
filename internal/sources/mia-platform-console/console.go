@@ -60,9 +60,6 @@ func (c *Config) getWebhookConfig() (*webhook.Configuration, error) {
 		WebhookPath:    c.WebhookPath,
 		Authentication: c.Authentication,
 		Events:         &DefaultSupportedEvents,
-		ContentTypeConfig: &webhook.ContentTypeConfig{
-			ContentType: "application/json",
-		},
 	}
 	if err := webhookConfig.Validate(); err != nil {
 		return nil, err

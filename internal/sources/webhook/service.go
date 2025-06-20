@@ -19,6 +19,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"mime"
 	"net/http"
 
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
@@ -30,8 +32,11 @@ import (
 )
 
 var (
-	ErrUnmarshalEvent          = errors.New("error unmarshaling event")
-	ErrUnsupportedWebhookEvent = errors.New("unsupported webhook event")
+	ErrUnmarshalEvent           = errors.New("error unmarshaling event")
+	ErrUnsupportedWebhookEvent  = errors.New("unsupported webhook event")
+	ErrUnsupportedContentType   = errors.New("unsupported content type for webhook request")
+	ErrFailedToParseContentType = errors.New("failed to parse content type")
+	ErrFailsToParseBody         = errors.New("failed to parse body")
 )
 
 func SetupService(
@@ -54,35 +59,28 @@ func SetupService(
 	return nil
 }
 
-func extractBodyFromContentType(c *fiber.Ctx, cfg *ContentTypeConfig) []byte {
-	contentType := ""
-	if cfg != nil {
-		contentType = cfg.ContentType
-	} else {
-		contentType = c.Get("content-type")
+func extractBodyFromContentType(c *fiber.Ctx, events *Events) ([]byte, error) {
+	contentTypeHeader := c.Get("Content-Type")
+
+	if contentTypeHeader == "" {
+		return bytes.Clone(c.Body()), nil
 	}
 
-	switch contentType {
-	case "application/json":
-		// Default: use whole body
-		return bytes.Clone(c.Body())
-	case "application/x-www-form-urlencoded":
-		// Expect a field to extract (e.g., payload)
-		field := "payload"
-		if cfg != nil && cfg.Field != "" {
-			field = cfg.Field
+	mediaType, _, err := mime.ParseMediaType(contentTypeHeader)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrFailedToParseContentType, contentTypeHeader)
+	}
+
+	switch mediaType {
+	case fiber.MIMEApplicationJSON:
+		return bytes.Clone(c.Body()), nil
+	case fiber.MIMEApplicationForm:
+		if events.FormPayloadKey == "" {
+			return nil, fmt.Errorf("%w: FormPayloadKey setting is required for %s", ErrUnsupportedContentType, contentTypeHeader)
 		}
-		form, err := c.MultipartForm()
-		if err == nil && form != nil && len(form.Value[field]) > 0 {
-			return []byte(form.Value[field][0])
-		} else if v := c.FormValue(field); v != "" {
-			return []byte(v)
-		}
-		return nil
-	// Add more content types here as needed
+		return []byte(c.FormValue(events.FormPayloadKey)), nil
 	default:
-		// Unknown or unsupported content type
-		return nil
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedContentType, contentTypeHeader)
 	}
 }
 
@@ -95,24 +93,20 @@ func webhookHandler(config *Configuration, p *pipeline.Group) fiber.Handler {
 			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
 		}
 
-		var body []byte
-		body = extractBodyFromContentType(c, config.ContentTypeConfig)
-
+		body, err := extractBodyFromContentType(c, config.Events)
+		if err != nil {
+			log.WithError(err).Error("error extracting body from content type")
+			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
+		}
 		if len(body) == 0 {
 			log.Error("empty request body")
 			return c.SendStatus(http.StatusOK)
 		}
 
-		// Inject GitHub event type from header if present
-		if eventType := c.Get("X-GitHub-Event"); eventType != "" {
-			trimmed := bytes.TrimRight(body, " \n\r\t")
-			if len(trimmed) > 0 && trimmed[len(trimmed)-1] == '}' {
-				trimmed = append(trimmed[:len(trimmed)-1], []byte(",\"_github_event_type\":\""+eventType+"\"}")...)
-				body = trimmed
-			}
-		}
-
-		event, err := config.Events.getPipelineEvent(log, body)
+		event, err := config.Events.getPipelineEvent(log, RequestInfo{
+			data:    body,
+			headers: http.Header(c.GetReqHeaders()),
+		})
 		if err != nil {
 			log.WithError(err).Error("error unmarshaling event")
 			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))

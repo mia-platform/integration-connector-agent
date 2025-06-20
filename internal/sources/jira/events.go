@@ -110,5 +110,5 @@ var DefaultSupportedEvents = webhook.Events{
 			GetFieldID: webhook.GetPrimaryKeyByPath(versionEventIDPath),
 		},
 	},
-	EventTypeFieldPath: webhookEventPath,
+	GetEventType: webhook.GetEventTypeByPath(webhookEventPath),
 }

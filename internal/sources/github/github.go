@@ -18,14 +18,18 @@ package github
 import (
 	"context"
 
-	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
-	"github.com/tidwall/gjson"
+)
+
+const (
+	defaultWebhookPath = "/github/webhook"
+
+	authHeaderName = "X-Hub-Signature-256"
 )
 
 type Config struct {
@@ -34,48 +38,33 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	if c.WebhookPath == "" {
-		return webhook.ErrWebhookPathRequired
-	}
+	c.withDefault()
+
 	return nil
 }
+func (c *Config) withDefault() *Config {
+	if c.WebhookPath == "" {
+		c.WebhookPath = defaultWebhookPath
+	}
+	if c.Authentication.HeaderName == "" {
+		c.Authentication.HeaderName = authHeaderName
+	}
 
-// getWebhookConfig returns the webhook.Configuration for this source
+	return c
+}
+
 func (c *Config) getWebhookConfig() (*webhook.Configuration, error) {
-	return &webhook.Configuration{
+	config := &webhook.Configuration{
 		WebhookPath:    c.WebhookPath,
 		Authentication: c.Authentication,
 		Events:         &SupportedEvents,
-		ContentTypeConfig: &webhook.ContentTypeConfig{
-			ContentType: "application/x-www-form-urlencoded",
-			Field:       "payload",
-		},
-	}, nil
+	}
+
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+	return config, nil
 }
-
-const (
-	pullRequestEvent   = "pull_request"
-	defaultWebhookPath = "/github/webhook"
-	githubEventHeader  = "X-GitHub-Event"
-)
-
-var SupportedEvents = webhook.Events{
-	Supported: map[string]webhook.Event{
-		pullRequestEvent: {
-			Operation: entities.Write,
-			GetFieldID: func(parsedData gjson.Result) entities.PkFields {
-				id := parsedData.Get("pull_request.id").String()
-				if id == "" {
-					return nil
-				}
-				return entities.PkFields{{Key: "pull_request.id", Value: id}}
-			},
-		},
-	},
-	EventTypeFieldPath: "_github_event_type", // will be injected from header
-}
-
-// This file will contain the implementation for the GitHub webhook source.
 
 func AddSourceToRouter(ctx context.Context, cfg config.GenericConfig, pg *pipeline.Group, router *swagger.Router[fiber.Handler, fiber.Router]) error {
 	githubConfig, err := config.GetConfig[*Config](cfg)
