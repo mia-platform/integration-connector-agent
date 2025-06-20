@@ -16,6 +16,8 @@
 package github
 
 import (
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 )
@@ -39,5 +41,7 @@ var SupportedEvents = webhook.Events{
 	GetEventType: func(data webhook.EventTypeParam) string {
 		return data.Headers.Get(githubEventHeader)
 	},
-	FormPayloadKey: "payload",
+	PayloadKey: webhook.ContentTypeConfig{
+		fiber.MIMEApplicationForm: "payload",
+	},
 }

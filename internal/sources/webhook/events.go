@@ -35,9 +35,9 @@ type EventTypeParam struct {
 }
 
 type Events struct {
-	Supported      map[string]Event
-	GetEventType   func(data EventTypeParam) string
-	FormPayloadKey string
+	Supported    map[string]Event
+	GetEventType func(data EventTypeParam) string
+	PayloadKey   ContentTypeConfig
 }
 
 type Event struct {

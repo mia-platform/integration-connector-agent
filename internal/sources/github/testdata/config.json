@@ -2,7 +2,7 @@
   "webhookPath": "/webhook",
   "authentication": {
     "secret": {
-			"fromFile": "testdata/secret"
-		}
+      "fromFile": "testdata/secret"
+    }
   }
 }

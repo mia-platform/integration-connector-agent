@@ -75,10 +75,10 @@ func extractBodyFromContentType(c *fiber.Ctx, events *Events) ([]byte, error) {
 	case fiber.MIMEApplicationJSON:
 		return bytes.Clone(c.Body()), nil
 	case fiber.MIMEApplicationForm:
-		if events.FormPayloadKey == "" {
+		if events.PayloadKey == nil || events.PayloadKey[fiber.MIMEApplicationForm] == "" {
 			return nil, fmt.Errorf("%w: FormPayloadKey setting is required for %s", ErrUnsupportedContentType, contentTypeHeader)
 		}
-		return []byte(c.FormValue(events.FormPayloadKey)), nil
+		return []byte(c.FormValue(events.PayloadKey[fiber.MIMEApplicationForm])), nil
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedContentType, contentTypeHeader)
 	}

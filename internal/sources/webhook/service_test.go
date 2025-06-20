@@ -127,8 +127,10 @@ func TestSetupServiceWithConfig(t *testing.T) {
 							Operation:  entities.Write,
 						},
 					},
-					GetEventType:   GetEventTypeByPath("webhookEvent"),
-					FormPayloadKey: "payload",
+					GetEventType: GetEventTypeByPath("webhookEvent"),
+					PayloadKey: ContentTypeConfig{
+						fiber.MIMEApplicationForm: "payload",
+					},
 				},
 			},
 			req: func(t *testing.T) *http.Request {
@@ -210,7 +212,9 @@ func TestExtractBodyFromContentType(t *testing.T) {
 			contentType: "application/x-www-form-urlencoded",
 			body:        "payload=%7B%22key1%22%3A%22value1%22%2C%22key2%22%3A%22value2%22%7D",
 			events: &Events{
-				FormPayloadKey: "payload",
+				PayloadKey: ContentTypeConfig{
+					fiber.MIMEApplicationForm: "payload",
+				},
 			},
 			expectedBody:  []byte(`{"key1":"value1","key2":"value2"}`),
 			expectedError: nil,
@@ -266,7 +270,9 @@ func TestExtractBodyFromContentType(t *testing.T) {
 			name:        "Malformed form body",
 			contentType: "application/x-www-form-urlencoded",
 			events: &Events{
-				FormPayloadKey: "payload",
+				PayloadKey: ContentTypeConfig{
+					fiber.MIMEApplicationForm: "payload",
+				},
 			},
 			body:         `malformed data %`,
 			expectedBody: nil,

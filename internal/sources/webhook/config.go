@@ -33,12 +33,8 @@ type Authentication interface {
 	CheckSignature(req ValidatingRequest) error
 }
 
-// ContentTypeConfig allows configuring how to extract the payload for a given content-type
-// If Field is empty, the whole body is used (for application/json, etc)
-type ContentTypeConfig struct {
-	ContentType string `json:"contentType"`
-	Field       string `json:"field,omitempty"`
-}
+// ContentTypeConfig allows configuring how to extract the payload field for a given content-type
+type ContentTypeConfig map[string]string
 
 // Configuration is the representation of the configuration for a Jira Cloud webhook
 type Configuration struct {
