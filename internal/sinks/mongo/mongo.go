@@ -31,6 +31,8 @@ import (
 )
 
 var (
+	mongoTimeout = 5 * time.Second
+
 	ErrMongoInitialization = errors.New("failed to start mongo writer")
 )
 
@@ -49,7 +51,7 @@ type Writer[T entities.PipelineEvent] struct {
 // NewMongoDBWriter will construct a new MongoDB writer and validate the connection parameters via a ping request.
 func NewMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Config) (sinks.Sink[T], error) {
 	return newMongoDBWriter[T](ctx, config, func(ctx context.Context, c *mongo.Client) error {
-		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, mongoTimeout)
 		defer cancel()
 		return c.Ping(ctx, nil)
 	})

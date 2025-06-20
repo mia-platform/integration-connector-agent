@@ -17,6 +17,7 @@ package pipeline
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -44,6 +45,10 @@ func (pg *Group) Start(ctx context.Context) {
 		go func(p IPipeline) {
 			err := p.Start(ctx)
 			if err != nil {
+				if errors.Is(err, context.Canceled) {
+					pg.logger.WithError(err).Info("pipeline context cancelled")
+					return
+				}
 				pg.logger.WithError(err).Error("error starting pipeline")
 				// TODO: manage error
 				panic(err)

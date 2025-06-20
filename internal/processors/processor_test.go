@@ -16,7 +16,6 @@
 package processors
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -89,7 +88,7 @@ func TestProcessors_Process(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &Processors{processors: tt.processors}
-			got, err := p.Process(context.Background(), tt.input)
+			got, err := p.Process(t.Context(), tt.input)
 			if tt.expectedErr != "" {
 				require.EqualError(t, err, tt.expectedErr)
 			} else {
