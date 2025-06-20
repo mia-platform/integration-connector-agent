@@ -247,12 +247,12 @@ func getPipeline(t *testing.T, p IPipeline) *Pipeline {
 func runPipeline(t *testing.T, p IPipeline) {
 	t.Helper()
 
-	ctx := t.Context()
-
 	go func(t *testing.T) {
 		t.Helper()
 
-		err := p.Start(ctx)
-		require.NoError(t, err)
+		err := p.Start(t.Context())
+		if err != nil && !errors.Is(err, context.Canceled) {
+			t.Errorf("error starting pipeline: %v", err)
+		}
 	}(t)
 }
