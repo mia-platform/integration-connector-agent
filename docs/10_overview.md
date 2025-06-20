@@ -33,6 +33,7 @@ Currently, the supported **Sources** are:
 
 - Mia-Platform Console
 - Jira
+- GitHub
 
 The supported **Sinks** are:
 

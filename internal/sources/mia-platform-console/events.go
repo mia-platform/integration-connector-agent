@@ -97,5 +97,5 @@ var DefaultSupportedEvents = webhook.Events{
 			},
 		},
 	},
-	EventTypeFieldPath: webhookEventPath,
+	GetEventType: webhook.GetEventTypeByPath(webhookEventPath),
 }
