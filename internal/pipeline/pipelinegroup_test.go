@@ -16,7 +16,6 @@
 package pipeline
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -59,7 +58,7 @@ func TestPipelineGroup(t *testing.T) {
 
 		pg := NewGroup(logger, p1, p2)
 
-		pg.Start(context.Background())
+		pg.Start(t.Context())
 
 		event := &entities.Event{
 			PrimaryKeys: entities.PkFields{{Key: "id", Value: "123"}},
