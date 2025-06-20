@@ -28,6 +28,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
 	gcppubsub "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/github"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
 	console "github.com/mia-platform/integration-connector-agent/internal/sources/mia-platform-console"
 
@@ -114,6 +115,10 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 			}
 
 			integration.appendCloseableSource(pubsub)
+		case sources.Github:
+			if err := github.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
+				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+			}
 		case "test":
 			// skip this source as it is only used for test
 			continue

@@ -1,0 +1,8 @@
+{
+  "webhookPath": "/webhook",
+  "authentication": {
+    "secret": {
+      "fromFile": "testdata/secret"
+    }
+  }
+}

@@ -4,7 +4,7 @@
 
 To develop the service locally you need:
 
-- Go 1.23+
+- Go 1.24+
 
 To start the application locally
 

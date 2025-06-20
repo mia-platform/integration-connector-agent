@@ -18,6 +18,7 @@ package sources
 const (
 	Jira               = "jira"
 	Console            = "console"
+	Github             = "github"
 	GCPInventoryPubSub = "gcp-inventory-pubsub"
 )
 

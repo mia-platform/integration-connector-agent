@@ -33,6 +33,9 @@ type Authentication interface {
 	CheckSignature(req ValidatingRequest) error
 }
 
+// ContentTypeConfig allows configuring how to extract the payload field for a given content-type
+type ContentTypeConfig map[string]string
+
 // Configuration is the representation of the configuration for a Jira Cloud webhook
 type Configuration struct {
 	// Secret the webhook secret configuration for validating the data received
