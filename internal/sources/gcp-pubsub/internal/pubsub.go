@@ -92,6 +92,12 @@ func (p *ConcretePubSub) Listen(ctx context.Context, handler ListenerFunc) error
 			return
 		}
 
+		// TODO: message is Acked here once the pipelines have received the message for processing.
+		// This means that if the pipeline fails after this point, the message will not be
+		// retried. Consider implementing, either:
+		// - a dead-letter queue or similar mechanism.
+		// - a way to be notified here if all the pipelins have processed the
+		//   message successfully in order to correctly ack/nack it.
 		msg.Ack()
 	})
 }
