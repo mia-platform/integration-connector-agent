@@ -16,7 +16,8 @@
 package sources
 
 const (
-	Jira    = "jira"
-	Console = "console"
-	Github  = "github"
+	Jira                   = "jira"
+	Console                = "console"
+	Github                 = "github"
+	AzureInventoryEventHub = "azure-inventory-event-hub"
 )
