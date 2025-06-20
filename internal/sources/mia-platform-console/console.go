@@ -70,7 +70,7 @@ func (c *Config) getWebhookConfig() (*webhook.Configuration, error) {
 func AddSourceToRouter(
 	ctx context.Context,
 	cfg config.GenericConfig,
-	pg *pipeline.Group,
+	pg pipeline.IPipelineGroup,
 	router *swagger.Router[fiber.Handler, fiber.Router],
 ) error {
 	consoleConfig, err := config.GetConfig[*Config](cfg)

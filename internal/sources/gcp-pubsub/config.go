@@ -13,22 +13,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+package gcppubsub
 
-import (
-	"context"
+import "fmt"
 
-	"github.com/mia-platform/integration-connector-agent/entities"
-)
-
-type IPipeline interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context) error
-	Close() error
+type Config struct {
+	ProjectID          string `json:"projectId"`
+	TopicName          string `json:"topicName"`
+	SubscriptionID     string `json:"subscriptionId"`
+	AckDeadlineSeconds int    `json:"ackDeadlineSeconds,omitempty"`
 }
 
-type IPipelineGroup interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context)
-	Close() error
+func (c *Config) Validate() error {
+	if c.ProjectID == "" {
+		return fmt.Errorf("projectId must be provided")
+	}
+	if c.TopicName == "" {
+		return fmt.Errorf("topicName must be provided")
+	}
+	if c.SubscriptionID == "" {
+		return fmt.Errorf("subscriptionId must be provided")
+	}
+
+	return nil
 }

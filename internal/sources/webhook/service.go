@@ -43,7 +43,7 @@ func SetupService(
 	ctx context.Context,
 	router *swagger.Router[fiber.Handler, fiber.Router],
 	config *Configuration,
-	p *pipeline.Group,
+	p pipeline.IPipelineGroup,
 ) error {
 	if err := config.Validate(); err != nil {
 		return err
@@ -84,7 +84,7 @@ func extractBodyFromContentType(c *fiber.Ctx, events *Events) ([]byte, error) {
 	}
 }
 
-func webhookHandler(config *Configuration, p *pipeline.Group) fiber.Handler {
+func webhookHandler(config *Configuration, p pipeline.IPipelineGroup) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		log := glogrus.FromContext(c.UserContext())
 

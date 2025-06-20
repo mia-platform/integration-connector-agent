@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+package gcppubsub
 
 import (
 	"context"
@@ -21,14 +21,6 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
-type IPipeline interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context) error
-	Close() error
-}
-
-type IPipelineGroup interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context)
-	Close() error
+type EventBuilder interface {
+	GetPipelineEvent(ctx context.Context, data []byte) (entities.PipelineEvent, error)
 }
