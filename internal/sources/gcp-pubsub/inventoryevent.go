@@ -17,9 +17,18 @@ package gcppubsub
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
+
+var (
+	ErrMalformedEvent = errors.New("malformed event")
+)
+
+const InventoryAssetUpdateEventType = "inventory-asset-update"
 
 type InventoryEventBuilder struct {
 }
@@ -28,13 +37,57 @@ func NewInventoryEventBuilder() EventBuilder {
 	return &InventoryEventBuilder{}
 }
 
-func (b *InventoryEventBuilder) GetPipelineEvent(ctx context.Context, data []byte) (entities.PipelineEvent, error) {
-	// event := &entities.Event{
-	// 	PrimaryKeys:   entities.PkFields{}, // TODO
-	// 	OperationType: entities.Write,      // TOOD
-	// 	Type:          "type",              // TODO
+type InventoryEventAsset struct {
+	Ancestors  []string               `json:"ancestors"`
+	AssetType  string                 `json:"assetType"`
+	Name       string                 `json:"name"`
+	Resource   map[string]interface{} `json:"resource"`
+	UpdateTime string                 `json:"updateTime"`
+}
 
-	// 	OriginalRaw: data,
-	// }
-	return nil, nil
+type InventoryEventWindow struct {
+	StartTime string `json:"startTime"`
+}
+
+type InventoryEvent struct {
+	Asset           InventoryEventAsset  `json:"asset"`
+	PriorAsset      InventoryEventAsset  `json:"priorAsset"`
+	PriorAssetState string               `json:"priorAssetState"`
+	Window          InventoryEventWindow `json:"window"`
+	Deleted         bool                 `json:"deleted"`
+}
+
+func (b *InventoryEventBuilder) GetPipelineEvent(_ context.Context, data []byte) (entities.PipelineEvent, error) {
+	rawEvent := InventoryEvent{}
+	if err := json.Unmarshal(data, &rawEvent); err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrMalformedEvent, err.Error())
+	}
+
+	event := &entities.Event{
+		PrimaryKeys:   b.primaryKeys(rawEvent),
+		OperationType: b.operationType(rawEvent),
+		Type:          InventoryAssetUpdateEventType,
+		OriginalRaw:   data,
+	}
+	return event, nil
+}
+
+func (*InventoryEventBuilder) primaryKeys(event InventoryEvent) entities.PkFields {
+	return entities.PkFields{
+		{Key: "resourceName", Value: event.Asset.Name},
+		{Key: "resourceType", Value: event.Asset.AssetType},
+	}
+}
+
+func (*InventoryEventBuilder) operationType(event InventoryEvent) entities.Operation {
+	switch {
+	case event.Deleted:
+		return entities.Delete
+	case event.PriorAssetState == "DOES_NOT_EXIST":
+		return entities.Write
+	case event.PriorAssetState == "PRESENT":
+		return entities.Write
+	default:
+		return entities.Write
+	}
 }
