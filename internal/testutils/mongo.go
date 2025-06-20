@@ -56,6 +56,7 @@ func MongoCollection(t *testing.T, mongoURL, collection, db string) *mongo.Colle
 	coll := client.Database(db).Collection(collection)
 
 	t.Cleanup(func() {
+		ctx := context.Background()
 		err := coll.Drop(ctx)
 		require.NoError(t, err)
 		err = client.Database(db).Drop(ctx)

@@ -72,6 +72,8 @@ linters:
         rules:
           yaml: camel
         use-field-name: true
+    usetesting:
+      context-background: false
   exclusions:
     generated: lax
     presets:
