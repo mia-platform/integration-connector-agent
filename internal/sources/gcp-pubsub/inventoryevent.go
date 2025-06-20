@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+package gcppubsub
 
 import (
 	"context"
@@ -21,14 +21,20 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
-type IPipeline interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context) error
-	Close() error
+type InventoryEventBuilder struct {
 }
 
-type IPipelineGroup interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context)
-	Close() error
+func NewInventoryEventBuilder() EventBuilder {
+	return &InventoryEventBuilder{}
+}
+
+func (b *InventoryEventBuilder) GetPipelineEvent(ctx context.Context, data []byte) (entities.PipelineEvent, error) {
+	// event := &entities.Event{
+	// 	PrimaryKeys:   entities.PkFields{}, // TODO
+	// 	OperationType: entities.Write,      // TOOD
+	// 	Type:          "type",              // TODO
+
+	// 	OriginalRaw: data,
+	// }
+	return nil, nil
 }

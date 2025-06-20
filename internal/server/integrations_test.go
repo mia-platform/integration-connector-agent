@@ -175,6 +175,17 @@ func TestSetupIntegrations(t *testing.T) {
 		"console integration type": {
 			jsonCfg: `{"integrations":[{"source":{"type":"console"},"pipelines":[{"sinks":[{"type":"fake","raw":{}}]}]}]}`,
 		},
+		"gcp pubsub integration type": {
+			cfg: config.Configuration{
+				Integrations: []config.Integration{
+					{
+						Source:    config.GenericConfig{Type: sources.GCPInventoryPubSub, Raw: []byte(`{}`)},
+						Pipelines: []config.Pipeline{{Sinks: config.Sinks{getFakeWriter(t)}}},
+					},
+				},
+			},
+			expectedIntegrations: 1,
+		},
 	}
 
 	for name, tc := range testCases {

@@ -13,22 +13,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+package internal
 
 import (
 	"context"
-
-	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
-type IPipeline interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context) error
-	Close() error
+type MockPubSub struct {
+	ListenError   error
+	ListenAssert  func(ctx context.Context, handler ListenerFunc)
+	ListenInvoked bool
+
+	CloseError   error
+	CloseInvoked bool
 }
 
-type IPipelineGroup interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context)
-	Close() error
+func (m *MockPubSub) Listen(ctx context.Context, handler ListenerFunc) error {
+	m.ListenInvoked = true
+	if m.ListenAssert != nil {
+		m.ListenAssert(ctx, handler)
+	}
+
+	<-ctx.Done()
+	return m.ListenError
+}
+
+func (m *MockPubSub) Close() error {
+	m.CloseInvoked = true
+	return m.CloseError
 }

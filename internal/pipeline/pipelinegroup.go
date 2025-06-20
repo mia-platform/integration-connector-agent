@@ -31,7 +31,7 @@ type Group struct {
 	errors    []error
 }
 
-func NewGroup(logger *logrus.Logger, pipelines ...IPipeline) *Group {
+func NewGroup(logger *logrus.Logger, pipelines ...IPipeline) IPipelineGroup {
 	return &Group{
 		pipelines: pipelines,
 		logger:    logger,

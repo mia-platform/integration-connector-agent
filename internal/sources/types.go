@@ -16,6 +16,11 @@
 package sources
 
 const (
-	Jira    = "jira"
-	Console = "console"
+	Jira               = "jira"
+	Console            = "console"
+	GCPInventoryPubSub = "gcp-inventory-pubsub"
 )
+
+type CloseableSource interface {
+	Close() error
+}

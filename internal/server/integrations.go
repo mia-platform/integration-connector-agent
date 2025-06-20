@@ -27,6 +27,7 @@ import (
 	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
+	gcppubsub "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
 	console "github.com/mia-platform/integration-connector-agent/internal/sources/mia-platform-console"
 
@@ -36,12 +37,25 @@ import (
 )
 
 type Integration struct {
-	PipelineGroup *pipeline.Group
+	PipelineGroup  pipeline.IPipelineGroup
+	sourcesToClose []sources.CloseableSource
+}
+
+func (i *Integration) appendCloseableSource(source sources.CloseableSource) {
+	if i.sourcesToClose == nil {
+		i.sourcesToClose = make([]sources.CloseableSource, 0)
+	}
+	i.sourcesToClose = append(i.sourcesToClose, source)
 }
 
 func (i Integration) Close() error {
 	if i.PipelineGroup != nil {
 		return i.PipelineGroup.Close()
+	}
+	for _, source := range i.sourcesToClose {
+		if err := source.Close(); err != nil {
+			return fmt.Errorf("error closing source: %w", err)
+		}
 	}
 	return nil
 }
@@ -76,6 +90,9 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 		}
 
 		pg := pipeline.NewGroup(log, pipelines...)
+		integration := Integration{
+			PipelineGroup: pg,
+		}
 
 		source := cfgIntegration.Source
 		switch source.Type {
@@ -87,15 +104,23 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 			if err := console.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
 			}
+		case sources.GCPInventoryPubSub:
+			pubsub, err := gcppubsub.New(&gcppubsub.ConsumerOptions{
+				Ctx: ctx,
+				Log: log,
+			}, source, pg, gcppubsub.NewInventoryEventBuilder())
+			if err != nil {
+				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+			}
+
+			integration.appendCloseableSource(pubsub)
 		case "test":
 			// skip this source as it is only used for test
 			continue
 		default:
 			return nil, fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)
 		}
-		integrations = append(integrations, Integration{
-			PipelineGroup: pg,
-		})
+		integrations = append(integrations)
 	}
 
 	return integrations, nil
