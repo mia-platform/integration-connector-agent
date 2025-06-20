@@ -120,7 +120,7 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 		default:
 			return nil, fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)
 		}
-		integrations = append(integrations)
+		integrations = append(integrations, integration)
 	}
 
 	return integrations, nil
