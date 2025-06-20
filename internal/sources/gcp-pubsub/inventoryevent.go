@@ -28,33 +28,10 @@ var (
 	ErrMalformedEvent = errors.New("malformed event")
 )
 
-const InventoryAssetUpdateEventType = "inventory-asset-update"
-
-type InventoryEventBuilder struct {
-}
+type InventoryEventBuilder struct{}
 
 func NewInventoryEventBuilder() EventBuilder {
 	return &InventoryEventBuilder{}
-}
-
-type InventoryEventAsset struct {
-	Ancestors  []string               `json:"ancestors"`
-	AssetType  string                 `json:"assetType"`
-	Name       string                 `json:"name"`
-	Resource   map[string]interface{} `json:"resource"`
-	UpdateTime string                 `json:"updateTime"`
-}
-
-type InventoryEventWindow struct {
-	StartTime string `json:"startTime"`
-}
-
-type InventoryEvent struct {
-	Asset           InventoryEventAsset  `json:"asset"`
-	PriorAsset      InventoryEventAsset  `json:"priorAsset"`
-	PriorAssetState string               `json:"priorAssetState"`
-	Window          InventoryEventWindow `json:"window"`
-	Deleted         bool                 `json:"deleted"`
 }
 
 func (b *InventoryEventBuilder) GetPipelineEvent(_ context.Context, data []byte) (entities.PipelineEvent, error) {
@@ -63,13 +40,12 @@ func (b *InventoryEventBuilder) GetPipelineEvent(_ context.Context, data []byte)
 		return nil, fmt.Errorf("%w: %s", ErrMalformedEvent, err.Error())
 	}
 
-	event := &entities.Event{
+	return &entities.Event{
 		PrimaryKeys:   b.primaryKeys(rawEvent),
 		OperationType: b.operationType(rawEvent),
-		Type:          InventoryAssetUpdateEventType,
+		Type:          b.eventType(rawEvent),
 		OriginalRaw:   data,
-	}
-	return event, nil
+	}, nil
 }
 
 func (*InventoryEventBuilder) primaryKeys(event InventoryEvent) entities.PkFields {
@@ -90,4 +66,28 @@ func (*InventoryEventBuilder) operationType(event InventoryEvent) entities.Opera
 	default:
 		return entities.Write
 	}
+}
+
+func (*InventoryEventBuilder) eventType(event InventoryEvent) string {
+	return event.Asset.AssetType
+}
+
+type InventoryEventAsset struct {
+	Ancestors  []string               `json:"ancestors"`
+	AssetType  string                 `json:"assetType"`
+	Name       string                 `json:"name"`
+	Resource   map[string]interface{} `json:"resource"`
+	UpdateTime string                 `json:"updateTime"`
+}
+
+type InventoryEventWindow struct {
+	StartTime string `json:"startTime"`
+}
+
+type InventoryEvent struct {
+	Asset           InventoryEventAsset  `json:"asset"`
+	PriorAsset      InventoryEventAsset  `json:"priorAsset"`
+	PriorAssetState string               `json:"priorAssetState"`
+	Window          InventoryEventWindow `json:"window"`
+	Deleted         bool                 `json:"deleted"`
 }

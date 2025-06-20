@@ -18,6 +18,7 @@ package gcppubsub
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -82,15 +83,15 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 
 		// Allow some time for the goroutine to start
 		time.Sleep(10 * time.Millisecond)
-		require.True(t, client.ListenInvoked)
-		require.False(t, client.CloseInvoked)
+		require.True(t, client.ListenInvoked())
+		require.False(t, client.CloseInvoked())
 
 		cancel()
 
 		// Allow some time for the goroutine to run the close-up logic
 		time.Sleep(10 * time.Millisecond)
 
-		require.True(t, client.CloseInvoked)
+		require.True(t, client.CloseInvoked())
 	})
 
 	t.Run("messages are correctly sent to the pipeline", func(t *testing.T) {
@@ -133,12 +134,12 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 
 		// Allow some time for the goroutine to start
 		time.Sleep(10 * time.Millisecond)
-		require.True(t, client.ListenInvoked)
-		require.False(t, client.CloseInvoked)
+		require.True(t, client.ListenInvoked())
+		require.False(t, client.CloseInvoked())
 
 		cancel()
 		time.Sleep(10 * time.Millisecond)
-		require.True(t, client.CloseInvoked)
+		require.True(t, client.CloseInvoked())
 	})
 
 	t.Run("messages are not sent to the pipeline on event builder error", func(t *testing.T) {
@@ -179,12 +180,12 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 
 		// Allow some time for the goroutine to start
 		time.Sleep(10 * time.Millisecond)
-		require.True(t, client.ListenInvoked)
-		require.False(t, client.CloseInvoked)
+		require.True(t, client.ListenInvoked())
+		require.False(t, client.CloseInvoked())
 
 		cancel()
 		time.Sleep(10 * time.Millisecond)
-		require.True(t, client.CloseInvoked)
+		require.True(t, client.CloseInvoked())
 	})
 
 	t.Run("can process multiple messages", func(t *testing.T) {
@@ -211,23 +212,20 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 					Type: "some-type",
 				}, nil
 			},
-			// assertData: func(data []byte) {
-			// 	require.Equal(t, dataFromPubSub, data)
-			// },
-			// returnedEvent: &entities.Event{
-			// 	Type: "some-type",
-			// },
 		}
 		config := &Config{}
 
 		var handlerRef internal.ListenerFunc
+		var handlerRefLock sync.Mutex
 		client := &internal.MockPubSub{
 			ListenAssert: func(ctx context.Context, handler internal.ListenerFunc) {
 				require.NotNil(t, ctx)
 				require.NotNil(t, handler)
 
 				// Simulate receiving a message from Pub/Sub
+				handlerRefLock.Lock()
 				handlerRef = handler
+				handlerRefLock.Unlock()
 			},
 		}
 
@@ -239,9 +237,11 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 
 		// Allow some time for the goroutine to start
 		time.Sleep(10 * time.Millisecond)
-		require.True(t, client.ListenInvoked)
-		require.False(t, client.CloseInvoked)
+		require.True(t, client.ListenInvoked())
+		require.False(t, client.CloseInvoked())
 
+		handlerRefLock.Lock()
+		defer handlerRefLock.Unlock()
 		require.NotNil(t, handlerRef)
 
 		err = handlerRef(ctx, dataFromPubSub)
@@ -255,6 +255,6 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 
 		cancel()
 		time.Sleep(10 * time.Millisecond)
-		require.True(t, client.CloseInvoked)
+		require.True(t, client.CloseInvoked())
 	})
 }

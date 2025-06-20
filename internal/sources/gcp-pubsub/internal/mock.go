@@ -17,19 +17,24 @@ package internal
 
 import (
 	"context"
+	"sync"
 )
 
 type MockPubSub struct {
-	ListenError   error
-	ListenAssert  func(ctx context.Context, handler ListenerFunc)
-	ListenInvoked bool
+	ListenError       error
+	ListenAssert      func(ctx context.Context, handler ListenerFunc)
+	listenInvoked     bool
+	listenInvokedLock sync.Mutex
 
-	CloseError   error
-	CloseInvoked bool
+	CloseError      error
+	closeInvoked    bool
+	closInvokedLock sync.Mutex
 }
 
 func (m *MockPubSub) Listen(ctx context.Context, handler ListenerFunc) error {
-	m.ListenInvoked = true
+	m.listenInvokedLock.Lock()
+	m.listenInvoked = true
+	m.listenInvokedLock.Unlock()
 	if m.ListenAssert != nil {
 		m.ListenAssert(ctx, handler)
 	}
@@ -38,7 +43,21 @@ func (m *MockPubSub) Listen(ctx context.Context, handler ListenerFunc) error {
 	return m.ListenError
 }
 
+func (m *MockPubSub) ListenInvoked() bool {
+	m.listenInvokedLock.Lock()
+	defer m.listenInvokedLock.Unlock()
+	return m.listenInvoked
+}
+
 func (m *MockPubSub) Close() error {
-	m.CloseInvoked = true
+	m.closInvokedLock.Lock()
+	defer m.closInvokedLock.Unlock()
+	m.closeInvoked = true
 	return m.CloseError
+}
+
+func (m *MockPubSub) CloseInvoked() bool {
+	m.closInvokedLock.Lock()
+	defer m.closInvokedLock.Unlock()
+	return m.closeInvoked
 }
