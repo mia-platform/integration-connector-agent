@@ -119,14 +119,14 @@ func (p *ConcretePubSub) ensureSubscription(ctx context.Context, topicName, subs
 		return subscription, nil
 	}
 
-	ackDeadlineSeconds := 10 * time.Second
+	ackDeadline := 10 * time.Second
 	if p.config.AckDeadlineSeconds > 0 {
-		ackDeadlineSeconds = time.Duration(p.config.AckDeadlineSeconds) * time.Second
+		ackDeadline = time.Duration(p.config.AckDeadlineSeconds) * time.Second
 	}
 
 	subscription, err = p.c.CreateSubscription(ctx, subscriptionID, pubsub.SubscriptionConfig{
 		Topic:       p.c.Topic(topicName),
-		AckDeadline: ackDeadlineSeconds,
+		AckDeadline: ackDeadline,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create subscription: %w", err)
