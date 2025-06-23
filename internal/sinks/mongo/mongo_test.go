@@ -87,7 +87,7 @@ func TestNewWriter(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+			ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
 			defer cancel()
 
 			writer, err := newMongoDBWriter[entities.PipelineEvent](ctx, test.configuration, test.validateFunc)
@@ -159,7 +159,7 @@ func TestUpsert(t *testing.T) {
 
 			mt.AddMockResponses(test.responses)
 
-			ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+			ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
 			defer cancel()
 
 			err := writer.Upsert(ctx, test.data)
@@ -211,7 +211,7 @@ func TestDelete(t *testing.T) {
 
 			mt.AddMockResponses(test.responses)
 
-			ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+			ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
 			defer cancel()
 
 			err := writer.Delete(ctx, test.data)
@@ -262,7 +262,7 @@ func TestInsert(t *testing.T) {
 
 			mt.AddMockResponses(test.responses)
 
-			ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+			ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
 			defer cancel()
 
 			err := writer.Insert(ctx, test.data)

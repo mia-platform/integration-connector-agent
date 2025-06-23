@@ -16,7 +16,6 @@
 package fakewriter
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -40,7 +39,7 @@ func TestImplementWriter(t *testing.T) {
 			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
 			OperationType: entities.Write,
 		}
-		err := f.WriteData(context.Background(), event)
+		err := f.WriteData(t.Context(), event)
 		require.NoError(t, err)
 
 		require.Len(t, f.Calls(), 1)
@@ -57,7 +56,7 @@ func TestImplementWriter(t *testing.T) {
 			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
 			OperationType: entities.Delete,
 		}
-		err := f.WriteData(context.Background(), event)
+		err := f.WriteData(t.Context(), event)
 		require.NoError(t, err)
 
 		require.Len(t, f.Calls(), 1)
@@ -74,7 +73,7 @@ func TestImplementWriter(t *testing.T) {
 			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
 			OperationType: entities.Write,
 		}
-		err := f.WriteData(context.Background(), event)
+		err := f.WriteData(t.Context(), event)
 		require.NoError(t, err)
 
 		require.Len(t, f.Calls(), 1)
@@ -92,7 +91,7 @@ func TestImplementWriter(t *testing.T) {
 		f.AddMock(Mock{
 			Error: errors.New("mock error"),
 		})
-		err := f.WriteData(context.Background(), event)
+		err := f.WriteData(t.Context(), event)
 		require.EqualError(t, err, "mock error")
 
 		require.Len(t, f.Calls(), 1)
@@ -112,7 +111,7 @@ func TestImplementWriter(t *testing.T) {
 		f.AddMock(Mock{
 			Error: errors.New("mock error"),
 		})
-		err := f.WriteData(context.Background(), event)
+		err := f.WriteData(t.Context(), event)
 		require.EqualError(t, err, "mock error")
 
 		require.Len(t, f.Calls(), 1)

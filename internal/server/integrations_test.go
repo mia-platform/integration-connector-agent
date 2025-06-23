@@ -16,7 +16,6 @@
 package server
 
 import (
-	"context"
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
@@ -32,7 +31,7 @@ import (
 )
 
 func TestSetupWriters(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testCases := map[string]struct {
 		writers config.Sinks
@@ -190,7 +189,7 @@ func TestSetupIntegrations(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			ctx := context.Background()
+			ctx := t.Context()
 			log, _ := test.NewNullLogger()
 			router := getRouter(t)
 

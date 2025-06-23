@@ -16,7 +16,6 @@
 package server
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -37,7 +36,7 @@ func TestSetupRouter(t *testing.T) {
 	}
 	cfg := &config.Configuration{}
 
-	ctx := context.TODO()
+	ctx := t.Context()
 	app, err := NewApp(ctx, env, log, cfg)
 	require.NoError(t, err, "unexpected error")
 
