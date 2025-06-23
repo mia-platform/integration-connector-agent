@@ -13,6 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build integration
+// +build integration
+
 package server
 
 import (
@@ -174,6 +177,20 @@ func TestSetupIntegrations(t *testing.T) {
 		"console integration type": {
 			jsonCfg: `{"integrations":[{"source":{"type":"console"},"pipelines":[{"sinks":[{"type":"fake","raw":{}}]}]}]}`,
 		},
+		"gcp pubsub integration type": {
+			cfg: config.Configuration{
+				Integrations: []config.Integration{
+					{
+						Source: config.GenericConfig{
+							Type: sources.GCPInventoryPubSub,
+							Raw:  []byte(`{"projectId":"test-project-id","subscriptionId":"test-subscription","topicName":"test-topic"}`),
+						},
+						Pipelines: []config.Pipeline{{Sinks: config.Sinks{getFakeWriter(t)}}},
+					},
+				},
+			},
+			expectedIntegrations: 1,
+		},
 	}
 
 	for name, tc := range testCases {
@@ -182,7 +199,7 @@ func TestSetupIntegrations(t *testing.T) {
 			log, _ := test.NewNullLogger()
 			router := getRouter(t)
 
-			integrations, err := setupPipelines(ctx, log, &tc.cfg, router)
+			integrations, err := setupIntegrations(ctx, log, &tc.cfg, router)
 			if tc.expectError != "" {
 				require.EqualError(t, err, tc.expectError)
 			} else {

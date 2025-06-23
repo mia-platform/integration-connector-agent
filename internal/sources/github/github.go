@@ -66,7 +66,7 @@ func (c *Config) getWebhookConfig() (*webhook.Configuration, error) {
 	return config, nil
 }
 
-func AddSourceToRouter(ctx context.Context, cfg config.GenericConfig, pg *pipeline.Group, router *swagger.Router[fiber.Handler, fiber.Router]) error {
+func AddSourceToRouter(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipelineGroup, router *swagger.Router[fiber.Handler, fiber.Router]) error {
 	githubConfig, err := config.GetConfig[*Config](cfg)
 	if err != nil {
 		return err

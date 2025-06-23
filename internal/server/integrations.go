@@ -27,6 +27,7 @@ import (
 	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
+	gcppubsub "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/github"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
 	console "github.com/mia-platform/integration-connector-agent/internal/sources/mia-platform-console"
@@ -37,46 +38,42 @@ import (
 )
 
 type Integration struct {
-	PipelineGroup *pipeline.Group
+	PipelineGroup  pipeline.IPipelineGroup
+	sourcesToClose []sources.CloseableSource
+}
+
+func (i *Integration) appendCloseableSource(source sources.CloseableSource) {
+	if i.sourcesToClose == nil {
+		i.sourcesToClose = make([]sources.CloseableSource, 0)
+	}
+	i.sourcesToClose = append(i.sourcesToClose, source)
 }
 
 func (i Integration) Close() error {
 	if i.PipelineGroup != nil {
 		return i.PipelineGroup.Close()
 	}
+	for _, source := range i.sourcesToClose {
+		if err := source.Close(); err != nil {
+			return fmt.Errorf("error closing source: %w", err)
+		}
+	}
 	return nil
 }
 
 // TODO: write an integration test to test this setup
-func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) ([]Integration, error) {
+func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) ([]Integration, error) {
 	integrations := make([]Integration, 0)
 	for _, cfgIntegration := range cfg.Integrations {
-		var pipelines []pipeline.IPipeline
-
-		for _, cfgPipeline := range cfgIntegration.Pipelines {
-			sinks, err := setupSinks(ctx, cfgPipeline.Sinks)
-			if err != nil {
-				return nil, err
-			}
-			if len(sinks) != 1 {
-				return nil, fmt.Errorf("only 1 writer is supported, now there are %d", len(sinks))
-			}
-			writer := sinks[0]
-
-			proc, err := processors.New(log, cfgPipeline.Processors)
-			if err != nil {
-				return nil, err
-			}
-
-			pip, err := pipeline.New(log, proc, writer)
-			if err != nil {
-				return nil, err
-			}
-
-			pipelines = append(pipelines, pip)
+		pipelines, err := setupIntegrationPipelines(ctx, log, cfgIntegration)
+		if err != nil {
+			return nil, err
 		}
 
 		pg := pipeline.NewGroup(log, pipelines...)
+		integration := Integration{
+			PipelineGroup: pg,
+		}
 
 		source := cfgIntegration.Source
 		switch source.Type {
@@ -88,6 +85,16 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 			if err := console.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
 			}
+		case sources.GCPInventoryPubSub:
+			pubsub, err := gcppubsub.New(&gcppubsub.ConsumerOptions{
+				Ctx: ctx,
+				Log: log,
+			}, source, pg, gcppubsub.NewInventoryEventBuilder())
+			if err != nil {
+				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+			}
+
+			integration.appendCloseableSource(pubsub)
 		case sources.Github:
 			if err := github.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
@@ -98,12 +105,38 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 		default:
 			return nil, fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)
 		}
-		integrations = append(integrations, Integration{
-			PipelineGroup: pg,
-		})
+		integrations = append(integrations, integration)
 	}
 
 	return integrations, nil
+}
+
+func setupIntegrationPipelines(ctx context.Context, log *logrus.Logger, cfgIntegration config.Integration) ([]pipeline.IPipeline, error) {
+	pipelines := make([]pipeline.IPipeline, 0)
+
+	for _, cfgPipeline := range cfgIntegration.Pipelines {
+		sinks, err := setupSinks(ctx, cfgPipeline.Sinks)
+		if err != nil {
+			return nil, err
+		}
+		if len(sinks) != 1 {
+			return nil, fmt.Errorf("only 1 writer is supported, now there are %d", len(sinks))
+		}
+		writer := sinks[0]
+
+		proc, err := processors.New(log, cfgPipeline.Processors)
+		if err != nil {
+			return nil, err
+		}
+
+		pip, err := pipeline.New(log, proc, writer)
+		if err != nil {
+			return nil, err
+		}
+
+		pipelines = append(pipelines, pip)
+	}
+	return pipelines, nil
 }
 
 func setupSinks(ctx context.Context, writers config.Sinks) ([]sinks.Sink[entities.PipelineEvent], error) {

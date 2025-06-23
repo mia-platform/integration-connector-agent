@@ -13,22 +13,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+//go:build integration
+// +build integration
+
+package internal
 
 import (
-	"context"
+	"testing"
 
-	"github.com/mia-platform/integration-connector-agent/entities"
+	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/require"
 )
 
-type IPipeline interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context) error
-	Close() error
-}
-
-type IPipelineGroup interface {
-	AddMessage(data entities.PipelineEvent)
-	Start(ctx context.Context)
-	Close() error
+func TestNew(t *testing.T) {
+	log, _ := test.NewNullLogger()
+	c, err := New(t.Context(), log, PubSubConfig{
+		ProjectID:          "test-project",
+		AckDeadlineSeconds: 10,
+		TopicName:          "test-topic",
+		SubscriptionID:     "test-subscription",
+	})
+	require.NoError(t, err)
+	require.NotNil(t, c)
 }
