@@ -27,7 +27,6 @@ test/build-plugin:
 	$(info Building RPC mock plugin for tests...)
 	go build -o ./internal/processors/hcgp/testdata/mockplugin/mockplugin ./internal/processors/hcgp/testdata/mockplugin/*.go
 
-
 .PHONY: test/unit
 test/unit:
 	$(info Running tests...)
@@ -55,7 +54,7 @@ test/coverage:
 .PHONY: test/integration/coverage
 test/integration/coverage:
 	$(info Running ci tests with coverage on...)
-	go test $(GO_TEST_DEBUG_FLAG) -tags=integration -race -coverprofile=coverage.txt -covermode=atomic ./...
+	PUBSUB_EMULATOR_HOST=localhost:8085 go test $(GO_TEST_DEBUG_FLAG) -tags=integration -race -coverprofile=coverage.txt -covermode=atomic ./...
 
 .PHONY: test/conformance test/conformance/setup test/conformance/teardown
 test/conformance/setup:
