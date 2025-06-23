@@ -14,6 +14,10 @@ To configure the Google Cloud Asset Inventory API Pub/Sub source, you need to:
 - create a Pub/Sub topic
 - configure a feed between the Google Cloud Asset Inventory API and the Pub/Sub topic
 
+:::tip
+Find out more about how to [monitor asset changes](https://cloud.google.com/asset-inventory/docs/monitor-asset-changes).
+:::
+
 ## Service Configuration
 
 When configuring the Google Cloud Asset Inventory API Pub/Sub source,
