@@ -15,7 +15,8 @@
                 "enum": [
                   "jira",
                   "console",
-                  "github"
+                  "github",
+									"gcp-inventory-pubsub"
                 ]
               },
               "webhookPath": {
