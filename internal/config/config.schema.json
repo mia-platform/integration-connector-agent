@@ -16,7 +16,7 @@
                   "jira",
                   "console",
                   "github",
-									"gcp-inventory-pubsub"
+                  "gcp-inventory-pubsub"
                 ]
               },
               "webhookPath": {
