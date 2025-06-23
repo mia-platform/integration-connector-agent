@@ -178,7 +178,10 @@ func TestSetupIntegrations(t *testing.T) {
 			cfg: config.Configuration{
 				Integrations: []config.Integration{
 					{
-						Source:    config.GenericConfig{Type: sources.GCPInventoryPubSub, Raw: []byte(`{}`)},
+						Source: config.GenericConfig{
+							Type: sources.GCPInventoryPubSub,
+							Raw:  []byte(`{"projectId":"test-project","subscriptionId":"test-subscription","topicName":"test-topic"}`),
+						},
 						Pipelines: []config.Pipeline{{Sinks: config.Sinks{getFakeWriter(t)}}},
 					},
 				},
@@ -193,7 +196,7 @@ func TestSetupIntegrations(t *testing.T) {
 			log, _ := test.NewNullLogger()
 			router := getRouter(t)
 
-			integrations, err := setupPipelines(ctx, log, &tc.cfg, router)
+			integrations, err := setupIntegrations(ctx, log, &tc.cfg, router)
 			if tc.expectError != "" {
 				require.EqualError(t, err, tc.expectError)
 			} else {

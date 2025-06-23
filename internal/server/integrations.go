@@ -62,32 +62,12 @@ func (i Integration) Close() error {
 }
 
 // TODO: write an integration test to test this setup
-func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) ([]Integration, error) {
+func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) ([]Integration, error) {
 	integrations := make([]Integration, 0)
 	for _, cfgIntegration := range cfg.Integrations {
-		var pipelines []pipeline.IPipeline
-
-		for _, cfgPipeline := range cfgIntegration.Pipelines {
-			sinks, err := setupSinks(ctx, cfgPipeline.Sinks)
-			if err != nil {
-				return nil, err
-			}
-			if len(sinks) != 1 {
-				return nil, fmt.Errorf("only 1 writer is supported, now there are %d", len(sinks))
-			}
-			writer := sinks[0]
-
-			proc, err := processors.New(log, cfgPipeline.Processors)
-			if err != nil {
-				return nil, err
-			}
-
-			pip, err := pipeline.New(log, proc, writer)
-			if err != nil {
-				return nil, err
-			}
-
-			pipelines = append(pipelines, pip)
+		pipelines, err := setupIntegrationPipelines(ctx, log, cfgIntegration)
+		if err != nil {
+			return nil, err
 		}
 
 		pg := pipeline.NewGroup(log, pipelines...)
@@ -129,6 +109,34 @@ func setupPipelines(ctx context.Context, log *logrus.Logger, cfg *config.Configu
 	}
 
 	return integrations, nil
+}
+
+func setupIntegrationPipelines(ctx context.Context, log *logrus.Logger, cfgIntegration config.Integration) ([]pipeline.IPipeline, error) {
+	pipelines := make([]pipeline.IPipeline, 0)
+
+	for _, cfgPipeline := range cfgIntegration.Pipelines {
+		sinks, err := setupSinks(ctx, cfgPipeline.Sinks)
+		if err != nil {
+			return nil, err
+		}
+		if len(sinks) != 1 {
+			return nil, fmt.Errorf("only 1 writer is supported, now there are %d", len(sinks))
+		}
+		writer := sinks[0]
+
+		proc, err := processors.New(log, cfgPipeline.Processors)
+		if err != nil {
+			return nil, err
+		}
+
+		pip, err := pipeline.New(log, proc, writer)
+		if err != nil {
+			return nil, err
+		}
+
+		pipelines = append(pipelines, pip)
+	}
+	return pipelines, nil
 }
 
 func setupSinks(ctx context.Context, writers config.Sinks) ([]sinks.Sink[entities.PipelineEvent], error) {
