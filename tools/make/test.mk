@@ -37,12 +37,15 @@ test/unit:
 test/integration/setup:
 	$(info Setup mongo...)
 	docker run --rm --name mongo -p 27017:27017 -d mongo
+	$(info Setup gcloud pubsub emulator...)
+	docker run --rm --name gcloud-pubsub-emulator -p 8085:8085 -d gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators gcloud beta emulators pubsub start --project=test-project-id
 test/integration:
 	$(info Running integration tests...)
-	go test $(GO_TEST_DEBUG_FLAG) -tags=integration -cover -race ./...
+	PUBSUB_EMULATOR_HOST=localhost:8085 go test $(GO_TEST_DEBUG_FLAG) -tags=integration -count=1 -cover -race ./...
 test/integration/teardown:
 	$(info Teardown integration tests...)
 	docker rm mongo --force
+	docker rm gcloud-pubsub-emulator --force
 
 .PHONY: test/coverage
 test/coverage:

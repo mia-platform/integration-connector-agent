@@ -13,6 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build integration
+// +build integration
+
 package server
 
 import (
@@ -180,7 +183,7 @@ func TestSetupIntegrations(t *testing.T) {
 					{
 						Source: config.GenericConfig{
 							Type: sources.GCPInventoryPubSub,
-							Raw:  []byte(`{"projectId":"test-project","subscriptionId":"test-subscription","topicName":"test-topic"}`),
+							Raw:  []byte(`{"projectId":"test-project-id","subscriptionId":"test-subscription","topicName":"test-topic"}`),
 						},
 						Pipelines: []config.Pipeline{{Sinks: config.Sinks{getFakeWriter(t)}}},
 					},
