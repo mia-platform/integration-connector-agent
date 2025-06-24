@@ -25,13 +25,12 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2/checkpoints"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
-	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/sirupsen/logrus"
 )
 
 type EventConsumer func(event *azeventhubs.ReceivedEventData) error
 
-func SetupEventHub(ctx context.Context, config *Config, _ pipeline.IPipelineGroup, logger *logrus.Logger) error {
+func SetupEventHub(ctx context.Context, config *Config, logger *logrus.Logger) error {
 	var credential *azidentity.DefaultAzureCredential
 	var store azeventhubs.CheckpointStore
 	var consumerClient *azeventhubs.ConsumerClient
