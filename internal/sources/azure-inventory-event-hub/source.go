@@ -43,7 +43,7 @@ type InventoryEventRecord struct {
 	Category        string                  `json:"category"`
 	ResultType      string                  `json:"resultType"`
 	ResultSignature string                  `json:"resultSignature"`
-	DurationMs      int                     `json:"durationMs"`
+	DurationMs      string                  `json:"durationMs"`
 	CallerIPAddress string                  `json:"callerIpAddress"`
 	CorrelationID   string                  `json:"correlationId"`
 	Identity        *InventoryEventIdentity `json:"identity"`
@@ -77,7 +77,7 @@ func AddSource(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipel
 		return err
 	}
 
-	return azureeventhub.SetupEventHub(ctx, eventHubConfig, logger)
+	return azureeventhub.SetupEventHub(ctx, eventHubConfig, pg, logger)
 }
 
 func configFromGeneric(cfg config.GenericConfig, pg pipeline.IPipelineGroup) (*azureeventhub.Config, error) {
@@ -99,7 +99,7 @@ func inventoryConsumer(pg pipeline.IPipelineGroup) azureeventhub.EventConsumer {
 
 		for _, record := range inventoryEventData.Records {
 			if event := pipelineEventFromRecord(record); event != nil {
-				pg.AddMessage(pipelineEventFromRecord(record))
+				pg.AddMessage(event)
 			}
 		}
 
