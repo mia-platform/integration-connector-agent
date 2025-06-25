@@ -21,11 +21,11 @@ import (
 )
 
 type Config struct {
-	SubscriptionID                 string
-	EventHubNamespace              string
-	EventHubName                   string
-	CheckpointStorageAccountName   string
-	CheckpointStorageContainerName string
+	SubscriptionID                 string `json:"subscriptionId"`
+	EventHubNamespace              string `json:"eventHubNamespace"`
+	EventHubName                   string `json:"eventHubName"`
+	CheckpointStorageAccountName   string `json:"checkpointStorageAccountName"`
+	CheckpointStorageContainerName string `json:"checkpointStorageContainerName"`
 	EventConsumer                  EventConsumer
 }
 
@@ -48,10 +48,6 @@ func (c *Config) Validate() error {
 
 	if c.CheckpointStorageContainerName == "" {
 		return fmt.Errorf("checkpointStorageContainerName is required")
-	}
-
-	if c.EventConsumer == nil {
-		return fmt.Errorf("eventConsumer is required")
 	}
 
 	if !strings.HasSuffix(c.EventHubNamespace, ".servicebus.windows.net") {

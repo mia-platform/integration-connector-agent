@@ -72,17 +72,22 @@ type AuthorizationEvidence struct {
 }
 
 func AddSource(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipelineGroup, logger *logrus.Logger) error {
-	eventHubConfig, err := config.GetConfig[*azureeventhub.Config](cfg)
+	eventHubConfig, err := configFromGeneric(cfg, pg)
 	if err != nil {
 		return err
 	}
 
-	eventHubConfig.EventConsumer = inventoryConsumer(pg)
-	if err := eventHubConfig.Validate(); err != nil {
-		return fmt.Errorf("invalid event hub configuration: %w", err)
+	return azureeventhub.SetupEventHub(ctx, eventHubConfig, logger)
+}
+
+func configFromGeneric(cfg config.GenericConfig, pg pipeline.IPipelineGroup) (*azureeventhub.Config, error) {
+	eventHubConfig, err := config.GetConfig[*azureeventhub.Config](cfg)
+	if err != nil {
+		return nil, err
 	}
 
-	return azureeventhub.SetupEventHub(ctx, eventHubConfig, logger)
+	eventHubConfig.EventConsumer = inventoryConsumer(pg)
+	return eventHubConfig, nil
 }
 
 func inventoryConsumer(pg pipeline.IPipelineGroup) azureeventhub.EventConsumer {
@@ -122,7 +127,8 @@ func pipelineEventFromRecord(record *InventoryEventRecord) *entities.Event {
 }
 
 func eventOperationTypeFromRecord(record *InventoryEventRecord) entities.Operation {
-	if strings.HasSuffix(strings.ToLower(record.OperationName), "delete") {
+	if strings.HasSuffix(strings.ToLower(record.OperationName), "delete") ||
+		strings.HasSuffix(strings.ToLower(record.OperationName), "delete/action") {
 		return entities.Delete
 	}
 
