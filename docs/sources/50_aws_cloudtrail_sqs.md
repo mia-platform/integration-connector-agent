@@ -20,3 +20,12 @@ When configuring the AWS CloudTrail SQS source, you need to provide the followin
 - `type` (*string*): The type of the source, which should be set to `aws-cloudtrail-sqs`.
 - `queueUrl` (*string*): The URL of the SQS queue to which CloudTrail events are published.
 - `region` (*string*): The AWS region where the SQS queue is located.
+
+### Example
+
+```json
+{
+	"type": "aws-cloudtrail-sqs",
+	"queueUrl": "https://sqs.eu-north-1.amazonaws.com/123123123123/my-sqs-queue"
+}
+```
