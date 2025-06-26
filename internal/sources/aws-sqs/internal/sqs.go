@@ -86,7 +86,6 @@ func (s *concreteSQS) Listen(ctx context.Context, handler ListenerFunc) error {
 		}
 
 		if len(result.Messages) == 0 {
-			s.log.WithField("queueUrl", s.config.QueueURL).Debug("no messages received")
 			continue
 		}
 
