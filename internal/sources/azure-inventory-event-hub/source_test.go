@@ -22,9 +22,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2"
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -134,7 +135,7 @@ func TestConfig(t *testing.T) {
 	}
 }
 
-const listActonEvent = `{
+const listActionEvent = `{
 	"resourceId": "/SUBSCRIPTIONS/00000000-0000-0000-0000-000000000000/RESOURCEGROUPS/GROUP/PROVIDERS/MICROSOFT.STORAGE/STORAGEACCOUNTS/ACCOUNT",
 	"operationName": "MICROSOFT.STORAGE/STORAGEACCOUNTS/LISTKEYS/ACTION",
 	"category": "Administrative",
@@ -215,7 +216,7 @@ func TestInventoryConsumer(t *testing.T) {
 		"return write event": {
 			eventData: &azeventhubs.ReceivedEventData{
 				EventData: azeventhubs.EventData{
-					Body: []byte(fmt.Sprintf("{\"records\":[%s]}", listActonEvent)),
+					Body: []byte(fmt.Sprintf("{\"records\":[%s]}", listActionEvent)),
 				},
 			},
 			expectedMessages: []*entities.Event{
@@ -228,7 +229,7 @@ func TestInventoryConsumer(t *testing.T) {
 					},
 					Type:          "azure:storage:storageaccounts:listkeys:action:administrative",
 					OperationType: entities.Write,
-					OriginalRaw:   rawEvent(listActonEvent),
+					OriginalRaw:   rawEvent(listActionEvent),
 				},
 			},
 		},
@@ -255,7 +256,7 @@ func TestInventoryConsumer(t *testing.T) {
 		"return multiple events": {
 			eventData: &azeventhubs.ReceivedEventData{
 				EventData: azeventhubs.EventData{
-					Body: []byte(fmt.Sprintf("{\"records\":[%s, %s]}", listActonEvent, deleteEvent)),
+					Body: []byte(fmt.Sprintf("{\"records\":[%s, %s]}", listActionEvent, deleteEvent)),
 				},
 			},
 			expectedMessages: []*entities.Event{
@@ -268,7 +269,7 @@ func TestInventoryConsumer(t *testing.T) {
 					},
 					Type:          "azure:storage:storageaccounts:listkeys:action:administrative",
 					OperationType: entities.Write,
-					OriginalRaw:   rawEvent(listActonEvent),
+					OriginalRaw:   rawEvent(listActionEvent),
 				},
 				{
 					PrimaryKeys: []entities.PkField{

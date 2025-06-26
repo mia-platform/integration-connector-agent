@@ -21,11 +21,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2/checkpoints"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
-	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/sirupsen/logrus"
 )
 
