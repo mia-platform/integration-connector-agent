@@ -5,7 +5,7 @@ throught the Event Hub service.
 
 ## Microsoft Azure Setup
 
-To use this source type, yiy need to configure your Microsoft Azure
+To use this source type, you need to configure your Microsoft Azure
 subscription so that all the activity logs tracked in the Monitor section of your subscription are being
 sent to an Event Hub.
 
