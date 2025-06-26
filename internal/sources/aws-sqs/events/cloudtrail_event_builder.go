@@ -85,6 +85,9 @@ func (CloudTrailEventBuilder) operationType(event CloudTrailEvent) (entities.Ope
 	case strings.HasPrefix(eventName, "Publish"):
 		return entities.Write, nil
 
+	case strings.HasPrefix(eventName, "Put"):
+		return entities.Write, nil
+
 	default:
 		return entities.Write, fmt.Errorf("unsupported event name: %s", eventName)
 	}
