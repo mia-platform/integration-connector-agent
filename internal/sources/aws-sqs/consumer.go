@@ -64,6 +64,11 @@ func newWithClient(options *ConsumerOptions, pipeline pipeline.IPipelineGroup, e
 				return err
 			}
 
+			log.WithFields(logrus.Fields{
+				"queueUrl":         config.QueueURL,
+				"eventPrimaryKeys": event.GetPrimaryKeys(),
+			}).Debug("received event from AWS SQS queue")
+
 			pipeline.AddMessage(event)
 			return nil
 		})
