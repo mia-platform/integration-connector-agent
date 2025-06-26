@@ -17,7 +17,7 @@
                   "console",
                   "github",
                   "gcp-inventory-pubsub",
-                  "azure-inventory-event-hub"
+                  "azure-activity-log-event-hub"
                 ]
               },
               "webhookPath": {

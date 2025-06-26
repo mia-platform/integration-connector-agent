@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package azureinventoryeventhub
+package azureactivitylogeventhub
 
 import (
 	"context"
@@ -195,11 +195,11 @@ const deleteEvent = `{
 	"tenantId": "00000000-0000-0000-0000-000000000000"
 }`
 
-func TestInventoryConsumer(t *testing.T) {
+func TestActivityLogConsumer(t *testing.T) {
 	t.Parallel()
 
 	rawEvent := func(stringEvent string) []byte {
-		record := new(InventoryEventRecord)
+		record := new(ActivityLogEventRecord)
 		err := json.Unmarshal([]byte(stringEvent), &record)
 		require.NoError(t, err)
 
@@ -297,7 +297,7 @@ func TestInventoryConsumer(t *testing.T) {
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
 			pg := &testPipelineGroup{}
-			consumerFunction := inventoryConsumer(pg)
+			consumerFunction := activityLogConsumer(pg)
 
 			err := consumerFunction(test.eventData)
 			if test.expectedError {

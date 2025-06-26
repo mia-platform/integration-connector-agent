@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package azureinventoryeventhub
+package azureactivitylogeventhub
 
 import (
 	"context"
@@ -30,34 +30,34 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type InventoryEventData struct {
-	Records []*InventoryEventRecord `json:"records"`
+type ActivityLogEventData struct {
+	Records []*ActivityLogEventRecord `json:"records"`
 }
 
-type InventoryEventRecord struct {
-	RoleLocation    string                  `json:"RoleLocation"`   //nolint:tagliatelle
-	Stamp           string                  `json:"Stamp"`          //nolint:tagliatelle
-	ReleaseVersion  string                  `json:"ReleaseVersion"` //nolint:tagliatelle
-	Time            string                  `json:"time"`
-	ResourceID      string                  `json:"resourceId"`
-	OperationName   string                  `json:"operationName"`
-	Category        string                  `json:"category"`
-	ResultType      string                  `json:"resultType"`
-	ResultSignature string                  `json:"resultSignature"`
-	DurationMs      string                  `json:"durationMs"`
-	CallerIPAddress string                  `json:"callerIpAddress"`
-	CorrelationID   string                  `json:"correlationId"`
-	Identity        *InventoryEventIdentity `json:"identity"`
-	Level           string                  `json:"level"`
-	Properties      map[string]any          `json:"properties"`
+type ActivityLogEventRecord struct {
+	RoleLocation    string                    `json:"RoleLocation"`   //nolint:tagliatelle
+	Stamp           string                    `json:"Stamp"`          //nolint:tagliatelle
+	ReleaseVersion  string                    `json:"ReleaseVersion"` //nolint:tagliatelle
+	Time            string                    `json:"time"`
+	ResourceID      string                    `json:"resourceId"`
+	OperationName   string                    `json:"operationName"`
+	Category        string                    `json:"category"`
+	ResultType      string                    `json:"resultType"`
+	ResultSignature string                    `json:"resultSignature"`
+	DurationMs      string                    `json:"durationMs"`
+	CallerIPAddress string                    `json:"callerIpAddress"`
+	CorrelationID   string                    `json:"correlationId"`
+	Identity        *ActivityLogEventIdentity `json:"identity"`
+	Level           string                    `json:"level"`
+	Properties      map[string]any            `json:"properties"`
 }
 
-type InventoryEventIdentity struct {
-	Authorization *IdentityAuthorization `json:"authorization"`
-	Claims        map[string]string      `json:"claims"`
+type ActivityLogEventIdentity struct {
+	Authorization *ActivityLogAuthorization `json:"authorization"`
+	Claims        map[string]string         `json:"claims"`
 }
 
-type IdentityAuthorization struct {
+type ActivityLogAuthorization struct {
 	Scope    string                `json:"scope"`
 	Action   string                `json:"action"`
 	Evidence AuthorizationEvidence `json:"evidence"`
@@ -87,18 +87,18 @@ func configFromGeneric(cfg config.GenericConfig, pg pipeline.IPipelineGroup) (*a
 		return nil, err
 	}
 
-	eventHubConfig.EventConsumer = inventoryConsumer(pg)
+	eventHubConfig.EventConsumer = activityLogConsumer(pg)
 	return eventHubConfig, nil
 }
 
-func inventoryConsumer(pg pipeline.IPipelineGroup) azureeventhub.EventConsumer {
+func activityLogConsumer(pg pipeline.IPipelineGroup) azureeventhub.EventConsumer {
 	return func(eventData *azeventhubs.ReceivedEventData) error {
-		inventoryEventData := new(InventoryEventData)
-		if err := json.Unmarshal(eventData.Body, inventoryEventData); err != nil {
-			return fmt.Errorf("failed to read inventory event data: %w", err)
+		activityLogEventData := new(ActivityLogEventData)
+		if err := json.Unmarshal(eventData.Body, activityLogEventData); err != nil {
+			return fmt.Errorf("failed to read activity log event data: %w", err)
 		}
 
-		for _, record := range inventoryEventData.Records {
+		for _, record := range activityLogEventData.Records {
 			if event := pipelineEventFromRecord(record); event != nil {
 				pg.AddMessage(event)
 			}
@@ -108,7 +108,7 @@ func inventoryConsumer(pg pipeline.IPipelineGroup) azureeventhub.EventConsumer {
 	}
 }
 
-func pipelineEventFromRecord(record *InventoryEventRecord) *entities.Event {
+func pipelineEventFromRecord(record *ActivityLogEventRecord) *entities.Event {
 	rawRecord, err := json.Marshal(record)
 	if err != nil {
 		return nil
@@ -127,7 +127,7 @@ func pipelineEventFromRecord(record *InventoryEventRecord) *entities.Event {
 	}
 }
 
-func eventOperationTypeFromRecord(record *InventoryEventRecord) entities.Operation {
+func eventOperationTypeFromRecord(record *ActivityLogEventRecord) entities.Operation {
 	if strings.HasSuffix(strings.ToLower(record.OperationName), "delete") ||
 		strings.HasSuffix(strings.ToLower(record.OperationName), "delete/action") {
 		return entities.Delete
@@ -136,7 +136,7 @@ func eventOperationTypeFromRecord(record *InventoryEventRecord) entities.Operati
 	return entities.Write
 }
 
-func eventTypeFromRecord(record *InventoryEventRecord) string {
+func eventTypeFromRecord(record *ActivityLogEventRecord) string {
 	eventType := fmt.Sprintf("%s:%s", strings.ToLower(record.OperationName), strings.ToLower(record.Category))
 	eventType = strings.ReplaceAll(eventType, "microsoft", "azure")
 	eventType = strings.ReplaceAll(eventType, ".", ":")
