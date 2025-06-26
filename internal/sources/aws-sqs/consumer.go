@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gcppubsub
+package awssqs
 
 import (
 	"context"
@@ -21,34 +21,31 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/internal"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/internal"
 
 	"github.com/sirupsen/logrus"
 )
+
+type AWSConsumer struct {
+	config   *Config
+	pipeline pipeline.IPipelineGroup
+	log      *logrus.Logger
+	client   internal.SQS
+}
 
 type ConsumerOptions struct {
 	Ctx context.Context
 	Log *logrus.Logger
 }
 
-type GCPConsumer struct {
-	config   *Config
-	pipeline pipeline.IPipelineGroup
-	log      *logrus.Logger
-	client   internal.PubSub
-}
-
-func New(options *ConsumerOptions, cfg config.GenericConfig, pipeline pipeline.IPipelineGroup, eventBuilder entities.EventBuilder) (*GCPConsumer, error) {
+func New(options *ConsumerOptions, cfg config.GenericConfig, pipeline pipeline.IPipelineGroup, eventBuilder entities.EventBuilder) (*AWSConsumer, error) {
 	config, err := config.GetConfig[*Config](cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := internal.New(options.Ctx, options.Log, internal.PubSubConfig{
-		ProjectID:          config.ProjectID,
-		TopicName:          config.TopicName,
-		SubscriptionID:     config.SubscriptionID,
-		AckDeadlineSeconds: config.AckDeadlineSeconds,
+	client, err := internal.New(options.Ctx, options.Log, internal.Config{
+		QueueURL: config.QueueURL,
 	})
 	if err != nil {
 		return nil, err
@@ -57,10 +54,10 @@ func New(options *ConsumerOptions, cfg config.GenericConfig, pipeline pipeline.I
 	return newWithClient(options, pipeline, eventBuilder, config, client)
 }
 
-func newWithClient(options *ConsumerOptions, pipeline pipeline.IPipelineGroup, eventBuilder entities.EventBuilder, config *Config, client internal.PubSub) (*GCPConsumer, error) {
+func newWithClient(options *ConsumerOptions, pipeline pipeline.IPipelineGroup, eventBuilder entities.EventBuilder, config *Config, client internal.SQS) (*AWSConsumer, error) {
 	pipeline.Start(options.Ctx)
 
-	go func(ctx context.Context, log *logrus.Logger, client internal.PubSub) {
+	go func(ctx context.Context, log *logrus.Logger, client internal.SQS) {
 		err := client.Listen(ctx, func(ctx context.Context, data []byte) error {
 			event, err := eventBuilder.GetPipelineEvent(ctx, data)
 			if err != nil {
@@ -71,20 +68,20 @@ func newWithClient(options *ConsumerOptions, pipeline pipeline.IPipelineGroup, e
 			return nil
 		})
 		if err != nil {
-			log.WithError(err).Error("error listening to GCP Pub/Sub")
+			log.WithField("queueUrl", config.QueueURL).WithError(err).Error("error listening to AWS SQS queue")
 		}
 
 		client.Close()
 	}(options.Ctx, options.Log, client)
 
-	return &GCPConsumer{
-		log:      options.Log,
+	return &AWSConsumer{
 		config:   config,
-		client:   client,
 		pipeline: pipeline,
+		log:      options.Log,
+		client:   client,
 	}, nil
 }
 
-func (g *GCPConsumer) Close() error {
-	return g.client.Close()
+func (a *AWSConsumer) Close() error {
+	return a.client.Close()
 }

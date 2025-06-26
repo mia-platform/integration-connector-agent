@@ -1,0 +1,22 @@
+# AWS CloudTrail SQS
+
+This source allows the integration connector agent to receive events from AWS CloudTrail published to SQS using Amazon EventBridge.
+
+## AWS Setup
+
+To use this source type, you need to configure your AWS account so that all changes of intereset tracked by CloudTrail
+are published to an SQS queue.
+
+To configure AWS, you need to:
+
+- create a new trail in CloudTrail
+- create a new SQS queue dedicated to receiving CloudTrail events
+- create an EventBridge rule that maps the desired sources and sends them to the SQS queue
+
+## Service Configuration
+
+When configuring the AWS CloudTrail SQS source, you need to provide the following parameters in your configuration file:
+
+- `type` (*string*): The type of the source, which should be set to `aws-cloudtrail-sqs`.
+- `queueUrl` (*string*): The URL of the SQS queue to which CloudTrail events are published.
+- `region` (*string*): The AWS region where the SQS queue is located.

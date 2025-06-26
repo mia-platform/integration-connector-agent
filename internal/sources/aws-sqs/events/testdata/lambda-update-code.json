@@ -1,0 +1,94 @@
+{
+    "version": "0",
+    "id": "7cd33618-e5ea-faae-97bf-b8a6bd83656d",
+    "detail-type": "AWS API Call via CloudTrail",
+    "source": "aws.lambda",
+    "account": "accountid",
+    "time": "2025-06-25T15:14:32Z",
+    "region": "eu-north-1",
+    "resources": [],
+    "detail": {
+        "eventVersion": "1.11",
+        "userIdentity": {
+            "type": "AssumedRole",
+            "principalId": "principalid:user@example.com",
+            "arn": "arn:aws:sts::accountid:assumed-role/TheAssumedRole/user@example.com",
+            "accountId": "accountid",
+            "accessKeyId": "ASIA5FTZFBZ7PQQEVLP6",
+            "sessionContext": {
+                "sessionIssuer": {
+                    "type": "Role",
+                    "principalId": "principalid",
+                    "arn": "arn:aws:iam::accountid:role/aws-reserved/sso.amazonaws.com/eu-west-1/TheAssumedRole",
+                    "accountId": "accountid",
+                    "userName": "TheAssumedRole"
+                },
+                "attributes": {
+                    "creationDate": "2025-06-25T13:30:04Z",
+                    "mfaAuthenticated": "false"
+                }
+            },
+            "invokedBy": "AWS Internal"
+        },
+        "eventTime": "2025-06-25T15:14:32Z",
+        "eventSource": "lambda.amazonaws.com",
+        "eventName": "UpdateFunctionCode20150331v2",
+        "awsRegion": "eu-north-1",
+        "sourceIPAddress": "AWS Internal",
+        "userAgent": "AWS Internal",
+        "requestParameters": {
+            "functionName": "arn:aws:lambda:eu-north-1:accountid:function:the-function-name",
+            "publish": false,
+            "dryRun": false
+        },
+        "responseElements": {
+            "functionName": "the-function-name",
+            "functionArn": "arn:aws:lambda:eu-north-1:accountid:function:the-function-name",
+            "runtime": "nodejs22.x",
+            "role": "arn:aws:iam::accountid:role/service-role/the-function-name-role-w24sibw3",
+            "handler": "index.handler",
+            "codeSize": 270,
+            "description": "",
+            "timeout": 3,
+            "memorySize": 128,
+            "lastModified": "2025-06-25T15:14:32.000+0000",
+            "codeSha256": "========================================================",
+            "version": "$LATEST",
+            "environment": {},
+            "tracingConfig": {
+                "mode": "PassThrough"
+            },
+            "revisionId": "43858916-01a9-4a85-8fec-1c09918dca92",
+            "state": "Active",
+            "lastUpdateStatus": "InProgress",
+            "lastUpdateStatusReason": "The function is being created.",
+            "lastUpdateStatusReasonCode": "Creating",
+            "packageType": "Zip",
+            "architectures": [
+                "x86_64"
+            ],
+            "ephemeralStorage": {
+                "size": 512
+            },
+            "snapStart": {
+                "applyOn": "None",
+                "optimizationStatus": "Off"
+            },
+            "runtimeVersionConfig": {
+                "runtimeVersionArn": "arn:aws:lambda:eu-north-1::runtime:fd2e05b324f99edd3c6e17800b2535deb79bcce74b7506d595a94870b3d9bd2e"
+            },
+            "loggingConfig": {
+                "logFormat": "Text",
+                "logGroup": "/aws/lambda/the-function-name"
+            }
+        },
+        "requestID": "7ceb5661-964c-42cd-b076-5f84c7b4f69b",
+        "eventID": "82569b59-9b14-43c5-9781-0d96747f5fda",
+        "readOnly": false,
+        "eventType": "AwsApiCall",
+        "managementEvent": true,
+        "recipientAccountId": "accountid",
+        "eventCategory": "Management",
+        "sessionCredentialFromConsole": "true"
+    }
+}
