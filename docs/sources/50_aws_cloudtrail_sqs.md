@@ -29,3 +29,17 @@ When configuring the AWS CloudTrail SQS source, you need to provide the followin
 	"queueUrl": "https://sqs.eu-north-1.amazonaws.com/123123123123/my-sqs-queue"
 }
 ```
+
+## Supported Events
+
+The AWS CloudTrail SQS source supports the following CloudTrail sources:
+
+- `aws.s3`
+- `aws.lambda`
+
+For the above sources, the integration connector agent supports the following event types:
+
+- All `Create*` events
+- All `Delete*` events
+- All `Update*` events
+- All `Publish*` events
