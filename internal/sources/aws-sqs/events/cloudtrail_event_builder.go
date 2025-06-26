@@ -46,9 +46,14 @@ func (b CloudTrailEventBuilder) GetPipelineEvent(_ context.Context, data []byte)
 		return nil, fmt.Errorf("error getting primary keys: %w", err)
 	}
 
+	op, err := b.operationType(rawEvent)
+	if err != nil {
+		return nil, fmt.Errorf("error getting operation type: %w", err)
+	}
+
 	return &entities.Event{
 		PrimaryKeys:   pk,
-		OperationType: b.operationType(rawEvent),
+		OperationType: op,
 		Type:          b.eventType(rawEvent),
 		OriginalRaw:   data,
 	}, nil
@@ -65,18 +70,23 @@ func (CloudTrailEventBuilder) primaryKeys(event CloudTrailEvent) (entities.PkFie
 	}, nil
 }
 
-func (CloudTrailEventBuilder) operationType(event CloudTrailEvent) entities.Operation {
+func (CloudTrailEventBuilder) operationType(event CloudTrailEvent) (entities.Operation, error) {
 	eventName := event.Detail.EventName
 	switch {
 	case strings.HasPrefix(eventName, "Delete"):
-		return entities.Delete
+		return entities.Delete, nil
 
 	case strings.HasPrefix(eventName, "Create"):
-		fallthrough
+		return entities.Write, nil
+
 	case strings.HasPrefix(eventName, "Update"):
-		fallthrough
+		return entities.Write, nil
+
+	case strings.HasPrefix(eventName, "Publish"):
+		return entities.Write, nil
+
 	default:
-		return entities.Write
+		return entities.Write, fmt.Errorf("unsupported event name: %s", eventName)
 	}
 }
 

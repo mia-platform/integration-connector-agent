@@ -98,17 +98,15 @@ func (s *concreteSQS) Listen(ctx context.Context, handler ListenerFunc) error {
 		for _, message := range result.Messages {
 			if err := handler(ctx, []byte(*message.Body)); err != nil {
 				s.log.WithFields(logrus.Fields{
-					"queueUrl":      s.config.QueueURL,
-					"receiptHandle": message.ReceiptHandle,
-					"messageId":     message.MessageId,
+					"queueUrl":  s.config.QueueURL,
+					"messageId": message.MessageId,
 				}).WithError(err).Warn("error processing message")
 				continue
 			}
 
 			s.log.WithFields(logrus.Fields{
-				"queueUrl":      s.config.QueueURL,
-				"receiptHandle": message.ReceiptHandle,
-				"messageId":     message.MessageId,
+				"queueUrl":  s.config.QueueURL,
+				"messageId": message.MessageId,
 			}).Debug("message processed successfully")
 			_, err := s.c.DeleteMessage(ctx, &sqs.DeleteMessageInput{
 				QueueUrl:      &s.config.QueueURL,
@@ -116,17 +114,15 @@ func (s *concreteSQS) Listen(ctx context.Context, handler ListenerFunc) error {
 			})
 			if err != nil {
 				s.log.WithFields(logrus.Fields{
-					"queueUrl":      s.config.QueueURL,
-					"receiptHandle": message.ReceiptHandle,
-					"messageId":     message.MessageId,
+					"queueUrl":  s.config.QueueURL,
+					"messageId": message.MessageId,
 				}).Warn("error deleting message from queue, it may be processed again later")
 				continue
 			}
 
 			s.log.WithFields(logrus.Fields{
-				"queueUrl":      s.config.QueueURL,
-				"receiptHandle": message.ReceiptHandle,
-				"messageId":     message.MessageId,
+				"queueUrl":  s.config.QueueURL,
+				"messageId": message.MessageId,
 			}).Debug("message deleted successfully")
 		}
 	}
