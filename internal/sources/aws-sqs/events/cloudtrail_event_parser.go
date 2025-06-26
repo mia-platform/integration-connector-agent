@@ -23,7 +23,7 @@ import (
 type CloudTrailEvent struct {
 	Version    string `json:"version"`
 	ID         string `json:"id"`
-	DetailType string `json:"detail-type"`
+	DetailType string `json:"detail-type"` //nolint:tagliatelle
 	Source     string `json:"source"`
 	Account    string `json:"account"`
 	Time       string `json:"time"`
@@ -45,14 +45,14 @@ type CloudTrailEvent struct {
 		EventSource        string         `json:"eventSource"`
 		EventName          string         `json:"eventName"`
 		AWSRegion          string         `json:"awsRegion"`
-		SourceIPAddress    string         `json:"sourceIPAddress"`
+		SourceIPAddress    string         `json:"sourceIPAddress"` //nolint:tagliatelle
 		UserAgent          string         `json:"userAgent"`
 		ErrorCode          string         `json:"errorCode"`
 		ErrorMessage       string         `json:"errorMessage"`
 		RequestParameters  map[string]any `json:"requestParameters"`
 		ResponseElements   map[string]any `json:"responseElements"`
-		RequestID          string         `json:"requestID"`
-		EventID            string         `json:"eventID"`
+		RequestID          string         `json:"requestID"` //nolint:tagliatelle
+		EventID            string         `json:"eventID"`   //nolint:tagliatelle
 		ReadOnly           bool           `json:"readOnly"`
 		EventType          string         `json:"eventType"`
 		ManagementEvent    bool           `json:"managementEvent"`
