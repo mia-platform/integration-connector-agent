@@ -18,18 +18,23 @@ package azureeventhub
 import (
 	"fmt"
 	"strings"
+
+	"github.com/mia-platform/integration-connector-agent/internal/config"
 )
 
 type Config struct {
-	SubscriptionID                 string `json:"subscriptionId"`
-	EventHubNamespace              string `json:"eventHubNamespace"`
-	EventHubName                   string `json:"eventHubName"`
-	CheckpointStorageAccountName   string `json:"checkpointStorageAccountName"`
-	CheckpointStorageContainerName string `json:"checkpointStorageContainerName"`
+	SubscriptionID                 string              `json:"subscriptionId"`
+	EventHubNamespace              string              `json:"eventHubNamespace"`
+	EventHubName                   string              `json:"eventHubName"`
+	CheckpointStorageAccountName   string              `json:"checkpointStorageAccountName"`
+	CheckpointStorageContainerName string              `json:"checkpointStorageContainerName"`
+	TenantID                       string              `json:"tenantId"`
+	ClientID                       config.SecretSource `json:"clientId"`
+	ClientSecret                   config.SecretSource `json:"clientSecret"`
 	EventConsumer                  EventConsumer
 }
 
-func (c *Config) Validate() error {
+func (c *Config) Validate() error { //nolint: gocyclo
 	if c.SubscriptionID == "" {
 		return fmt.Errorf("subscriptionId is required")
 	}
@@ -48,6 +53,21 @@ func (c *Config) Validate() error {
 
 	if c.CheckpointStorageContainerName == "" {
 		return fmt.Errorf("checkpointStorageContainerName is required")
+	}
+
+	switch {
+	case len(c.TenantID) > 0:
+		if len(c.ClientID) == 0 || len(c.ClientSecret) == 0 {
+			return fmt.Errorf("clientId and clientSecret are required when tenantId is provided")
+		}
+	case len(c.ClientID) > 0:
+		if len(c.TenantID) == 0 || len(c.ClientSecret) == 0 {
+			return fmt.Errorf("tenantId and clientSecret are required when clientId is provided")
+		}
+	case len(c.ClientSecret) > 0:
+		if len(c.TenantID) == 0 || len(c.ClientID) == 0 {
+			return fmt.Errorf("tenantId and clientId are required when clientSecret is provided")
+		}
 	}
 
 	if !strings.HasSuffix(c.EventHubNamespace, ".servicebus.windows.net") {

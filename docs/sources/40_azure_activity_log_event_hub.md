@@ -32,6 +32,10 @@ configuration file:
 - `checkpointStorageAccountName` (*string*): The name of the storage account where the blob storage container is located
 - `checkpointStorageContainerName` (*string*): The name of the blob storage container where the Event Hub checkpoints
   are saved
+- `tenantId` (*string*): The tenant ID of the Azure Entra ID where the entity used to authenticate is located inside
+  the subscription
+- `clientId` ([*SecretSource*](../20_install.md#secretsource)): The client ID of the entity used to authenticate
+- `clientSecret` ([*SecretSource*](../20_install.md#secretsource)): The client secret of the entity used to authenticate
 
 ### Example
 
@@ -46,12 +50,14 @@ configuration file:
 }
 ```
 
-## Authentication
+## Single Authentication
 
-In addition to these settings to allow the application to authenticate to the Microsoft Azure subscription at least
-these environment variables are needed:
+In addition to these settings to allow the application to authenticate to the Microsoft Azure subscription you can set
+the following environment varibales instead of the equivalent source configuration:
 
 - `AZURE_TENANT_ID`: The tenant ID of the Azure Entra ID where the entity used to authenticate is located inside
   the subscription
 - `AZURE_CLIENT_ID`: The client ID of the entity used to authenticate
 - `AZURE_CLIENT_SECRET`: The client secret of the entity used to authenticate
+
+The values set in the configuration block will take precendece over the env variables.

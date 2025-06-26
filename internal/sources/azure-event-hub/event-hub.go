@@ -23,6 +23,7 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2/checkpoints"
@@ -33,13 +34,13 @@ import (
 type EventConsumer func(event *azeventhubs.ReceivedEventData) error
 
 func SetupEventHub(ctx context.Context, config *Config, pg pipeline.IPipelineGroup, logger *logrus.Logger) error {
-	var credential *azidentity.DefaultAzureCredential
+	var credential azcore.TokenCredential
 	var store azeventhubs.CheckpointStore
 	var consumerClient *azeventhubs.ConsumerClient
 	var processor *azeventhubs.Processor
 	var err error
 
-	if credential, err = azureCredential(); err != nil {
+	if credential, err = azureCredential(config); err != nil {
 		return err
 	}
 
@@ -65,15 +66,32 @@ func SetupEventHub(ctx context.Context, config *Config, pg pipeline.IPipelineGro
 	return processor.Run(processorCtx)
 }
 
-func azureCredential() (*azidentity.DefaultAzureCredential, error) {
-	credential, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Azure credential: %w", err)
+func azureCredential(config *Config) (azcore.TokenCredential, error) {
+	credentials := make([]azcore.TokenCredential, 0)
+
+	if len(config.TenantID) > 0 && len(config.ClientID) > 0 && len(config.ClientSecret) > 0 {
+		secretCredential, err := azidentity.NewClientSecretCredential(
+			config.TenantID,
+			config.ClientID.String(),
+			config.ClientSecret.String(),
+			nil, // Options
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create an Azure client secret credential: %w", err)
+		}
+		credentials = append(credentials, secretCredential)
 	}
-	return credential, nil
+
+	defaultCredential, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create a default Azure credential: %w", err)
+	}
+	credentials = append(credentials, defaultCredential)
+
+	return azidentity.NewChainedTokenCredential(credentials, nil)
 }
 
-func checkpointStore(credential *azidentity.DefaultAzureCredential, storageAccountName, storageContainerName string) (azeventhubs.CheckpointStore, error) {
+func checkpointStore(credential azcore.TokenCredential, storageAccountName, storageContainerName string) (azeventhubs.CheckpointStore, error) {
 	var blobClient *azblob.Client
 	var err error
 
