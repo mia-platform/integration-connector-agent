@@ -27,6 +27,7 @@ import (
 	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
+	azureactivitylogeventhub "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub"
 	gcppubsub "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/github"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
@@ -97,6 +98,10 @@ func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Conf
 			integration.appendCloseableSource(pubsub)
 		case sources.Github:
 			if err := github.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
+				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+			}
+		case sources.AzureActivityLogEventHub:
+			if err := azureactivitylogeventhub.AddSource(ctx, source, pg, log); err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
 			}
 		case "test":

@@ -16,10 +16,11 @@
 package sources
 
 const (
-	Jira               = "jira"
-	Console            = "console"
-	Github             = "github"
-	GCPInventoryPubSub = "gcp-inventory-pubsub"
+	Jira                     = "jira"
+	Console                  = "console"
+	Github                   = "github"
+	GCPInventoryPubSub       = "gcp-inventory-pubsub"
+	AzureActivityLogEventHub = "azure-activity-log-event-hub"
 )
 
 type CloseableSource interface {

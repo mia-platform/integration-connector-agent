@@ -16,7 +16,8 @@
                   "jira",
                   "console",
                   "github",
-                  "gcp-inventory-pubsub"
+                  "gcp-inventory-pubsub",
+                  "azure-activity-log-event-hub"
                 ]
               },
               "webhookPath": {
