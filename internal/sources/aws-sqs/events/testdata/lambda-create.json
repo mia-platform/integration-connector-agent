@@ -1,0 +1,69 @@
+{
+    "version": "0",
+    "id": "11e1d982-15df-62dc-d9e0-1a2570a8b71c",
+    "detail-type": "AWS API Call via CloudTrail",
+    "source": "aws.lambda",
+    "account": "accountid",
+    "time": "2025-06-25T15:09:42Z",
+    "region": "eu-north-1",
+    "resources": [],
+    "detail": {
+        "eventVersion": "1.11",
+        "userIdentity": {
+            "type": "AssumedRole",
+            "principalId": "principalid:user@example.com",
+            "arn": "arn:aws:sts::accountid:assumed-role/TheAssumedRole/user@example.com",
+            "accountId": "accountid",
+            "accessKeyId": "ASIA5FTZFBZ7EIJPAPHQ",
+            "sessionContext": {
+                "sessionIssuer": {
+                    "type": "Role",
+                    "principalId": "principalid",
+                    "arn": "arn:aws:iam::accountid:role/aws-reserved/sso.amazonaws.com/eu-west-1/TheAssumedRole",
+                    "accountId": "accountid",
+                    "userName": "TheAssumedRole"
+                },
+                "attributes": {
+                    "creationDate": "2025-06-25T13:30:04Z",
+                    "mfaAuthenticated": "false"
+                }
+            }
+        },
+        "eventTime": "2025-06-25T15:09:42Z",
+        "eventSource": "lambda.amazonaws.com",
+        "eventName": "CreateFunction20150331",
+        "awsRegion": "eu-north-1",
+        "sourceIPAddress": "2.40.119.250",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:139.0) Gecko/20100101 Firefox/139.0",
+        "errorCode": "InvalidParameterValueException",
+        "errorMessage": "The role defined for the function cannot be assumed by Lambda.",
+        "requestParameters": {
+            "functionName": "the-function-name",
+            "runtime": "nodejs22.x",
+            "role": "arn:aws:iam::accountid:role/service-role/the-function-name-role-w24sibw3",
+            "handler": "index.handler",
+            "code": {},
+            "timeout": 3,
+            "memorySize": 128,
+            "publish": false,
+            "environment": {},
+            "architectures": [
+                "x86_64"
+            ]
+        },
+        "responseElements": null,
+        "requestID": "8bf1ad6c-8393-4781-8bdb-400c1383f55e",
+        "eventID": "c76c20d7-e438-4523-9d81-2b8e0aefa826",
+        "readOnly": false,
+        "eventType": "AwsApiCall",
+        "managementEvent": true,
+        "recipientAccountId": "accountid",
+        "eventCategory": "Management",
+        "tlsDetails": {
+            "tlsVersion": "TLSv1.3",
+            "cipherSuite": "TLS_AES_128_GCM_SHA256",
+            "clientProvidedHostHeader": "lambda.eu-north-1.amazonaws.com"
+        },
+        "sessionCredentialFromConsole": "true"
+    }
+}
