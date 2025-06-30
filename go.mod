@@ -10,7 +10,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.6.1
 	github.com/caarlos0/env/v11 v11.2.2
 	github.com/davidebianchi/gswagger v0.10.0
-	github.com/getkin/kin-openapi v0.131.0
+	github.com/getkin/kin-openapi v0.132.0
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/google/cel-go v0.22.1
 	github.com/hashicorp/go-hclog v0.14.1
