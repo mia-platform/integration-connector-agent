@@ -10,8 +10,10 @@ are published to an SQS queue.
 To configure AWS, you need to:
 
 - create a new trail in [CloudTrail](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-user-guide.html)
-- create a new [SQS queue](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html) dedicated to receiving CloudTrail events
-- create an [EventBridge](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-setup.html) rule that maps the desired sources and sends them to the SQS queue
+- create a new [SQS queue](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html)
+  dedicated to receiving CloudTrail events
+- create an [EventBridge](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-setup.html) rule that maps
+  the desired sources and sends them to the SQS queue
 
 ## Service Configuration
 
@@ -23,7 +25,6 @@ When configuring the AWS CloudTrail SQS source, you need to provide the followin
 - `accessKeyId` (*string*): access key ID from AWS
 - `secretAccessKey` (*string*): secret access key from AWS
 - `sessionToken` (*string*): session token from AWS
-
 
 ### Example
 

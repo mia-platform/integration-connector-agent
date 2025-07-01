@@ -48,7 +48,7 @@ func New(options *ConsumerOptions, cfg config.GenericConfig, pipeline pipeline.I
 		QueueURL:        config.QueueURL,
 		Region:          config.Region,
 		AccessKeyID:     config.AccessKeyID,
-		SecretAccessKey: config.SecretAccessKey,
+		SecretAccessKey: config.SecretAccessKey.String(),
 		SessionToken:    config.SessionToken,
 	})
 	if err != nil {

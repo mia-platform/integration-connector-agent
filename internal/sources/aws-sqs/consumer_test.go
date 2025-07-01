@@ -41,19 +41,32 @@ func TestNew(t *testing.T) {
 		Log: log,
 	}
 
-	t.Run("fails on invalid config", func(t *testing.T) {
-		_, err := New(options, config.GenericConfig{
-			Type: "awssqs",
-			Raw:  []byte(`{"queueUrl": ""}`),
-		}, pg, &awssqsevents.EventBuilderMock{})
+	t.Run("invalid configurations", func(t *testing.T) {
+		testCases := []struct {
+			config string
+		}{
+			{config: `{"queueUrl": ""}`},
+			{config: `{"queueUrl": "a"}`},
+			{config: `{"queueUrl": "a","accessKeyId":"key"}`},
+			{config: `{"queueUrl": "a","secretAccessKey":{"fromEnv":"MISSING_ENV"}}`},
+		}
 
-		require.ErrorIs(t, err, config.ErrConfigNotValid)
+		for _, tc := range testCases {
+			t.Run(tc.config, func(t *testing.T) {
+				_, err := New(options, config.GenericConfig{
+					Type: "aws-sqs",
+					Raw:  []byte(tc.config),
+				}, pg, &awssqsevents.EventBuilderMock{})
+				require.ErrorIs(t, err, config.ErrConfigNotValid)
+			})
+		}
 	})
 
 	t.Run("succeeds with valid config", func(t *testing.T) {
+		t.Setenv("MY_SECRET_ENV", "SECRET_VALUE")
 		consumer, err := New(options, config.GenericConfig{
 			Type: "awssqs",
-			Raw:  []byte(`{"queueUrl": "https://something.com"}`),
+			Raw:  []byte(`{"queueUrl": "https://something.com","secretAccessKey":{"fromEnv":"MY_SECRET_ENV"},"accessKeyId":"key","region":"us-east-1"}`),
 		}, pg, &awssqsevents.EventBuilderMock{})
 
 		require.NoError(t, err)

@@ -15,19 +15,30 @@
 
 package awssqs
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/mia-platform/integration-connector-agent/internal/config"
+)
 
 type Config struct {
-	QueueURL        string `json:"queueUrl"`
-	Region          string `json:"region"`
-	AccessKeyID     string `json:"accessKeyId,omitempty"`
-	SecretAccessKey string `json:"secretAccessKey,omitempty"`
-	SessionToken    string `json:"sessionToken,omitempty"`
+	QueueURL        string              `json:"queueUrl"`
+	Region          string              `json:"region"`
+	AccessKeyID     string              `json:"accessKeyId,omitempty"`
+	SecretAccessKey config.SecretSource `json:"secretAccessKey,omitempty"`
+	SessionToken    string              `json:"sessionToken,omitempty"`
 }
 
 func (c *Config) Validate() error {
 	if c.QueueURL == "" {
 		return fmt.Errorf("queueId must be provided")
+	}
+
+	if c.AccessKeyID == "" {
+		return fmt.Errorf("accessKeyId must be provided")
+	}
+	if c.SecretAccessKey == "" {
+		return fmt.Errorf("secretAccessKey must be provided")
 	}
 
 	return nil
