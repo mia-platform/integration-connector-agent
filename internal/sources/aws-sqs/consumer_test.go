@@ -46,9 +46,6 @@ func TestNew(t *testing.T) {
 			config string
 		}{
 			{config: `{"queueUrl": ""}`},
-			{config: `{"queueUrl": "a"}`},
-			{config: `{"queueUrl": "a","accessKeyId":"key"}`},
-			{config: `{"queueUrl": "a","secretAccessKey":{"fromEnv":"MISSING_ENV"}}`},
 		}
 
 		for _, tc := range testCases {

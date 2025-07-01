@@ -52,14 +52,18 @@ type Config struct {
 func New(ctx context.Context, log *logrus.Logger, c Config) (SQS, error) {
 	loadOptions := make([]func(*config.LoadOptions) error, 0)
 
-	credentialOptions := config.WithCredentialsProvider(
-		credentials.NewStaticCredentialsProvider(
-			c.AccessKeyID,
-			c.SecretAccessKey,
-			c.SessionToken,
-		),
-	)
-	loadOptions = append(loadOptions, credentialOptions)
+	if c.AccessKeyID != "" && c.SecretAccessKey != "" && c.SessionToken != "" {
+		credentialOptions := config.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider(
+				c.AccessKeyID,
+				c.SecretAccessKey,
+				c.SessionToken,
+			),
+		)
+		loadOptions = append(loadOptions, credentialOptions)
+	} else {
+		log.Warn("AccessKeyID, SecretAccessKey, and SessionToken are not provided, using default credentials")
+	}
 
 	if c.Region != "" {
 		loadOptions = append(loadOptions, config.WithRegion(c.Region))

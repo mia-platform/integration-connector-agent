@@ -34,16 +34,5 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("queueId must be provided")
 	}
 
-	if c.Region == "" {
-		return fmt.Errorf("region must be provided")
-	}
-
-	if c.AccessKeyID == "" {
-		return fmt.Errorf("accessKeyId must be provided")
-	}
-	if c.SecretAccessKey == "" {
-		return fmt.Errorf("secretAccessKey must be provided")
-	}
-
 	return nil
 }
