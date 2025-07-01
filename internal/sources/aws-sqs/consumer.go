@@ -49,7 +49,7 @@ func New(options *ConsumerOptions, cfg config.GenericConfig, pipeline pipeline.I
 		Region:          config.Region,
 		AccessKeyID:     config.AccessKeyID,
 		SecretAccessKey: config.SecretAccessKey.String(),
-		SessionToken:    config.SessionToken,
+		SessionToken:    config.SessionToken.String(),
 	})
 	if err != nil {
 		return nil, err

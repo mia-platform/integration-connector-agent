@@ -26,7 +26,7 @@ type Config struct {
 	Region          string              `json:"region"`
 	AccessKeyID     string              `json:"accessKeyId,omitempty"`
 	SecretAccessKey config.SecretSource `json:"secretAccessKey,omitempty"`
-	SessionToken    string              `json:"sessionToken,omitempty"`
+	SessionToken    config.SecretSource `json:"sessionToken,omitempty"`
 }
 
 func (c *Config) Validate() error {

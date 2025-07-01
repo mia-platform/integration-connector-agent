@@ -31,7 +31,10 @@ When configuring the AWS CloudTrail SQS source, you need to provide the followin
 ```json
 {
 	"type": "aws-cloudtrail-sqs",
-	"queueUrl": "https://sqs.eu-north-1.amazonaws.com/123123123123/my-sqs-queue"
+	"queueUrl": "https://sqs.eu-north-1.amazonaws.com/123123123123/my-sqs-queue",
+	"accessKeyId": "",
+	"secretAccessKey": {"fromEnv": "AWS_SQS_SECRET_ACCESS_KEY"},
+	"sessionToken": {"fromEnv": "AWS_SQS_SESSION_TOKEN"},
 }
 ```
 
