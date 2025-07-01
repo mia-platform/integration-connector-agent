@@ -20,9 +20,9 @@ When configuring the AWS CloudTrail SQS source, you need to provide the followin
 - `type` (*string*): The type of the source, which should be set to `aws-cloudtrail-sqs`.
 - `queueUrl` (*string*): The URL of the SQS queue to which CloudTrail events are published.
 - `region` (*string*): The AWS region where the SQS queue is located.
-- `accessKeyId` (*string*): 
-- `secretAccessKey` (*string*): 
-- `sessionToken` (*string*): 
+- `accessKeyId` (*string*): access key ID from AWS
+- `secretAccessKey` (*string*): secret access key from AWS
+- `sessionToken` (*string*): session token from AWS
 
 
 ### Example
