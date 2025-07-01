@@ -18,8 +18,11 @@ package awssqs
 import "fmt"
 
 type Config struct {
-	QueueURL string `json:"queueUrl"`
-	Region   string `json:"region"`
+	QueueURL        string `json:"queueUrl"`
+	Region          string `json:"region"`
+	AccessKeyID     string `json:"accessKeyId,omitempty"`
+	SecretAccessKey string `json:"secretAccessKey,omitempty"`
+	SessionToken    string `json:"sessionToken,omitempty"`
 }
 
 func (c *Config) Validate() error {

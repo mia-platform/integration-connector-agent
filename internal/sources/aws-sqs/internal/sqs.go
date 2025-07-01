@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/sirupsen/logrus"
 )
@@ -41,12 +42,25 @@ type concreteSQS struct {
 }
 
 type Config struct {
-	QueueURL string
-	Region   string
+	QueueURL        string
+	Region          string
+	AccessKeyID     string
+	SecretAccessKey string
+	SessionToken    string
 }
 
 func New(ctx context.Context, log *logrus.Logger, c Config) (SQS, error) {
 	loadOptions := make([]func(*config.LoadOptions) error, 0)
+
+	credentialOptions := config.WithCredentialsProvider(
+		credentials.NewStaticCredentialsProvider(
+			c.AccessKeyID,
+			c.SecretAccessKey,
+			c.SessionToken,
+		),
+	)
+	loadOptions = append(loadOptions, credentialOptions)
+
 	if c.Region != "" {
 		loadOptions = append(loadOptions, config.WithRegion(c.Region))
 	}

@@ -45,7 +45,11 @@ func New(options *ConsumerOptions, cfg config.GenericConfig, pipeline pipeline.I
 	}
 
 	client, err := internal.New(options.Ctx, options.Log, internal.Config{
-		QueueURL: config.QueueURL,
+		QueueURL:        config.QueueURL,
+		Region:          config.Region,
+		AccessKeyID:     config.AccessKeyID,
+		SecretAccessKey: config.SecretAccessKey,
+		SessionToken:    config.SessionToken,
 	})
 	if err != nil {
 		return nil, err
