@@ -162,14 +162,14 @@ jobs:
       id: meta
       uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
       env:
-        DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest # add 'index' when we will support a multiarch image
+        DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
       with:
         images: |
           ghcr.io/mia-platform/integration-connector-agent
           docker.io/miaplatform/integration-connector-agent
           nexus.mia-platform.eu/plugins/integration-connector-agent
         tags: |
-          type=ref,event=branch
+          type=raw,value=latest,enable={{is_default_branch}}
           type=semver,pattern={{version}}
         labels: |
           org.opencontainers.image.authors=Mia Platform Core Team<core@mia-platform.eu>
@@ -177,8 +177,6 @@ jobs:
         annotations: |
           org.opencontainers.image.authors=Mia Platform Core Team<core@mia-platform.eu>
           org.opencontainers.image.vendor=Mia s.r.l.
-        flavor: |
-          latest=auto
     - name: Setup Buildx Context
       uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
       id: buildx
@@ -226,7 +224,7 @@ jobs:
         for tag in ${TAGS}; do
           image="${tag}@${DIGEST}"
           cosign sign --recursive --yes --key "${COSIGN_PRIVATE_KEY}" "${image}"
-          cosign attest --recursive --yes --key "${COSIGN_PRIVATE_KEY}" --predicate "integration-connector-agent-sbom.spdx.json" --type="spdxjson" "${image}"
+          cosign attest --yes --key "${COSIGN_PRIVATE_KEY}" --predicate "integration-connector-agent-sbom.spdx.json" --type="spdxjson" "${image}"
         done
       env:
         TAGS: |
