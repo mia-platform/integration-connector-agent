@@ -16,6 +16,7 @@
 package entities
 
 import (
+	"context"
 	"encoding/gob"
 	"encoding/json"
 )
@@ -59,6 +60,10 @@ type PipelineEvent interface {
 	WithData([]byte)
 	JSON() (map[string]any, error)
 	Clone() PipelineEvent
+}
+
+type EventBuilder interface {
+	GetPipelineEvent(ctx context.Context, data []byte) (PipelineEvent, error)
 }
 
 type Event struct {

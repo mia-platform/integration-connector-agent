@@ -30,7 +30,7 @@ var (
 
 type InventoryEventBuilder struct{}
 
-func NewInventoryEventBuilder() EventBuilder {
+func NewInventoryEventBuilder() entities.EventBuilder {
 	return &InventoryEventBuilder{}
 }
 

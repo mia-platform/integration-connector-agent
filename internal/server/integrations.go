@@ -27,6 +27,8 @@ import (
 	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
+	awssqs "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs"
+	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
 	azureactivitylogeventhub "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub"
 	gcppubsub "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/github"
@@ -63,7 +65,7 @@ func (i Integration) Close() error {
 }
 
 // TODO: write an integration test to test this setup
-func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) ([]Integration, error) {
+func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) ([]Integration, error) { //nolint:gocyclo
 	integrations := make([]Integration, 0)
 	for _, cfgIntegration := range cfg.Integrations {
 		pipelines, err := setupIntegrationPipelines(ctx, log, cfgIntegration)
@@ -96,6 +98,15 @@ func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Conf
 			}
 
 			integration.appendCloseableSource(pubsub)
+		case sources.AWSCloudTrailSQS:
+			awsConsumer, err := awssqs.New(&awssqs.ConsumerOptions{
+				Ctx: ctx,
+				Log: log,
+			}, source, pg, awssqsevents.NewCloudTrailEventBuilder())
+			if err != nil {
+				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+			}
+			integration.appendCloseableSource(awsConsumer)
 		case sources.Github:
 			if err := github.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
