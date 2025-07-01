@@ -224,7 +224,7 @@ jobs:
         for tag in ${TAGS}; do
           image="${tag}@${DIGEST}"
           cosign sign --recursive --yes --key "${COSIGN_PRIVATE_KEY}" "${image}"
-          cosign attest --recursive --yes --key "${COSIGN_PRIVATE_KEY}" --predicate "integration-connector-agent-sbom.spdx.json" --type="spdxjson" "${image}"
+          cosign attest --yes --key "${COSIGN_PRIVATE_KEY}" --predicate "integration-connector-agent-sbom.spdx.json" --type="spdxjson" "${image}"
         done
       env:
         TAGS: |
