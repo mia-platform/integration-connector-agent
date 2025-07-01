@@ -17,4 +17,4 @@ package config
 
 import "github.com/mia-platform/integration-connector-agent/internal/config"
 
-type SecretSource config.SecretSource
+type SecretSource = config.SecretSource
