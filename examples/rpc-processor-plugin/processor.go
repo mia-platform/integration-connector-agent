@@ -16,6 +16,8 @@
 package main
 
 import (
+	"encoding/json"
+
 	rpcprocessor "github.com/mia-platform/integration-connector-agent/adapters/rpc-processor"
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
@@ -33,9 +35,19 @@ func (g *CustomProcessor) Process(input entities.PipelineEvent) (entities.Pipeli
 	return output, nil
 }
 
-func (g *CustomProcessor) Init(config map[string]interface{}) error {
+type Config struct {
+	Message string `json:"message"`
+}
+
+func (g *CustomProcessor) Init(raw []byte) error {
 	// Here you can initialize your processor with the provided configuration
 	// For example, you might want to set up connections, load resources, etc.
-	g.logger.WithFields(map[string]interface{}{"config": config}).Info("CustomProcessor initialized with config")
+	var config Config
+	if err := json.Unmarshal(raw, &config); err != nil {
+		g.logger.WithError(err).Error("Failed to unmarshal configuration")
+		return err
+	}
+
+	g.logger.WithField("message", config.Message).Info("CustomProcessor initialized with config")
 	return nil
 }
