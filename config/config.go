@@ -13,15 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package hcgp
+package config
 
-import "encoding/json"
+import "github.com/mia-platform/integration-connector-agent/internal/config"
 
-type Config struct {
-	ModulePath  string          `json:"modulePath"`
-	InitOptions json.RawMessage `json:"initOptions,omitempty"`
-}
-
-func (c Config) Validate() error {
-	return nil
-}
+type SecretSource config.SecretSource

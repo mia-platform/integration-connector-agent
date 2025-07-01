@@ -73,7 +73,7 @@ func New(log *logrus.Logger, cfg Config) (entities.Processor, error) {
 	return p.Init(cfg.InitOptions)
 }
 
-func (p *Plugin) Init(initOptions map[string]interface{}) (entities.Processor, error) {
+func (p *Plugin) Init(initOptions []byte) (entities.Processor, error) {
 	if len(initOptions) == 0 {
 		return p, nil
 	}
