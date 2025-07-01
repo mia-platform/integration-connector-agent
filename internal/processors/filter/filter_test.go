@@ -76,7 +76,7 @@ func TestFilter(t *testing.T) {
 				OriginalRaw: []byte(`{"type":"event-type"}`),
 			},
 
-			expectedResultError: ErrEventToFilter.Error(),
+			expectedResultError: entities.ErrDiscardEvent.Error(),
 		},
 		"check on multiple event type": {
 			config: Config{
@@ -101,7 +101,7 @@ func TestFilter(t *testing.T) {
 				OriginalRaw: []byte(`{"type":"event-to-filter"}`),
 			},
 
-			expectedResultError: ErrEventToFilter.Error(),
+			expectedResultError: entities.ErrDiscardEvent.Error(),
 		},
 		"check on event content": {
 			config: Config{
@@ -126,7 +126,7 @@ func TestFilter(t *testing.T) {
 				OriginalRaw: []byte(`{"type":"event-type","fields":{"id": "my-id"}}`),
 			},
 
-			expectedResultError: ErrEventToFilter.Error(),
+			expectedResultError: entities.ErrDiscardEvent.Error(),
 		},
 		"not an expression": {
 			config: Config{

@@ -13,26 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package awssqs
+package entities
 
-import (
-	"fmt"
+import "errors"
 
-	"github.com/mia-platform/integration-connector-agent/internal/config"
-)
-
-type Config struct {
-	QueueURL        string              `json:"queueUrl"`
-	Region          string              `json:"region"`
-	AccessKeyID     string              `json:"accessKeyId,omitempty"`
-	SecretAccessKey config.SecretSource `json:"secretAccessKey,omitempty"`
-	SessionToken    config.SecretSource `json:"sessionToken,omitempty"`
-}
-
-func (c *Config) Validate() error {
-	if c.QueueURL == "" {
-		return fmt.Errorf("queueId must be provided")
-	}
-
-	return nil
-}
+var ErrDiscardEvent = errors.New("event discarded")

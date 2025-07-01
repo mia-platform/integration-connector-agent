@@ -24,10 +24,6 @@ import (
 	"github.com/google/cel-go/common/types"
 )
 
-var (
-	ErrEventToFilter = fmt.Errorf("event is to filter")
-)
-
 type Filter struct {
 	program cel.Program
 }
@@ -47,7 +43,7 @@ func (m Filter) Process(input entities.PipelineEvent) (entities.PipelineEvent, e
 		return nil, fmt.Errorf("program evaluation failed: %s", err.Error())
 	}
 	if out.Equal(types.False) == types.True {
-		return nil, ErrEventToFilter
+		return nil, entities.ErrDiscardEvent
 	}
 	return input, nil
 }
