@@ -54,7 +54,7 @@ func (g *RPCClient) Process(event entities.PipelineEvent) (entities.PipelineEven
 	return &resp, nil
 }
 
-func (g *RPCClient) Init(options map[string]interface{}) error {
+func (g *RPCClient) Init(options []byte) error {
 	resp := struct{}{}
 	if err := g.client.Call(InitRPCMethodName, options, &resp); err != nil {
 		return err
@@ -80,7 +80,7 @@ func (g *RPCServer) Process(input entities.Event, output *entities.Event) error 
 	return nil
 }
 
-func (g *RPCServer) Init(options map[string]interface{}, _ *struct{}) error {
+func (g *RPCServer) Init(options []byte, _ *struct{}) error {
 	if err := g.Impl.Init(options); err != nil {
 		return fmt.Errorf("plugin initialization error: %w", err)
 	}

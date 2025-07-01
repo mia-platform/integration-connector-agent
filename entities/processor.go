@@ -20,7 +20,7 @@ type Processor interface {
 }
 
 type Initializable interface {
-	Init(config map[string]interface{}) error
+	Init(config []byte) error
 }
 
 type InitializableProcessor interface {

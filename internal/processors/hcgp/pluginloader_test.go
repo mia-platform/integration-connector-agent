@@ -30,7 +30,7 @@ const validPluginPath = "./testdata/mockplugin/mockplugin"
 func TestNewProcessor(t *testing.T) {
 	testCases := map[string]struct {
 		modulePath  string
-		initOptions map[string]interface{}
+		initOptions []byte
 		expectError error
 	}{
 		"fail to load plugin on invalid path": {
@@ -49,16 +49,12 @@ func TestNewProcessor(t *testing.T) {
 			modulePath: validPluginPath,
 		},
 		"with init options": {
-			modulePath: validPluginPath,
-			initOptions: map[string]interface{}{
-				"option1": "value1",
-			},
+			modulePath:  validPluginPath,
+			initOptions: []byte(`{"option1":"value1"}`),
 		},
 		"with failing init options": {
-			modulePath: validPluginPath,
-			initOptions: map[string]interface{}{
-				"fail": true,
-			},
+			modulePath:  validPluginPath,
+			initOptions: []byte(`{"fail":true}`),
 			expectError: ErrPluginInitialization,
 		},
 	}

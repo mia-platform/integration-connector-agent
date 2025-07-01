@@ -16,10 +16,17 @@
 package hcgp
 
 type Config struct {
-	ModulePath  string                 `json:"modulePath"`
-	InitOptions map[string]interface{} `json:"initOptions,omitempty"`
+	ModulePath  string      `json:"modulePath"`
+	InitOptions InitOptions `json:"initOptions,omitempty"`
 }
 
 func (c Config) Validate() error {
+	return nil
+}
+
+type InitOptions []byte
+
+func (i *InitOptions) UnmarshalJSON(data []byte) error {
+	*i = data
 	return nil
 }
