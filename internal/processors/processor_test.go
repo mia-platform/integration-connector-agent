@@ -22,7 +22,6 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
-	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
 	"github.com/sirupsen/logrus/hooks/test"
 
 	"github.com/stretchr/testify/require"
@@ -71,7 +70,7 @@ func TestProcessors_Process(t *testing.T) {
 			processors: []entities.Processor{
 				&mockProcessor{
 					processFunc: func(event entities.PipelineEvent) (entities.PipelineEvent, error) {
-						return event, fmt.Errorf("%w: event filtered", filter.ErrEventToFilter)
+						return event, fmt.Errorf("%w: event filtered", entities.ErrDiscardEvent)
 					},
 				},
 				&mockProcessor{
@@ -81,7 +80,7 @@ func TestProcessors_Process(t *testing.T) {
 				},
 			},
 			input:       &entities.Event{OriginalRaw: []byte("test")},
-			expectedErr: fmt.Sprintf("%s: event filtered", filter.ErrEventToFilter),
+			expectedErr: fmt.Sprintf("%s: event filtered", entities.ErrDiscardEvent),
 		},
 	}
 

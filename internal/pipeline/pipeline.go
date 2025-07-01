@@ -21,7 +21,6 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
-	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
@@ -74,7 +73,7 @@ loop:
 
 			processedMessage, err := p.processors.Process(ctx, message)
 			if err != nil {
-				if errors.Is(err, filter.ErrEventToFilter) {
+				if errors.Is(err, entities.ErrDiscardEvent) {
 					// the message has been filtered out
 					p.logger.WithError(err).WithField("message", message.Data()).Trace("event filtered for pipeline")
 					continue
