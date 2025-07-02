@@ -1,0 +1,59 @@
+{
+  "version": "0",
+  "id": "85cb6d1d-b8c3-cfd2-23d8-8ac020a3eacc",
+  "detail-type": "AWS API Call via CloudTrail",
+  "source": "aws.lambda",
+  "account": "accountid",
+  "time": "2025-07-02T15:10:17Z",
+  "region": "eu-north-1",
+  "resources": [],
+  "detail": {
+    "eventVersion": "1.11",
+    "userIdentity": {
+      "type": "AssumedRole",
+      "principalId": "principalid:user@example.com",
+      "arn": "arn:aws:sts::accountid:assumed-role/TheAssumedRole/user@example.com",
+      "accountId": "accountid",
+      "accessKeyId": "ASIA5FTZFBZ7NH2BHWYL",
+      "sessionContext": {
+        "sessionIssuer": {
+          "type": "Role",
+          "principalId": "principalid",
+          "arn": "arn:aws:iam::accountid:role/aws-reserved/sso.amazonaws.com/eu-west-1/TheAssumedRole",
+          "accountId": "accountid",
+          "userName": "AWSReservedSSO_MiaDevelopersWrite_df00e7aca1c7c005"
+        },
+        "attributes": {
+          "creationDate": "2025-07-02T12:35:50Z",
+          "mfaAuthenticated": "false"
+        }
+      }
+    },
+    "eventTime": "2025-07-02T15:10:17Z",
+    "eventSource": "lambda.amazonaws.com",
+    "eventName": "TagResource20170331v2",
+    "awsRegion": "eu-north-1",
+    "sourceIPAddress": "2.40.119.250",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:139.0) Gecko/20100101 Firefox/139.0",
+    "requestParameters": {
+      "resource": "arn:aws:lambda:eu-north-1:accountid:function:the-function-name",
+      "tags": {
+        "t1": "2tv34"
+      }
+    },
+    "responseElements": null,
+    "requestID": "e2adaef6-ad88-482b-a2ba-03854a4f3ef4",
+    "eventID": "37a18d15-7366-43d8-abd2-31beac1b301e",
+    "readOnly": false,
+    "eventType": "AwsApiCall",
+    "managementEvent": true,
+    "recipientAccountId": "accountid",
+    "eventCategory": "Management",
+    "tlsDetails": {
+      "tlsVersion": "TLSv1.3",
+      "cipherSuite": "TLS_AES_128_GCM_SHA256",
+      "clientProvidedHostHeader": "lambda.eu-north-1.amazonaws.com"
+    },
+    "sessionCredentialFromConsole": "true"
+  }
+}

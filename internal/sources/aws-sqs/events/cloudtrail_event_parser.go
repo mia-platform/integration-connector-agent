@@ -18,6 +18,9 @@ package awssqsevents
 import (
 	"fmt"
 	"slices"
+	"strings"
+
+	"github.com/aws/aws-sdk-go-v2/aws/arn"
 )
 
 type CloudTrailEvent struct {
@@ -68,15 +71,20 @@ type CloudTrailEvent struct {
 }
 
 var eventMap = map[string]struct {
-	resourceNameField        string
-	resourceNameFromResponse []string
+	resourceNameField string
+	// resourceNameFromResponseEvents contains event names where the resource name
+	// is found in the response elements instead of request parameters.
+	resourceNameFromResponseEvents []string
+
+	resourceNameFromResourceArnEvents []string
 }{
 	"aws.s3": {
 		resourceNameField: "bucketName",
 	},
 	"aws.lambda": {
-		resourceNameField:        "functionName",
-		resourceNameFromResponse: []string{"UpdateFunctionCode20150331v2"},
+		resourceNameField:                 "functionName",
+		resourceNameFromResponseEvents:    []string{"UpdateFunctionCode20150331v2"},
+		resourceNameFromResourceArnEvents: []string{"TagResource20170331v2"},
 	},
 }
 
@@ -86,10 +94,32 @@ func (e CloudTrailEvent) ResourceName() (string, error) {
 		return "", fmt.Errorf("unsupported event source: %s", e.Source)
 	}
 
+	if slices.Contains(eventMappedData.resourceNameFromResourceArnEvents, e.Detail.EventName) {
+		resource, exists := e.Detail.RequestParameters["resource"]
+		if !exists {
+			return "", fmt.Errorf("resource field not found in event detail")
+		}
+		resourceArn, ok := resource.(string)
+		if !ok {
+			return "", fmt.Errorf("resource field is not a string")
+		}
+
+		if !arn.IsARN(resourceArn) {
+			return "", fmt.Errorf("resource field is not a valid ARN: %s", resourceArn)
+		}
+		parsedARN, err := arn.Parse(resourceArn)
+		if err != nil {
+			return "", fmt.Errorf("error parsing resource ARN: %w", err)
+		}
+
+		tokens := strings.Split(parsedARN.Resource, ":")
+		return tokens[1], nil
+	}
+
 	resourceNameField := eventMappedData.resourceNameField
 
 	params := e.Detail.RequestParameters
-	if slices.Contains(eventMappedData.resourceNameFromResponse, e.Detail.EventName) {
+	if slices.Contains(eventMappedData.resourceNameFromResponseEvents, e.Detail.EventName) {
 		params = e.Detail.ResponseElements
 	}
 
