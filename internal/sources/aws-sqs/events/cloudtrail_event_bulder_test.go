@@ -127,6 +127,18 @@ func TestCloudTrailEventBuilder(t *testing.T) {
 			},
 			expectedErr: nil,
 		},
+		{
+			name:         "update lambda tags",
+			dataFilePath: "testdata/lambda-update-tags.json",
+			expectedEvent: &entities.Event{
+				PrimaryKeys: entities.PkFields{
+					{Key: "resourceName", Value: "the-function-name"},
+					{Key: "eventSource", Value: "lambda.amazonaws.com"},
+				},
+				OperationType: entities.Write,
+			},
+			expectedErr: nil,
+		},
 	}
 
 	for _, tc := range testCases {
