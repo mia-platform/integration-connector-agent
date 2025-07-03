@@ -59,16 +59,12 @@ func SetupEventHub(ctx context.Context, config *Config, pg pipeline.IPipelineGro
 
 	go dispatchPartitionClients(ctx, processor, config.EventConsumer, logger)
 
-	processorCtx, processorCancel := context.WithCancel(ctx)
-
-	pg.Start(processorCtx)
-	go func(ctx context.Context, processor *azeventhubs.Processor, processorCancel context.CancelFunc) {
+	pg.Start(ctx)
+	go func(ctx context.Context, processor *azeventhubs.Processor) {
 		if err := processor.Run(ctx); err != nil {
-			logger.WithError(err).Error("azure event uub processor encountered an unrecoverable error")
+			logger.WithError(err).Error("azure event hub processor encountered an unrecoverable error")
 		}
-
-		processorCancel()
-	}(processorCtx, processor, processorCancel)
+	}(ctx, processor)
 
 	return nil
 }
