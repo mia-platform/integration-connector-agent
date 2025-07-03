@@ -52,6 +52,10 @@ func New(log *logrus.Logger, cfg Config) (entities.Processor, error) {
 		PluginProcessorKey: &PluginAdapter{},
 	}
 
+	log.WithFields(logrus.Fields{
+		"modulePath": cfg.ModulePath,
+	}).Trace("initializing plugin")
+
 	client := plugin.NewClient(&plugin.ClientConfig{
 		// #nosec:G204: this path is configuration based and only used at service bootstrap
 		Cmd:             exec.Command(cfg.ModulePath),
