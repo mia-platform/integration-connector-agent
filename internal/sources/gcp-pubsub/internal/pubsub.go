@@ -22,6 +22,7 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/api/option"
 )
 
 type ListenerFunc func(ctx context.Context, data []byte) error
@@ -42,10 +43,17 @@ type PubSubConfig struct {
 	AckDeadlineSeconds int
 	TopicName          string
 	SubscriptionID     string
+	CredentialsJSON    string
 }
 
 func New(ctx context.Context, log *logrus.Logger, config PubSubConfig) (PubSub, error) {
-	client, err := pubsub.NewClient(ctx, config.ProjectID)
+	options := make([]option.ClientOption, 0)
+	if config.CredentialsJSON != "" {
+		log.Debug("using credentials JSON for Pub/Sub client")
+		options = append(options, option.WithCredentialsJSON([]byte(config.CredentialsJSON)))
+	}
+
+	client, err := pubsub.NewClient(ctx, config.ProjectID, options...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pubsub client: %w", err)
 	}
