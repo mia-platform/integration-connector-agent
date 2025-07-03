@@ -63,7 +63,14 @@ func SetupEventHub(ctx context.Context, config *Config, pg pipeline.IPipelineGro
 	defer processorCancel()
 
 	pg.Start(processorCtx)
-	return processor.Run(processorCtx)
+	go func(ctx context.Context, processor *azeventhubs.Processor) {
+		err := processor.Run(ctx)
+		if err != nil {
+			logger.WithError(err).Error("azure event uub processor encountered an unrecoverable error")
+		}
+	}(processorCtx, processor)
+
+	return nil
 }
 
 func azureCredential(config *Config) (azcore.TokenCredential, error) {
