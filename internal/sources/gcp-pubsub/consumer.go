@@ -49,6 +49,7 @@ func New(options *ConsumerOptions, cfg config.GenericConfig, pipeline pipeline.I
 		TopicName:          config.TopicName,
 		SubscriptionID:     config.SubscriptionID,
 		AckDeadlineSeconds: config.AckDeadlineSeconds,
+		CredentialsJSON:    config.CredentialsJSON.String(),
 	})
 	if err != nil {
 		return nil, err

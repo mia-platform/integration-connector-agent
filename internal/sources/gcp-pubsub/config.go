@@ -15,13 +15,18 @@
 
 package gcppubsub
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/mia-platform/integration-connector-agent/internal/config"
+)
 
 type Config struct {
-	ProjectID          string `json:"projectId"`
-	TopicName          string `json:"topicName"`
-	SubscriptionID     string `json:"subscriptionId"`
-	AckDeadlineSeconds int    `json:"ackDeadlineSeconds,omitempty"`
+	ProjectID          string              `json:"projectId"`
+	TopicName          string              `json:"topicName"`
+	SubscriptionID     string              `json:"subscriptionId"`
+	AckDeadlineSeconds int                 `json:"ackDeadlineSeconds,omitempty"`
+	CredentialsJSON    config.SecretSource `json:"credentialsJson,omitempty"`
 }
 
 func (c *Config) Validate() error {
