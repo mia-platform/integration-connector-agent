@@ -68,6 +68,11 @@ func (i Integration) Close() error {
 func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) ([]Integration, error) { //nolint:gocyclo
 	integrations := make([]Integration, 0)
 	for _, cfgIntegration := range cfg.Integrations {
+		log.WithFields(logrus.Fields{
+			"sourceType":   cfgIntegration.Source.Type,
+			"pipelinesLen": len(cfgIntegration.Pipelines),
+		}).Trace("setting up integration")
+
 		pipelines, err := setupIntegrationPipelines(ctx, log, cfgIntegration)
 		if err != nil {
 			return nil, err
@@ -77,7 +82,6 @@ func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Conf
 		integration := Integration{
 			PipelineGroup: pg,
 		}
-
 		source := cfgIntegration.Source
 		switch source.Type {
 		case sources.Jira:
@@ -130,7 +134,13 @@ func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Conf
 func setupIntegrationPipelines(ctx context.Context, log *logrus.Logger, cfgIntegration config.Integration) ([]pipeline.IPipeline, error) {
 	pipelines := make([]pipeline.IPipeline, 0)
 
-	for _, cfgPipeline := range cfgIntegration.Pipelines {
+	for i, cfgPipeline := range cfgIntegration.Pipelines {
+		log.WithFields(logrus.Fields{
+			"sourceType":    cfgIntegration.Source.Type,
+			"pipelineIndex": i,
+			"processorsLen": len(cfgPipeline.Processors),
+		}).Trace("setting up pipeline processors")
+
 		sinks, err := setupSinks(ctx, cfgPipeline.Sinks)
 		if err != nil {
 			return nil, err

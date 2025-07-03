@@ -73,6 +73,7 @@ func New(logger *logrus.Logger, cfg config.Processors) (*Processors, error) {
 	p := new(Processors)
 
 	for _, processor := range cfg {
+		logger.WithFields(logrus.Fields{"type": processor.Type}).Trace("initializing processor")
 		switch processor.Type {
 		case Mapper:
 			config, err := config.GetConfig[mapper.Config](processor)
