@@ -88,7 +88,7 @@
                             "type": "string",
                             "const": "rpc-plugin"
                           },
-                          "modulePath": {
+                          "cloudVendorName": {
                             "type": "string"
                           },
                           "initOptions": {
@@ -100,6 +100,35 @@
                         "required": [
                           "type",
                           "modulePath"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "cloud-vendor-aggregator"
+                          },
+                          "cloudVendorName": {
+                            "type": "string"
+                          },
+                          "authOptions": {
+                            "type": "object",
+                            "additionalProperties": true
+                          },
+                          "credentialsJson": {"$ref": "#/definitions/secret"},
+                          "accessKeyId": {"type": "string"},
+                          "secretAccessKey": {"$ref": "#/definitions/secret"},
+                          "sessionToken": {"$ref": "#/definitions/secret"},
+                          "region": {"type": "string"},
+                          "tenantId": {"type": "string"},
+                          "clientId": {"$ref": "#/definitions/secret"},
+                          "clientSecret": {"$ref": "#/definitions/secret"}
+                        },
+                        "additionalProperties": true,
+                        "required": [
+                          "type",
+                          "cloudVendorName"
                         ]
                       }
                     ]

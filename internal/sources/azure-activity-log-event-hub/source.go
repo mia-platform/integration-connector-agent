@@ -24,53 +24,12 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
+	azureactivitylogeventhubevents "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub/events"
 	azureeventhub "github.com/mia-platform/integration-connector-agent/internal/sources/azure-event-hub"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2"
 	"github.com/sirupsen/logrus"
 )
-
-type ActivityLogEventData struct {
-	Records []*ActivityLogEventRecord `json:"records"`
-}
-
-type ActivityLogEventRecord struct {
-	RoleLocation    string                    `json:"RoleLocation"`   //nolint:tagliatelle
-	Stamp           string                    `json:"Stamp"`          //nolint:tagliatelle
-	ReleaseVersion  string                    `json:"ReleaseVersion"` //nolint:tagliatelle
-	Time            string                    `json:"time"`
-	ResourceID      string                    `json:"resourceId"`
-	OperationName   string                    `json:"operationName"`
-	Category        string                    `json:"category"`
-	ResultType      string                    `json:"resultType"`
-	ResultSignature string                    `json:"resultSignature"`
-	DurationMs      string                    `json:"durationMs"`
-	CallerIPAddress string                    `json:"callerIpAddress"`
-	CorrelationID   string                    `json:"correlationId"`
-	Identity        *ActivityLogEventIdentity `json:"identity"`
-	Level           string                    `json:"level"`
-	Properties      map[string]any            `json:"properties"`
-}
-
-type ActivityLogEventIdentity struct {
-	Authorization *ActivityLogAuthorization `json:"authorization"`
-	Claims        map[string]string         `json:"claims"`
-}
-
-type ActivityLogAuthorization struct {
-	Scope    string                `json:"scope"`
-	Action   string                `json:"action"`
-	Evidence AuthorizationEvidence `json:"evidence"`
-}
-
-type AuthorizationEvidence struct {
-	Role                string `json:"role"`
-	RoleAssignmentScope string `json:"roleAssignmentScope"`
-	RoleAssignmentID    string `json:"roleAssignmentId"`
-	RoleDefinitionID    string `json:"roleDefinitionId"`
-	PrincipalID         string `json:"principalId"`
-	PrincipalType       string `json:"principalType"`
-}
 
 func AddSource(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipelineGroup, logger *logrus.Logger) error {
 	eventHubConfig, err := configFromGeneric(cfg, pg)
@@ -93,7 +52,7 @@ func configFromGeneric(cfg config.GenericConfig, pg pipeline.IPipelineGroup) (*a
 
 func activityLogConsumer(pg pipeline.IPipelineGroup) azureeventhub.EventConsumer {
 	return func(eventData *azeventhubs.ReceivedEventData) error {
-		activityLogEventData := new(ActivityLogEventData)
+		activityLogEventData := new(azureactivitylogeventhubevents.ActivityLogEventData)
 		if err := json.Unmarshal(eventData.Body, activityLogEventData); err != nil {
 			return fmt.Errorf("failed to read activity log event data: %w", err)
 		}
@@ -108,7 +67,7 @@ func activityLogConsumer(pg pipeline.IPipelineGroup) azureeventhub.EventConsumer
 	}
 }
 
-func pipelineEventFromRecord(record *ActivityLogEventRecord) *entities.Event {
+func pipelineEventFromRecord(record *azureactivitylogeventhubevents.ActivityLogEventRecord) *entities.Event {
 	rawRecord, err := json.Marshal(record)
 	if err != nil {
 		return nil
@@ -127,7 +86,7 @@ func pipelineEventFromRecord(record *ActivityLogEventRecord) *entities.Event {
 	}
 }
 
-func eventOperationTypeFromRecord(record *ActivityLogEventRecord) entities.Operation {
+func eventOperationTypeFromRecord(record *azureactivitylogeventhubevents.ActivityLogEventRecord) entities.Operation {
 	if strings.HasSuffix(strings.ToLower(record.OperationName), "delete") ||
 		strings.HasSuffix(strings.ToLower(record.OperationName), "delete/action") {
 		return entities.Delete
@@ -136,7 +95,7 @@ func eventOperationTypeFromRecord(record *ActivityLogEventRecord) entities.Opera
 	return entities.Write
 }
 
-func eventTypeFromRecord(record *ActivityLogEventRecord) string {
+func eventTypeFromRecord(record *azureactivitylogeventhubevents.ActivityLogEventRecord) string {
 	eventType := fmt.Sprintf("%s:%s", strings.ToLower(record.OperationName), strings.ToLower(record.Category))
 	eventType = strings.ReplaceAll(eventType, "microsoft", "azure")
 	eventType = strings.ReplaceAll(eventType, ".", ":")
