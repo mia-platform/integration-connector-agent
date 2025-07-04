@@ -31,6 +31,7 @@ import (
 	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
 	azureactivitylogeventhub "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub"
 	gcppubsub "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub"
+	gcppubsubevents "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/events"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/github"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
 	console "github.com/mia-platform/integration-connector-agent/internal/sources/mia-platform-console"
@@ -96,7 +97,7 @@ func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Conf
 			pubsub, err := gcppubsub.New(&gcppubsub.ConsumerOptions{
 				Ctx: ctx,
 				Log: log,
-			}, source, pg, gcppubsub.NewInventoryEventBuilder())
+			}, source, pg, gcppubsubevents.NewInventoryEventBuilder())
 			if err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
 			}

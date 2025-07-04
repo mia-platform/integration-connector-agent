@@ -21,6 +21,9 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
+
+	cloudvendoraggregator "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator"
+	cloudvendoraggregatorConfig "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/config"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/hcgp"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/mapper"
@@ -33,9 +36,10 @@ var (
 )
 
 const (
-	Mapper = "mapper"
-	Filter = "filter"
-	RPC    = "rpc-plugin"
+	Mapper                = "mapper"
+	Filter                = "filter"
+	RPC                   = "rpc-plugin"
+	CloudVendorAggregator = "cloud-vendor-aggregator"
 )
 
 type Processors struct {
@@ -105,6 +109,20 @@ func New(logger *logrus.Logger, cfg config.Processors) (*Processors, error) {
 				return nil, err
 			}
 			p.processors = append(p.processors, h)
+		case CloudVendorAggregator:
+			config, err := config.GetConfig[cloudvendoraggregatorConfig.Config](processor)
+			if err != nil {
+				return nil, err
+			}
+			if err := config.Validate(); err != nil {
+				return nil, fmt.Errorf("invalid cloud vendor aggregator config: %w", err)
+			}
+			processor, err := cloudvendoraggregator.New(logger, config)
+			if err != nil {
+				return nil, fmt.Errorf("error creating cloud vendor aggregator processor: %w", err)
+			}
+			p.processors = append(p.processors, processor)
+
 		default:
 			return nil, ErrProcessorNotSupported
 		}
