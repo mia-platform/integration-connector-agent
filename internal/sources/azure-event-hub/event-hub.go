@@ -36,8 +36,6 @@ type EventConsumer func(event *azeventhubs.ReceivedEventData) error
 func SetupEventHub(ctx context.Context, config *Config, pg pipeline.IPipelineGroup, logger *logrus.Logger) error {
 	var credential azcore.TokenCredential
 	var store azeventhubs.CheckpointStore
-	var consumerClient *azeventhubs.ConsumerClient
-	var processor *azeventhubs.Processor
 	var err error
 
 	if credential, err = azureCredential(config); err != nil {
@@ -48,23 +46,28 @@ func SetupEventHub(ctx context.Context, config *Config, pg pipeline.IPipelineGro
 		return err
 	}
 
-	if consumerClient, err = azeventhubs.NewConsumerClient(config.EventHubNamespace, config.EventHubName, azeventhubs.DefaultConsumerGroup, credential, nil); err != nil {
-		return err
-	}
-	defer consumerClient.Close(ctx)
-
-	if processor, err = azeventhubs.NewProcessor(consumerClient, store, nil); err != nil {
-		return err
-	}
-
-	go dispatchPartitionClients(ctx, processor, config.EventConsumer, logger)
-
 	pg.Start(ctx)
-	go func(ctx context.Context, processor *azeventhubs.Processor) {
+	go func(ctx context.Context) {
+		var processor *azeventhubs.Processor
+		var consumerClient *azeventhubs.ConsumerClient
+		var err error
+
+		if consumerClient, err = azeventhubs.NewConsumerClient(config.EventHubNamespace, config.EventHubName, azeventhubs.DefaultConsumerGroup, credential, nil); err != nil {
+			logger.WithError(err).Error("azure event hub processor encountered an unrecoverable error")
+			return
+		}
+		defer consumerClient.Close(ctx)
+
+		if processor, err = azeventhubs.NewProcessor(consumerClient, store, nil); err != nil {
+			logger.WithError(err).Error("azure event hub processor encountered an unrecoverable error")
+			return
+		}
+
+		go dispatchPartitionClients(ctx, processor, config.EventConsumer, logger)
 		if err := processor.Run(ctx); err != nil {
 			logger.WithError(err).Error("azure event hub processor encountered an unrecoverable error")
 		}
-	}(ctx, processor)
+	}(ctx)
 
 	return nil
 }
