@@ -12,7 +12,14 @@ var (
 )
 
 type AuthOptions struct {
+	// GCP
 	CredenialsJson config.SecretSource `json:"credentialsJson,omitempty"`
+
+	// AWS
+	AccessKeyID     string              `json:"accessKeyId"`
+	SecretAccessKey config.SecretSource `json:"secretAccessKey"`
+	SessionToken    config.SecretSource `json:"sessionToken"`
+	Region          string              `json:"region"`
 }
 
 type Config struct {

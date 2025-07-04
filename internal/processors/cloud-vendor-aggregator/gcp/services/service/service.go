@@ -20,7 +20,7 @@ type GCPRunServiceDataAdapter struct {
 	client runservice.Client
 }
 
-func NewGCPRunServiceDataAdapter(ctx context.Context, client runservice.Client) commons.DataAdapter {
+func NewGCPRunServiceDataAdapter(ctx context.Context, client runservice.Client) commons.DataAdapter[*gcppubsubevents.InventoryEvent] {
 	return &GCPRunServiceDataAdapter{
 		client: client,
 	}

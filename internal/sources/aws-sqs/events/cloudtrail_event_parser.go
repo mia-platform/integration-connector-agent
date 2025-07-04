@@ -23,51 +23,53 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/arn"
 )
 
-type CloudTrailEvent struct {
-	Version    string `json:"version"`
-	ID         string `json:"id"`
-	DetailType string `json:"detail-type"` //nolint:tagliatelle
-	Source     string `json:"source"`
-	Account    string `json:"account"`
-	Time       string `json:"time"`
-	Region     string `json:"region"`
-	Detail     struct {
-		EventVersion string `json:"eventVersion"`
-		UserIdentity struct {
-			Type           string `json:"type"`
-			PrincipalID    string `json:"principalId"`
-			ARN            string `json:"arn"`
-			AccountID      string `json:"accountId"`
-			AccessKeyID    string `json:"accessKeyId"`
-			SessionContext struct {
-				Attributes    map[string]any `json:"attributes"`
-				SessionIssuer map[string]any `json:"sessionIssuer"`
-			}
+type CloudTrailEventDetail struct {
+	EventVersion string `json:"eventVersion"`
+	UserIdentity struct {
+		Type           string `json:"type"`
+		PrincipalID    string `json:"principalId"`
+		ARN            string `json:"arn"`
+		AccountID      string `json:"accountId"`
+		AccessKeyID    string `json:"accessKeyId"`
+		SessionContext struct {
+			Attributes    map[string]any `json:"attributes"`
+			SessionIssuer map[string]any `json:"sessionIssuer"`
 		}
-		EventTime          string         `json:"eventTime"`
-		EventSource        string         `json:"eventSource"`
-		EventName          string         `json:"eventName"`
-		AWSRegion          string         `json:"awsRegion"`
-		SourceIPAddress    string         `json:"sourceIPAddress"` //nolint:tagliatelle
-		UserAgent          string         `json:"userAgent"`
-		ErrorCode          string         `json:"errorCode"`
-		ErrorMessage       string         `json:"errorMessage"`
-		RequestParameters  map[string]any `json:"requestParameters"`
-		ResponseElements   map[string]any `json:"responseElements"`
-		RequestID          string         `json:"requestID"` //nolint:tagliatelle
-		EventID            string         `json:"eventID"`   //nolint:tagliatelle
-		ReadOnly           bool           `json:"readOnly"`
-		EventType          string         `json:"eventType"`
-		ManagementEvent    bool           `json:"managementEvent"`
-		RecipientAccountID string         `json:"recipientAccountId"`
-		EventCategory      string         `json:"eventCategory"`
-		TLSDetails         struct {
-			CipherSuite              string `json:"cipherSuite"`
-			TLSVersion               string `json:"tlsVersion"`
-			ClientProvidedHostHeader string `json:"clientProvidedHostHeader"`
-		} `json:"tlsDetails"`
-		SessionCredentialFromConsole string `json:"sessionCredentialFromConsole"`
-	} `json:"detail"`
+	}
+	EventTime          string         `json:"eventTime"`
+	EventSource        string         `json:"eventSource"`
+	EventName          string         `json:"eventName"`
+	AWSRegion          string         `json:"awsRegion"`
+	SourceIPAddress    string         `json:"sourceIPAddress"` //nolint:tagliatelle
+	UserAgent          string         `json:"userAgent"`
+	ErrorCode          string         `json:"errorCode"`
+	ErrorMessage       string         `json:"errorMessage"`
+	RequestParameters  map[string]any `json:"requestParameters"`
+	ResponseElements   map[string]any `json:"responseElements"`
+	RequestID          string         `json:"requestID"` //nolint:tagliatelle
+	EventID            string         `json:"eventID"`   //nolint:tagliatelle
+	ReadOnly           bool           `json:"readOnly"`
+	EventType          string         `json:"eventType"`
+	ManagementEvent    bool           `json:"managementEvent"`
+	RecipientAccountID string         `json:"recipientAccountId"`
+	EventCategory      string         `json:"eventCategory"`
+	TLSDetails         struct {
+		CipherSuite              string `json:"cipherSuite"`
+		TLSVersion               string `json:"tlsVersion"`
+		ClientProvidedHostHeader string `json:"clientProvidedHostHeader"`
+	} `json:"tlsDetails"`
+	SessionCredentialFromConsole string `json:"sessionCredentialFromConsole"`
+}
+
+type CloudTrailEvent struct {
+	Version    string                `json:"version"`
+	ID         string                `json:"id"`
+	DetailType string                `json:"detail-type"` //nolint:tagliatelle
+	Source     string                `json:"source"`
+	Account    string                `json:"account"`
+	Time       string                `json:"time"`
+	Region     string                `json:"region"`
+	Detail     CloudTrailEventDetail `json:"detail"`
 }
 
 var eventMap = map[string]struct {

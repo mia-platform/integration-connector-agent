@@ -62,7 +62,7 @@ func (c *GCPCloudVendorAggregator) Process(input entities.PipelineEvent) (entiti
 	return output, nil
 }
 
-func (c *GCPCloudVendorAggregator) EventDataProcessor(event *gcppubsubevents.InventoryEvent) (commons.DataAdapter, commons.Closable, error) {
+func (c *GCPCloudVendorAggregator) EventDataProcessor(event *gcppubsubevents.InventoryEvent) (commons.DataAdapter[*gcppubsubevents.InventoryEvent], commons.Closable, error) {
 	assetType := event.Asset.AssetType
 	switch assetType {
 	case storage.StorageAssetType:

@@ -17,7 +17,7 @@ type GCPStorageDataAdapter struct {
 	client storage.Client
 }
 
-func NewGCPRunServiceDataAdapter(ctx context.Context, client storage.Client) commons.DataAdapter {
+func NewGCPRunServiceDataAdapter(ctx context.Context, client storage.Client) commons.DataAdapter[*gcppubsubevents.InventoryEvent] {
 	return &GCPStorageDataAdapter{
 		client: client,
 	}
