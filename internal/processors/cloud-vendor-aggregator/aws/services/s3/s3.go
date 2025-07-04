@@ -5,18 +5,18 @@ import (
 	"encoding/json"
 	"fmt"
 
-	rpcprocessor "github.com/mia-platform/integration-connector-agent/adapters/rpc-processor"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/aws/clients/s3"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
+	"github.com/sirupsen/logrus"
 )
 
 type S3 struct {
-	logger rpcprocessor.Logger
+	logger *logrus.Logger
 	client s3.Client
 }
 
-func New(logger rpcprocessor.Logger, client s3.Client) *S3 {
+func New(logger *logrus.Logger, client s3.Client) *S3 {
 	return &S3{
 		logger: logger,
 		client: client,

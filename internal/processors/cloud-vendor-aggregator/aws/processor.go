@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	rpcprocessor "github.com/mia-platform/integration-connector-agent/adapters/rpc-processor"
 	"github.com/mia-platform/integration-connector-agent/entities"
 	lambdaclient "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/aws/clients/lambda"
 	s3client "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/aws/clients/s3"
@@ -19,7 +18,7 @@ import (
 
 type AWSProcessor struct {
 	ctx    context.Context
-	logger rpcprocessor.Logger
+	logger *logrus.Logger
 
 	config AWSProcessorConfig
 }

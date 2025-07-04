@@ -4,18 +4,18 @@ import (
 	"context"
 	"encoding/json"
 
-	rpcprocessor "github.com/mia-platform/integration-connector-agent/adapters/rpc-processor"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/aws/clients/lambda"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
+	"github.com/sirupsen/logrus"
 )
 
 type Lambda struct {
-	logger rpcprocessor.Logger
+	logger *logrus.Logger
 	client lambda.Client
 }
 
-func New(logger rpcprocessor.Logger, client lambda.Client) *Lambda {
+func New(logger *logrus.Logger, client lambda.Client) *Lambda {
 	return &Lambda{
 		logger: logger,
 		client: client,

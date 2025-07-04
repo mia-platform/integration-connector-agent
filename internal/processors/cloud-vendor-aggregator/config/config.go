@@ -20,6 +20,11 @@ type AuthOptions struct {
 	SecretAccessKey config.SecretSource `json:"secretAccessKey"`
 	SessionToken    config.SecretSource `json:"sessionToken"`
 	Region          string              `json:"region"`
+
+	// Azure
+	TenantID     string              `json:"tenantId"`
+	ClientID     config.SecretSource `json:"clientId"`
+	ClientSecret config.SecretSource `json:"clientSecret"`
 }
 
 type Config struct {

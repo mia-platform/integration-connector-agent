@@ -24,6 +24,7 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
+	azureactivitylogeventhubevents "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub/events"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2"
 	"github.com/stretchr/testify/assert"
@@ -199,7 +200,7 @@ func TestActivityLogConsumer(t *testing.T) {
 	t.Parallel()
 
 	rawEvent := func(stringEvent string) []byte {
-		record := new(ActivityLogEventRecord)
+		record := new(azureactivitylogeventhubevents.ActivityLogEventRecord)
 		err := json.Unmarshal([]byte(stringEvent), &record)
 		require.NoError(t, err)
 
