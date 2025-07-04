@@ -1,3 +1,18 @@
+// Copyright Mia srl
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package gcpaggregator
 
 import (
@@ -26,7 +41,7 @@ type GCPCloudVendorAggregator struct {
 func New(logger *logrus.Logger, authOptions config.AuthOptions) entities.Processor {
 	return &GCPCloudVendorAggregator{
 		logger:  logger,
-		options: gcpOptions.WithCredentialsJSON([]byte(authOptions.CredenialsJson.String())),
+		options: gcpOptions.WithCredentialsJSON([]byte(authOptions.CredenialsJSON.String())),
 	}
 }
 
@@ -70,13 +85,13 @@ func (c *GCPCloudVendorAggregator) EventDataProcessor(event *gcppubsubevents.Inv
 		if err != nil {
 			return nil, nil, err
 		}
-		return storage.NewGCPRunServiceDataAdapter(context.Background(), client), client, nil
+		return storage.NewGCPRunServiceDataAdapter(client), client, nil
 	case service.RunServiceAssetType:
 		client, err := runservice.NewClient(context.Background(), c.options)
 		if err != nil {
 			return nil, nil, err
 		}
-		return service.NewGCPRunServiceDataAdapter(context.Background(), client), client, nil
+		return service.NewGCPRunServiceDataAdapter(client), client, nil
 	default:
 		return nil, nil, fmt.Errorf("unsupported asset type: %s", assetType)
 	}

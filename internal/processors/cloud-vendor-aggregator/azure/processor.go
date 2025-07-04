@@ -1,3 +1,18 @@
+// Copyright Mia srl
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package azure
 
 import (
@@ -19,23 +34,23 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type AzureProcessor struct {
+type Processor struct {
 	logger      *logrus.Logger
 	credentials azcore.TokenCredential
 }
 
-func New(logger *logrus.Logger, authOptions config.AuthOptions) (*AzureProcessor, error) {
+func New(logger *logrus.Logger, authOptions config.AuthOptions) (*Processor, error) {
 	credentials, err := azureCredentialFromData(authOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Azure credentials: %w", err)
 	}
-	return &AzureProcessor{
+	return &Processor{
 		logger:      logger,
 		credentials: credentials,
 	}, nil
 }
 
-func (p *AzureProcessor) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
+func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
 	activityLogEvent := new(azureactivitylogeventhubevents.ActivityLogEventRecord)
 	if err := json.Unmarshal(input.Data(), &activityLogEvent); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
@@ -69,7 +84,7 @@ func (p *AzureProcessor) Process(input entities.PipelineEvent) (entities.Pipelin
 	return output, nil
 }
 
-func (p *AzureProcessor) EventDataProcessor(activityLogEvent *azureactivitylogeventhubevents.ActivityLogEventRecord) (commons.DataAdapter[*azureactivitylogeventhubevents.ActivityLogEventRecord], error) {
+func (p *Processor) EventDataProcessor(activityLogEvent *azureactivitylogeventhubevents.ActivityLogEventRecord) (commons.DataAdapter[*azureactivitylogeventhubevents.ActivityLogEventRecord], error) {
 	eventSource := strings.ToLower(activityLogEvent.ResourceID)
 	switch {
 	case strings.Contains(eventSource, storage.EventSource):
