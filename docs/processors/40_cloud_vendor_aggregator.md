@@ -72,9 +72,9 @@ on the source type you are using.
 
 | Field Name | Type | Description |
 |------------|:----:|-------------|
-| tenantId | *string*   | The Azure tenant ID. |
-| clientId | [*SecretSource*](../20_install.md#secretsource) | The Azure client ID, specified as a secret source. |
-| clientSecret | [*SecretSource*](../20_install.md#secretsource) | The Azure client secret, specified as a secret source. |
+| `tenantId` | *string*   | The Azure tenant ID. |
+| `clientId` | [*SecretSource*](../20_install.md#secretsource) | The Azure client ID, specified as a secret source. |
+| `clientSecret` | [*SecretSource*](../20_install.md#secretsource) | The Azure client secret, specified as a secret source. |
 
 ### Example
 
