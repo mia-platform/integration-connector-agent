@@ -21,10 +21,11 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources/v3"
+	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 )
 
 type Client interface {
-	GetByID(resourceID string) (armresources.ClientGetByIDResponse, error)
+	GetByID(resourceID string) (*Resource, error)
 }
 
 func New(credentials azcore.TokenCredential) Client {
@@ -37,11 +38,40 @@ type azureClient struct {
 	credentials azcore.TokenCredential
 }
 
-func (a *azureClient) GetByID(resourceID string) (armresources.ClientGetByIDResponse, error) {
+type Resource struct {
+	Name     string
+	Tags     commons.Tags
+	Type     string
+	Location string
+}
+
+func (a *azureClient) GetByID(resourceID string) (*Resource, error) {
 	genericClient, err := armresources.NewClient("", a.credentials, nil)
 	if err != nil {
-		return armresources.ClientGetByIDResponse{}, fmt.Errorf("failed to create Azure resources client: %w", err)
+		return nil, fmt.Errorf("failed to create Azure resources client: %w", err)
 	}
 
-	return genericClient.GetByID(context.Background(), resourceID, "2025-01-01", nil)
+	res, err := genericClient.GetByID(context.Background(), resourceID, "2025-01-01", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	tags := make(commons.Tags)
+	for key, value := range res.Tags {
+		tags[key] = str(value)
+	}
+
+	return &Resource{
+		Name:     str(res.Name),
+		Type:     str(res.Type),
+		Location: str(res.Location),
+		Tags:     tags,
+	}, nil
+}
+
+func str(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }
