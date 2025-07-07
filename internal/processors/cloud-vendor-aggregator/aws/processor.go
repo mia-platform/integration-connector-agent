@@ -56,6 +56,11 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 		return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
 	}
 
+	if input.Operation() == entities.Delete {
+		p.logger.Debug("Delete operation detected, skipping event processing")
+		return input.Clone(), nil
+	}
+
 	dataProcessor, err := p.EventDataProcessor(cloudTrailEvent)
 	if err != nil {
 		p.logger.WithError(err).Error("Failed to get event data processor")
