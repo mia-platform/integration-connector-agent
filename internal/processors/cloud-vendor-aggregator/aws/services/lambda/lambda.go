@@ -41,7 +41,7 @@ func (l *Lambda) GetData(ctx context.Context, event *awssqsevents.CloudTrailEven
 	// it cannot fail because the event is already validated from the main processor
 	data, _ := json.Marshal(event)
 
-	name := lambdaName(event)
+	name := l.lambdaName(event)
 	if name == "" {
 		l.logger.Error("functionName not found in request parameters or response elements")
 		return nil, commons.ErrInvalidEvent
@@ -70,7 +70,14 @@ func (l *Lambda) GetData(ctx context.Context, event *awssqsevents.CloudTrailEven
 	return json.Marshal(lambda)
 }
 
-func lambdaName(event *awssqsevents.CloudTrailEvent) string {
+func (l *Lambda) lambdaName(event *awssqsevents.CloudTrailEvent) string {
+	name, err := event.ResourceName()
+	if err == nil {
+		return name
+	}
+
+	l.logger.WithError(err).Debug("failed to get resource name from event, trying to extract functionName from request parameters or response elements")
+
 	if event.Detail.ResponseElements != nil {
 		if name, ok := event.Detail.ResponseElements["functionName"]; ok {
 			nameStr, ok := name.(string)

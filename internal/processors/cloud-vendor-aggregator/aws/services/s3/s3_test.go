@@ -39,6 +39,7 @@ func TestGetData(t *testing.T) {
 		{
 			name: "error if event is missing the bucketName in request parameters",
 			event: &awssqsevents.CloudTrailEvent{
+				Source: "aws.s3",
 				Detail: awssqsevents.CloudTrailEventDetail{
 					EventSource: "s3.amazonaws.com",
 					AWSRegion:   "us-west-2",
@@ -50,6 +51,7 @@ func TestGetData(t *testing.T) {
 			name: "returns tags retrieved from S3",
 			event: &awssqsevents.CloudTrailEvent{
 				Account: "123456789012",
+				Source:  "aws.s3",
 				Detail: awssqsevents.CloudTrailEventDetail{
 					EventSource: "s3.amazonaws.com",
 					AWSRegion:   "us-west-2",
@@ -80,6 +82,7 @@ func TestGetData(t *testing.T) {
 			name: "returns empty tags if S3 client fails",
 			event: &awssqsevents.CloudTrailEvent{
 				Account: "123456789012",
+				Source:  "aws.s3",
 				Detail: awssqsevents.CloudTrailEventDetail{
 					EventSource: "s3.amazonaws.com",
 					AWSRegion:   "us-west-2",

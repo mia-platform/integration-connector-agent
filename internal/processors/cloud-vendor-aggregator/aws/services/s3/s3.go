@@ -43,10 +43,10 @@ func (s *S3) GetData(ctx context.Context, event *awssqsevents.CloudTrailEvent) (
 	// it cannot fail because the event is already validated from the main processor
 	data, _ := json.Marshal(event)
 
-	bucketName, ok := event.Detail.RequestParameters["bucketName"].(string)
-	if !ok {
-		s.logger.Warn("bucketName not found in request parameters")
-		return nil, fmt.Errorf("%w: bucket name not found in request parameters", commons.ErrInvalidEvent)
+	bucketName, err := event.ResourceName()
+	if err != nil {
+		s.logger.WithError(err).Error("bucketName not found in request parameters")
+		return nil, fmt.Errorf("%w: %s", commons.ErrInvalidEvent, err.Error())
 	}
 
 	tags, err := s.client.GetTags(ctx, bucketName)
