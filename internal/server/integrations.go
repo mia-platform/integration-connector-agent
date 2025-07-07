@@ -24,6 +24,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"
+	crudservice "github.com/mia-platform/integration-connector-agent/internal/sinks/crud-service"
 	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
@@ -180,6 +181,16 @@ func setupSinks(ctx context.Context, writers config.Sinks) ([]sinks.Sink[entitie
 				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
 			}
 			w = append(w, mongoWriter)
+		case sinks.CRUDService:
+			config, err := config.GetConfig[*crudservice.Config](configuredWriter)
+			if err != nil {
+				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+			}
+			crudServiceWriter, err := crudservice.NewWriter[entities.PipelineEvent](ctx, config)
+			if err != nil {
+				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+			}
+			w = append(w, crudServiceWriter)
 		case sinks.Fake:
 			config, err := config.GetConfig[*fakewriter.Config](configuredWriter)
 			if err != nil {

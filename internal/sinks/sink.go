@@ -41,7 +41,8 @@ type Sink[Data DataWithIdentifier] interface {
 }
 
 const (
-	Mongo = "mongo"
+	Mongo       = "mongo"
+	CRUDService = "crud-service"
 
 	// Fake is a fake writer used for testing purposes
 	Fake = "fake"
