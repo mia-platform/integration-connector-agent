@@ -118,6 +118,33 @@ func TestGetData(t *testing.T) {
 			},
 		},
 		{
+			name: "returns function name from arn resource on tag events",
+			event: &awssqsevents.CloudTrailEvent{
+				Account: "123456789012",
+				Source:  "aws.lambda",
+				Detail: awssqsevents.CloudTrailEventDetail{
+					EventSource:      "lambda.amazonaws.com",
+					AWSRegion:        "us-west-2",
+					ResponseElements: nil,
+					EventName:        "TagResource20170331v2",
+					RequestParameters: map[string]interface{}{
+						"resource": "arn:aws:lambda:eu-north-1:accountid:function:test-function",
+						"tags": map[string]string{
+							"t1": "tv2",
+						},
+					},
+				},
+			},
+			expectedAsset: &commons.Asset{
+				Name:          "test-function",
+				Type:          "lambda.amazonaws.com",
+				Location:      "us-west-2",
+				Provider:      commons.AWSAssetProvider,
+				Relationships: []string{"account/123456789012"},
+				Tags:          commons.Tags{},
+			},
+		},
+		{
 			name: "returns tags from function if available",
 			event: &awssqsevents.CloudTrailEvent{
 				Account: "123456789012",
