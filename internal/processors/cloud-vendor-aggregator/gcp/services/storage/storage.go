@@ -47,15 +47,11 @@ func (g *GCPStorageDataAdapter) GetData(ctx context.Context, event *gcppubsubeve
 		return nil, err
 	}
 
-	asset := &commons.Asset{
-		Name:          bucket.Name,
-		Type:          event.Asset.AssetType,
-		Provider:      commons.GCPAssetProvider,
-		Location:      bucket.Location,
-		Tags:          bucket.Labels,
-		Relationships: event.Asset.Ancestors,
-		RawData:       data,
-	}
-
-	return json.Marshal(asset)
+	return json.Marshal(
+		commons.NewAsset(bucket.Name, StorageAssetType, commons.GCPAssetProvider).
+			WithLocation(bucket.Location).
+			WithTags(bucket.Labels).
+			WithRelationships(event.Asset.Ancestors).
+			WithRawData(data),
+	)
 }

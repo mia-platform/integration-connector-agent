@@ -67,17 +67,14 @@ func (g *GCPRunServiceDataAdapter) GetData(ctx context.Context, event *gcppubsub
 	}
 
 	name, location := nameAndLocationFromRunName(runServiceName)
-	asset := &commons.Asset{
-		Name:          name,
-		Type:          event.Asset.AssetType,
-		Provider:      commons.GCPAssetProvider,
-		Location:      location,
-		Tags:          service.Labels,
-		Relationships: event.Asset.Ancestors,
-		RawData:       data,
-	}
 
-	return json.Marshal(asset)
+	return json.Marshal(
+		commons.NewAsset(name, event.Asset.AssetType, commons.GCPAssetProvider).
+			WithLocation(location).
+			WithTags(service.Labels).
+			WithRelationships(event.Asset.Ancestors).
+			WithRawData(data),
+	)
 }
 
 func nameAndLocationFromRunName(runName string) (string, string) {

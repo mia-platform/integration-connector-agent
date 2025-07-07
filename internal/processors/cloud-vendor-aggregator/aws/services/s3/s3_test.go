@@ -129,6 +129,7 @@ func TestGetData(t *testing.T) {
 				require.Equal(t, tc.expectedAsset.Location, asset.Location)
 				require.Equal(t, tc.expectedAsset.Provider, asset.Provider)
 				require.Equal(t, tc.expectedAsset.Tags, asset.Tags)
+				require.NotEmpty(t, asset.Timestamp)
 			}
 		})
 	}

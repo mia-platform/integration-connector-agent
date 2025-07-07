@@ -57,17 +57,15 @@ func (l *Lambda) GetData(ctx context.Context, event *awssqsevents.CloudTrailEven
 		tags = functionDetails.Tags
 	}
 
-	lambda := &commons.Asset{
-		Name:          name,
-		Type:          event.Detail.EventSource,
-		Provider:      commons.AWSAssetProvider,
-		Location:      event.Detail.AWSRegion,
-		Tags:          tags,
-		Relationships: []string{"account/" + event.Account},
-		RawData:       data,
-	}
+	relationships := []string{"account/" + event.Account}
 
-	return json.Marshal(lambda)
+	return json.Marshal(
+		commons.NewAsset(name, event.Detail.EventSource, commons.AWSAssetProvider).
+			WithLocation(event.Detail.AWSRegion).
+			WithTags(tags).
+			WithRelationships(relationships).
+			WithRawData(data),
+	)
 }
 
 func (l *Lambda) lambdaName(event *awssqsevents.CloudTrailEvent) string {
