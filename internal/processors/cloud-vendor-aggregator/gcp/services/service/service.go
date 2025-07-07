@@ -45,20 +45,6 @@ func (g *GCPRunServiceDataAdapter) GetData(ctx context.Context, event *gcppubsub
 	// it cannot fail because the event is already validated from the main processor
 	data, _ := json.Marshal(event)
 
-	// client, err := run.NewServicesClient(ctx, options)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to create GCP run service client: %w", err)
-	// }
-	// defer client.Close()
-
-	// runServiceName := strings.TrimPrefix(event.Asset.Name, "//run.googleapis.com/")
-	// service, err := client.GetService(ctx, &runpb.GetServiceRequest{
-	// 	Name: runServiceName,
-	// })
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to get GCP run service: %w", err)
-	// }
-
 	runServiceName := strings.TrimPrefix(event.Asset.Name, "//run.googleapis.com/")
 
 	service, err := g.client.GetService(ctx, runServiceName)
