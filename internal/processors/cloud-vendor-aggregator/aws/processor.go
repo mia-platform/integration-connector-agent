@@ -33,7 +33,6 @@ import (
 )
 
 type Processor struct {
-	ctx    context.Context
 	logger *logrus.Logger
 
 	config processorConfig
@@ -63,7 +62,7 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 		return nil, fmt.Errorf("failed to get event data processor: %w", err)
 	}
 
-	newData, err := dataProcessor.GetData(p.ctx, cloudTrailEvent)
+	newData, err := dataProcessor.GetData(context.Background(), cloudTrailEvent)
 	if err != nil {
 		p.logger.WithError(err).Error("Failed to get data from AWS service")
 		return nil, fmt.Errorf("failed to get data from AWS service: %w", err)
@@ -75,7 +74,7 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 }
 
 func (p *Processor) EventDataProcessor(cloudTrailEvent *awssqsevents.CloudTrailEvent) (commons.DataAdapter[*awssqsevents.CloudTrailEvent], error) {
-	awsConf, err := p.config.AWSConfig(p.ctx, cloudTrailEvent.Detail.AWSRegion)
+	awsConf, err := p.config.AWSConfig(context.Background(), cloudTrailEvent.Detail.AWSRegion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
@@ -83,9 +82,9 @@ func (p *Processor) EventDataProcessor(cloudTrailEvent *awssqsevents.CloudTrailE
 	eventSource := cloudTrailEvent.Detail.EventSource
 	switch eventSource {
 	case s3.EventSource:
-		return s3.New(p.logger, s3client.NewS3Client(awsConf)), nil
+		return s3.New(p.logger, s3client.NewClient(awsConf)), nil
 	case lambda.EventSource:
-		return lambda.New(p.logger, lambdaclient.NewS3Client(awsConf)), nil
+		return lambda.New(p.logger, lambdaclient.NewClient(awsConf)), nil
 	default:
 		return nil, fmt.Errorf("unsupported event source: %s", eventSource)
 	}
