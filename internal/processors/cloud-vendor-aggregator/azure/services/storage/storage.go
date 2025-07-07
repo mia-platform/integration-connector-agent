@@ -53,17 +53,10 @@ func (a *AzureStorage) GetData(_ context.Context, event *azureactivitylogeventhu
 		return nil, fmt.Errorf("failed to get resource by ID: %w", err)
 	}
 
-	tags := make(commons.Tags)
-	for key, value := range resource.Tags {
-		if value != nil {
-			tags[key] = *value
-		}
-	}
-
 	return json.Marshal(
-		commons.NewAsset(*resource.Name, *resource.Type, commons.AzureAssetProvider).
-			WithLocation(*resource.Location).
-			WithTags(tags).
+		commons.NewAsset(resource.Name, resource.Type, commons.AzureAssetProvider).
+			WithLocation(resource.Location).
+			WithTags(resource.Tags).
 			WithRelationships(relationshipFromID(entity.(string))).
 			WithRawData(data),
 	)
