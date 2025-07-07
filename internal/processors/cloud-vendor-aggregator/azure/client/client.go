@@ -25,7 +25,7 @@ import (
 )
 
 type Client interface {
-	GetByID(resourceID string) (*Resource, error)
+	GetByID(resourceID, apiVersion string) (*Resource, error)
 }
 
 func New(credentials azcore.TokenCredential) Client {
@@ -45,13 +45,13 @@ type Resource struct {
 	Location string
 }
 
-func (a *azureClient) GetByID(resourceID string) (*Resource, error) {
+func (a *azureClient) GetByID(resourceID, apiVersion string) (*Resource, error) {
 	genericClient, err := armresources.NewClient("", a.credentials, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Azure resources client: %w", err)
 	}
 
-	res, err := genericClient.GetByID(context.Background(), resourceID, "2025-01-01", nil)
+	res, err := genericClient.GetByID(context.Background(), resourceID, apiVersion, nil)
 	if err != nil {
 		return nil, err
 	}

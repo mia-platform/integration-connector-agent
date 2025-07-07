@@ -48,7 +48,7 @@ func (a *AzureFunction) GetData(_ context.Context, event *azureactivitylogeventh
 		return nil, fmt.Errorf("entity not found in event properties")
 	}
 
-	resource, err := a.client.GetByID(entity.(string))
+	resource, err := a.client.GetByID(entity.(string), "2024-11-01")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get resource by ID: %w", err)
 	}
