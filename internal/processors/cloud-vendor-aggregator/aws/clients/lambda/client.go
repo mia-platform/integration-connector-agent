@@ -32,7 +32,7 @@ type client struct {
 	c *lambda.Client
 }
 
-func NewS3Client(awsConfig aws.Config) Client {
+func NewClient(awsConfig aws.Config) Client {
 	return &client{
 		c: lambda.NewFromConfig(awsConfig),
 	}

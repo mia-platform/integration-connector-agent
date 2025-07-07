@@ -83,9 +83,9 @@ func (p *Processor) EventDataProcessor(cloudTrailEvent *awssqsevents.CloudTrailE
 	eventSource := cloudTrailEvent.Detail.EventSource
 	switch eventSource {
 	case s3.EventSource:
-		return s3.New(p.logger, s3client.NewS3Client(awsConf)), nil
+		return s3.New(p.logger, s3client.NewClient(awsConf)), nil
 	case lambda.EventSource:
-		return lambda.New(p.logger, lambdaclient.NewS3Client(awsConf)), nil
+		return lambda.New(p.logger, lambdaclient.NewClient(awsConf)), nil
 	default:
 		return nil, fmt.Errorf("unsupported event source: %s", eventSource)
 	}
