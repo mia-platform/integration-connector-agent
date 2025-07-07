@@ -55,15 +55,14 @@ func (s *S3) GetData(ctx context.Context, event *awssqsevents.CloudTrailEvent) (
 		tags = make(commons.Tags)
 	}
 
-	bucket := &commons.Asset{
-		Name:          bucketName,
-		Type:          event.Detail.EventSource,
-		Location:      event.Detail.AWSRegion,
-		Tags:          tags,
-		Provider:      commons.AWSAssetProvider,
-		Relationships: []string{"account/" + event.Account},
-		RawData:       data,
-	}
+	relationships := []string{"account/" + event.Account}
 
-	return json.Marshal(bucket)
+	return json.Marshal(
+		commons.
+			NewAsset(bucketName, event.Detail.EventSource, commons.AWSAssetProvider).
+			WithLocation(event.Detail.AWSRegion).
+			WithTags(tags).
+			WithRelationships(relationships).
+			WithRawData(data),
+	)
 }

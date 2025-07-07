@@ -60,17 +60,13 @@ func (a *AzureStorage) GetData(_ context.Context, event *azureactivitylogeventhu
 		}
 	}
 
-	asset := &commons.Asset{
-		Name:          *resource.Name,
-		Type:          *resource.Type,
-		Provider:      commons.AzureAssetProvider,
-		Location:      *resource.Location,
-		Tags:          tags,
-		Relationships: relationshipFromID(entity.(string)),
-		RawData:       data,
-	}
-
-	return json.Marshal(asset)
+	return json.Marshal(
+		commons.NewAsset(*resource.Name, *resource.Type, commons.AzureAssetProvider).
+			WithLocation(*resource.Location).
+			WithTags(tags).
+			WithRelationships(relationshipFromID(entity.(string))).
+			WithRawData(data),
+	)
 }
 
 func relationshipFromID(id string) []string {
