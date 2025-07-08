@@ -33,7 +33,7 @@ To configure the CRUD Service sink, you need to provide the following parameters
 - `url` (*string*): The URL of the CRUD Service instance.
 - `insertOnly` (*boolean*, optional): If set to `true`, the sink will only insert data into the collection,
   and will not update or delete any existing data. Default is `false`.
-- `primaryKey` (*string*, optional): The primary key field to use for upserting and deleting data.
+- `primaryKeyFieldName` (*string*, optional): The primary key field to use for upserting and deleting data.
   Default is `_eventId`.
 
 :::caution
@@ -54,6 +54,6 @@ It is highly recommended to set an unique index on the primary key field in the 
   "type": "crud-service",
   "url": "https://crud-service/my-collection/",
   "insertOnly": false,
-  "primaryKey": "_eventId"
+  "primaryKeyFieldName": "_eventId"
 }
 ```

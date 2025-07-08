@@ -31,7 +31,7 @@ const DefaultPrimaryKey = "_eventId"
 type Config struct {
 	URL        string `json:"url"`
 	InsertOnly bool   `json:"insertOnly,omitempty"`
-	PrimaryKey string `json:"primaryKey,omitempty"`
+	PrimaryKey string `json:"primaryKeyFieldName,omitempty"` //nolint: tagliatelle
 }
 
 func (c *Config) Validate() error {
