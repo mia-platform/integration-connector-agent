@@ -55,6 +55,23 @@ func TestSetupWriters(t *testing.T) {
 				getFakeWriter(t),
 			},
 		},
+		"crud service writer": {
+			writers: config.Sinks{
+				config.GenericConfig{
+					Type: sinks.CRUDService,
+					Raw:  []byte(`{"url":"https://some-url.com"}`),
+				},
+			},
+		},
+		"crud service writer fail for invalid configuration": {
+			writers: config.Sinks{
+				config.GenericConfig{
+					Type: sinks.CRUDService,
+					Raw:  []byte(`{"url":""}`),
+				},
+			},
+			expectError: "error setting up writer: configuration not valid: URL not set in CRUD service sink configuration",
+		},
 	}
 
 	for name, tc := range testCases {
