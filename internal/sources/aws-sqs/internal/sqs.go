@@ -52,7 +52,7 @@ type Config struct {
 func New(ctx context.Context, log *logrus.Logger, c Config) (SQS, error) {
 	loadOptions := make([]func(*config.LoadOptions) error, 0)
 
-	if c.AccessKeyID != "" && c.SecretAccessKey != "" && c.SessionToken != "" {
+	if c.AccessKeyID != "" && c.SecretAccessKey != "" {
 		credentialOptions := config.WithCredentialsProvider(
 			credentials.NewStaticCredentialsProvider(
 				c.AccessKeyID,
@@ -62,7 +62,7 @@ func New(ctx context.Context, log *logrus.Logger, c Config) (SQS, error) {
 		)
 		loadOptions = append(loadOptions, credentialOptions)
 	} else {
-		log.Warn("AccessKeyID, SecretAccessKey, and SessionToken are not provided, using default credentials")
+		log.Warn("AccessKeyID and SecretAccessKey are not provided: using default credentials")
 	}
 
 	if c.Region != "" {

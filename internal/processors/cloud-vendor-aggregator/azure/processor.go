@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
@@ -63,8 +64,9 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 		return output, nil
 	}
 
-	if activityLogEvent.ResultType != "Success" {
-		p.logger.Debug("Event result type is not 'Success', filtering event")
+	successResultTypes := []string{"Success", "Succeeded"}
+	if !slices.Contains(successResultTypes, activityLogEvent.ResultType) {
+		p.logger.WithField("allowedResultTypes", successResultTypes).Debug("Event discarded for result tyope")
 		return nil, entities.ErrDiscardEvent
 	}
 
