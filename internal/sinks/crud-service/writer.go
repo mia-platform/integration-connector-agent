@@ -51,8 +51,7 @@ func (w *Writer[T]) WriteData(ctx context.Context, data T) error {
 		return w.client.Insert(ctx, data)
 	}
 
-	op := data.Operation()
-	switch op {
+	switch data.Operation() {
 	case entities.Delete:
 		return w.client.Delete(ctx, data)
 	case entities.Write:
