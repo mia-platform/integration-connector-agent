@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	EventSource = "microsoft.storage/storageaccounts/write"
+	EventSource = "microsoft.storage/storageaccounts"
 )
 
 type AzureStorage struct {

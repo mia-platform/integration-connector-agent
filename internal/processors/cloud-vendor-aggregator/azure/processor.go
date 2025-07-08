@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
-	"strings"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 	azurecommons "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/commons"
@@ -92,14 +91,13 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 }
 
 func (p *Processor) EventDataProcessor(activityLogEvent *azureactivitylogeventhubevents.ActivityLogEventRecord) (commons.DataAdapter[*azureactivitylogeventhubevents.ActivityLogEventRecord], error) {
-	eventSource := strings.ToLower(activityLogEvent.OperationName)
-	switch eventSource {
-	case storage.EventSource:
+	switch {
+	case azurecommons.EventIsForSource(activityLogEvent, storage.EventSource):
 		return storage.New(azurecommons.NewClient(p.credentials)), nil
-	case functions.EventSource:
+	case azurecommons.EventIsForSource(activityLogEvent, functions.EventSource):
 		return functions.New(azurecommons.NewClient(p.credentials)), nil
 	default:
-		return nil, fmt.Errorf("unsupported event source: %s", eventSource)
+		return nil, fmt.Errorf("unsupported event source: %s", activityLogEvent.OperationName)
 	}
 }
 

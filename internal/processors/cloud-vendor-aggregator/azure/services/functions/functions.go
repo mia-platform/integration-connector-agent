@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	EventSource = "microsoft.web/sites/write"
+	EventSource = "microsoft.web/sites"
 )
 
 type AzureFunction struct {
