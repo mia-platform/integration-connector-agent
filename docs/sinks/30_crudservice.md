@@ -1,6 +1,6 @@
 # CRUD Service Sink
 
-The CRUD Service sink allows you to write data to a [Mia-Platform CRUD Service](https://github.com/mia-platform/crud-service)
+The CRUD Service sink allows you to write data to a [Mia-Platform CRUD Service](https://docs.mia-platform.eu/docs/runtime_suite/crud-service/overview_and_usage)
 instance using its HTTP API.
 It supports upserting data using a specified primary key, or to insert only data without overwriting them.
 
