@@ -29,9 +29,9 @@ func TestWriteData(t *testing.T) {
 	t.Run("delete operation", func(t *testing.T) {
 		t.Run("successful delete", func(t *testing.T) {
 			filter := crud.Filter{
-				Fields: map[string]string{
-					"key1": "12345",
-					"key2": "98765",
+				MongoQuery: map[string]any{
+					"_pk.key1": "12345",
+					"_pk.key2": "98765",
 				},
 			}
 
@@ -58,9 +58,9 @@ func TestWriteData(t *testing.T) {
 
 		t.Run("delete failed with status code != 200", func(t *testing.T) {
 			filter := crud.Filter{
-				Fields: map[string]string{
-					"key1": "12345",
-					"key2": "98765",
+				MongoQuery: map[string]any{
+					"_pk.key1": "12345",
+					"_pk.key2": "98765",
 				},
 			}
 
@@ -89,13 +89,12 @@ func TestWriteData(t *testing.T) {
 	t.Run("write operation", func(t *testing.T) {
 		t.Run("successful upsert", func(t *testing.T) {
 			filter := crud.Filter{
-				Fields: map[string]string{
-					"key1": "12345",
-					"key2": "98765",
+				MongoQuery: map[string]any{
+					"_pk.key1": "12345",
+					"_pk.key2": "98765",
 				},
 			}
 
-			// TODO: assert body
 			gock.NewGockScope(t, "http://example.com/crud/", http.MethodPost, "upsert-one").
 				AddMatcher(gock.CrudQueryMatcher(t, gock.Filter(filter))).
 				Reply(200).JSON(map[string]any{})
@@ -120,13 +119,12 @@ func TestWriteData(t *testing.T) {
 
 		t.Run("upsert failed for status code != 200", func(t *testing.T) {
 			filter := crud.Filter{
-				Fields: map[string]string{
-					"key1": "12345",
-					"key2": "98765",
+				MongoQuery: map[string]any{
+					"_pk.key1": "12345",
+					"_pk.key2": "98765",
 				},
 			}
 
-			// TODO: assert body
 			gock.NewGockScope(t, "http://example.com/crud/", http.MethodPost, "upsert-one").
 				AddMatcher(gock.CrudQueryMatcher(t, gock.Filter(filter))).
 				Reply(500).JSON(map[string]any{"error": "Internal Server Error"})

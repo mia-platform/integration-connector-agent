@@ -30,10 +30,11 @@ import (
 func TestDelete(t *testing.T) {
 	t.Run("delete event with primary keys", func(t *testing.T) {
 		client := &client[entities.PipelineEvent]{
+			pkFieldPrefix: "pk",
 			c: &mock.CRUD[any]{
 				DeleteManyResult: 1,
 				DeleteManyAssertionFunc: func(_ context.Context, options crud.Options) {
-					require.Equal(t, map[string]string{"key1": "12345", "key2": "12345"}, options.Filter.Fields)
+					require.Equal(t, map[string]any{"pk.key1": "12345", "pk.key2": "12345"}, options.Filter.MongoQuery)
 				},
 			},
 		}
@@ -69,13 +70,16 @@ func TestDelete(t *testing.T) {
 func TestUpsert(t *testing.T) {
 	t.Run("successfully update event with primary keys", func(t *testing.T) {
 		client := &client[entities.PipelineEvent]{
+			pkFieldPrefix: "pk",
 			c: &mock.CRUD[any]{
 				UpsertOneAssertionFunc: func(_ context.Context, body crud.UpsertBody, options crud.Options) {
-					require.Equal(t, map[string]string{"key1": "12345", "key2": "98765"}, options.Filter.Fields)
+					require.Equal(t, map[string]any{"pk.key1": "12345", "pk.key2": "98765"}, options.Filter.MongoQuery)
 					require.Equal(t, map[string]any{
 						"data": "some data",
-						"key1": "12345",
-						"key2": "98765",
+						"pk": map[string]string{
+							"key1": "12345",
+							"key2": "98765",
+						},
 					}, body.Set)
 				},
 			},
@@ -114,13 +118,16 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("failure on client error", func(t *testing.T) {
 		client := &client[entities.PipelineEvent]{
+			pkFieldPrefix: "pk",
 			c: &mock.CRUD[any]{
 				UpsertOneAssertionFunc: func(_ context.Context, body crud.UpsertBody, options crud.Options) {
-					require.Equal(t, map[string]string{"key1": "12345", "key2": "98765"}, options.Filter.Fields)
+					require.Equal(t, map[string]any{"pk.key1": "12345", "pk.key2": "98765"}, options.Filter.MongoQuery)
 					require.Equal(t, map[string]any{
 						"data": "some data",
-						"key1": "12345",
-						"key2": "98765",
+						"pk": map[string]string{
+							"key1": "12345",
+							"key2": "98765",
+						},
 					}, body.Set)
 				},
 				UpsertOneError: errors.New("some error from crud"),
@@ -143,14 +150,17 @@ func TestInsert(t *testing.T) {
 	t.Run("successfully insert event with primary keys", func(t *testing.T) {
 		var invoked bool
 		client := &client[entities.PipelineEvent]{
+			pkFieldPrefix: "pk",
 			c: &mock.CRUD[any]{
 				CreateAssertionFunc: func(ctx context.Context, body any, options crud.Options) {
 					invoked = true
-					require.Empty(t, options.Filter.Fields)
+					require.Empty(t, options.Filter.MongoQuery)
 					require.Equal(t, map[string]any{
 						"data": "some data",
-						"key1": "12345",
-						"key2": "98765",
+						"pk": map[string]string{
+							"key1": "12345",
+							"key2": "98765",
+						},
 					}, body)
 				},
 			},
@@ -190,13 +200,16 @@ func TestInsert(t *testing.T) {
 
 	t.Run("failure on client error", func(t *testing.T) {
 		client := &client[entities.PipelineEvent]{
+			pkFieldPrefix: "pk",
 			c: &mock.CRUD[any]{
 				CreateAssertionFunc: func(ctx context.Context, body any, options crud.Options) {
-					require.Empty(t, options.Filter.Fields)
+					require.Empty(t, options.Filter.MongoQuery)
 					require.Equal(t, map[string]any{
 						"data": "some data",
-						"key1": "12345",
-						"key2": "98765",
+						"pk": map[string]string{
+							"key1": "12345",
+							"key2": "98765",
+						},
 					}, body)
 				},
 				CreateError: errors.New("some error from crud"),

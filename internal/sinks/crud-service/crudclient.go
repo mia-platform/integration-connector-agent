@@ -31,10 +31,11 @@ type crudclient[T entities.PipelineEvent] interface {
 }
 
 type client[T entities.PipelineEvent] struct {
-	c crud.CrudClient[any]
+	c             crud.CrudClient[any]
+	pkFieldPrefix string
 }
 
-func newCRUDClient[T entities.PipelineEvent](url string) (crudclient[T], error) {
+func newCRUDClient[T entities.PipelineEvent](url string, pkFieldPrefix string) (crudclient[T], error) {
 	c, err := crud.NewClient[any](crud.ClientOptions{
 		BaseURL: url,
 	})
@@ -42,7 +43,10 @@ func newCRUDClient[T entities.PipelineEvent](url string) (crudclient[T], error) 
 		return nil, err
 	}
 
-	return &client[T]{c: c}, nil
+	return &client[T]{
+		c:             c,
+		pkFieldPrefix: pkFieldPrefix,
+	}, nil
 }
 
 func (c *client[T]) Upsert(ctx context.Context, event T) error {
@@ -56,7 +60,8 @@ func (c *client[T]) Upsert(ctx context.Context, event T) error {
 		crud.UpsertBody{Set: m},
 		crud.Options{
 			Filter: crud.Filter{
-				Fields: event.GetPrimaryKeys().Map(),
+				// Fields: event.GetPrimaryKeys().Map(),
+				MongoQuery: c.prepareMongoQueryFilter(event),
 			},
 		},
 	)
@@ -66,7 +71,8 @@ func (c *client[T]) Upsert(ctx context.Context, event T) error {
 func (c *client[T]) Delete(ctx context.Context, event T) error {
 	_, err := c.c.DeleteMany(ctx, crud.Options{
 		Filter: crud.Filter{
-			Fields: event.GetPrimaryKeys().Map(),
+			// Fields: event.GetPrimaryKeys().Map(),
+			MongoQuery: c.prepareMongoQueryFilter(event),
 		},
 	})
 	return err
@@ -88,12 +94,23 @@ func (c *client[T]) prepareData(event T) (map[string]any, error) {
 		return nil, err
 	}
 
-	pks := event.GetPrimaryKeys().Map()
-	for k, v := range pks {
-		if _, ok := data[k]; !ok {
-			data[k] = v
-		}
-	}
-
+	data[c.pkFieldPrefix] = event.GetPrimaryKeys().Map()
 	return data, nil
+}
+
+func (c *client[T]) prepareMongoQueryFilter(event T) map[string]any {
+	pks := event.GetPrimaryKeys().Map()
+
+	filter := make(map[string]any, len(pks))
+	for k, v := range pks {
+		filter[c.pkKey(k)] = v
+	}
+	return filter
+}
+
+func (c *client[T]) pkKey(key string) string {
+	if c.pkFieldPrefix == "" {
+		return key
+	}
+	return c.pkFieldPrefix + "." + key
 }
