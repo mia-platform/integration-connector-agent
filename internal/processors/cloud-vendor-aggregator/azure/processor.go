@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/client"
+	azurecommons "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/commons"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/services/functions"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/services/storage"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
@@ -95,9 +95,9 @@ func (p *Processor) EventDataProcessor(activityLogEvent *azureactivitylogeventhu
 	eventSource := strings.ToLower(activityLogEvent.ResourceID)
 	switch {
 	case strings.Contains(eventSource, storage.EventSource):
-		return storage.New(client.New(p.credentials)), nil
+		return storage.New(azurecommons.NewClient(p.credentials)), nil
 	case strings.Contains(eventSource, functions.EventSource):
-		return functions.New(client.New(p.credentials)), nil
+		return functions.New(azurecommons.NewClient(p.credentials)), nil
 	default:
 		return nil, fmt.Errorf("unsupported event source: %s", eventSource)
 	}

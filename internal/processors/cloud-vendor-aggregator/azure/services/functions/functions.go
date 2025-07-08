@@ -19,22 +19,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"regexp"
 
-	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/client"
+	azurecommons "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/commons"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 	azureactivitylogeventhubevents "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub/events"
 )
 
 const (
-	EventSource = "microsoft.web/sites"
+	EventSource = "microsoft.web/sites/write"
 )
 
 type AzureFunction struct {
-	client client.Client
+	client azurecommons.Client
 }
 
-func New(getter client.Client) *AzureFunction {
+func New(getter azurecommons.Client) *AzureFunction {
 	return &AzureFunction{
 		client: getter,
 	}
@@ -43,9 +42,12 @@ func New(getter client.Client) *AzureFunction {
 func (a *AzureFunction) GetData(_ context.Context, event *azureactivitylogeventhubevents.ActivityLogEventRecord) ([]byte, error) {
 	// it cannot fail because the event is already validated from the main processor
 	data, _ := json.Marshal(event)
-	entity := event.ResourceID
+	entity, found := event.Properties["entity"]
+	if !found {
+		return nil, fmt.Errorf("entity not found in event properties")
+	}
 
-	resource, err := a.client.GetByID(entity, "2024-11-01")
+	resource, err := a.client.GetByID(entity.(string), "2024-11-01")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get resource by ID: %w", err)
 	}
@@ -54,27 +56,7 @@ func (a *AzureFunction) GetData(_ context.Context, event *azureactivitylogeventh
 		commons.NewAsset(resource.Name, resource.Type, commons.AzureAssetProvider).
 			WithLocation(resource.Location).
 			WithTags(resource.Tags).
-			WithRelationships(relationshipFromID(entity)).
+			WithRelationships(azurecommons.RelationshipFromID(entity.(string))).
 			WithRawData(data),
 	)
-}
-
-func relationshipFromID(id string) []string {
-	relationships := make([]string, 0)
-
-	regex := regexp.MustCompile(`^/subscriptions/(?P<subscriptionId>[^/]+)/resourceGroups/(?P<resourceGroupName>[^/]+)/`)
-	groupNames := regex.SubexpNames()
-	for _, match := range regex.FindAllStringSubmatch(id, -1) {
-		for groupIdx, group := range match {
-			name := groupNames[groupIdx]
-			switch name {
-			case "subscriptionId":
-				relationships = append(relationships, fmt.Sprintf("subscription/%s", group))
-			case "resourceGroupName":
-				relationships = append(relationships, fmt.Sprintf("resourceGroup/%s", group))
-			}
-		}
-	}
-
-	return relationships
 }
