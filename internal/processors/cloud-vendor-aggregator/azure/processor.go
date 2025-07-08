@@ -92,11 +92,11 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 }
 
 func (p *Processor) EventDataProcessor(activityLogEvent *azureactivitylogeventhubevents.ActivityLogEventRecord) (commons.DataAdapter[*azureactivitylogeventhubevents.ActivityLogEventRecord], error) {
-	eventSource := strings.ToLower(activityLogEvent.ResourceID)
-	switch {
-	case strings.Contains(eventSource, storage.EventSource):
+	eventSource := strings.ToLower(activityLogEvent.OperationName)
+	switch eventSource {
+	case storage.EventSource:
 		return storage.New(azurecommons.NewClient(p.credentials)), nil
-	case strings.Contains(eventSource, functions.EventSource):
+	case functions.EventSource:
 		return functions.New(azurecommons.NewClient(p.credentials)), nil
 	default:
 		return nil, fmt.Errorf("unsupported event source: %s", eventSource)
