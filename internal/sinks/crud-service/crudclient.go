@@ -60,7 +60,6 @@ func (c *client[T]) Upsert(ctx context.Context, event T) error {
 		crud.UpsertBody{Set: m},
 		crud.Options{
 			Filter: crud.Filter{
-				// Fields: event.GetPrimaryKeys().Map(),
 				MongoQuery: c.prepareMongoQueryFilter(event),
 			},
 		},
@@ -71,7 +70,6 @@ func (c *client[T]) Upsert(ctx context.Context, event T) error {
 func (c *client[T]) Delete(ctx context.Context, event T) error {
 	_, err := c.c.DeleteMany(ctx, crud.Options{
 		Filter: crud.Filter{
-			// Fields: event.GetPrimaryKeys().Map(),
 			MongoQuery: c.prepareMongoQueryFilter(event),
 		},
 	})
