@@ -152,7 +152,7 @@ func TestInsert(t *testing.T) {
 		client := &client[entities.PipelineEvent]{
 			pkFieldPrefix: "pk",
 			c: &mock.CRUD[any]{
-				CreateAssertionFunc: func(ctx context.Context, body any, options crud.Options) {
+				CreateAssertionFunc: func(_ context.Context, body any, options crud.Options) {
 					invoked = true
 					require.Empty(t, options.Filter.MongoQuery)
 					require.Equal(t, map[string]any{
@@ -202,7 +202,7 @@ func TestInsert(t *testing.T) {
 		client := &client[entities.PipelineEvent]{
 			pkFieldPrefix: "pk",
 			c: &mock.CRUD[any]{
-				CreateAssertionFunc: func(ctx context.Context, body any, options crud.Options) {
+				CreateAssertionFunc: func(_ context.Context, body any, options crud.Options) {
 					require.Empty(t, options.Filter.MongoQuery)
 					require.Equal(t, map[string]any{
 						"data": "some data",
