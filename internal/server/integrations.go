@@ -67,7 +67,7 @@ func (i Integration) Close() error {
 }
 
 // TODO: write an integration test to test this setup
-func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) ([]*Integration, error) { //nolint:gocyclo
+func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) ([]*Integration, error) {
 	integrations := make([]*Integration, 0)
 	for _, cfgIntegration := range cfg.Integrations {
 		log.WithFields(logrus.Fields{
