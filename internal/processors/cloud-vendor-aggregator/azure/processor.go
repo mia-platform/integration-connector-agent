@@ -66,7 +66,12 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 
 	successResultTypes := []string{"Success", "Succeeded"}
 	if !slices.Contains(successResultTypes, activityLogEvent.ResultType) {
-		p.logger.WithField("allowedResultTypes", successResultTypes).Debug("Event discarded for result tyope")
+		p.logger.
+			WithFields(logrus.Fields{
+				"allowedResultTypes": successResultTypes,
+				"resultType":         activityLogEvent.ResultType,
+			}).
+			Debug("Event discarded for result type")
 		return nil, entities.ErrDiscardEvent
 	}
 
