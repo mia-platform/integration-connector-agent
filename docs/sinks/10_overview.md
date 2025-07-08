@@ -7,3 +7,5 @@ The Integration Connector Agent supports multiple types of sinks, allowing for f
 The supported sinks are:
 
 - [**MongoDB**](20_mongodb.md): A NoSQL database that stores data in a flexible, JSON-like format.
+- [**CRUD Service**](30_crudservice.md): Useful to save events using
+  [Mia-Platform CRUD Service](https://github.com/mia-platform/crud-service) HTTP API.
