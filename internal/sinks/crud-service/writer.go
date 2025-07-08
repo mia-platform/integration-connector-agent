@@ -47,14 +47,15 @@ func NewWriter[T entities.PipelineEvent](config *Config) (sinks.Sink[T], error) 
 }
 
 func (w *Writer[T]) WriteData(ctx context.Context, data T) error {
+	if w.insertOnly {
+		return w.client.Insert(ctx, data)
+	}
+
 	op := data.Operation()
 	switch op {
 	case entities.Delete:
 		return w.client.Delete(ctx, data)
 	case entities.Write:
-		if w.insertOnly {
-			return w.client.Insert(ctx, data)
-		}
 		return w.client.Upsert(ctx, data)
 	default:
 		return ErrUnsupportedOperation

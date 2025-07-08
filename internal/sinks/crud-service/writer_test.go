@@ -19,9 +19,10 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/mia-platform/integration-connector-agent/entities"
+
 	"github.com/mia-platform/go-crud-service-client"
 	gock "github.com/mia-platform/go-crud-service-client/testhelper/gock"
-	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/stretchr/testify/require"
 )
 
@@ -83,6 +84,29 @@ func TestWriteData(t *testing.T) {
 				OperationType: entities.Delete,
 			})
 			require.Error(t, err)
+		})
+
+		t.Run("inserts event if insertOnly is set to true", func(t *testing.T) {
+			gock.NewGockScope(t, "http://example.com/crud/", http.MethodPost, "").
+				Reply(200).JSON(map[string]any{})
+
+			w, err := NewWriter[entities.PipelineEvent](
+				&Config{
+					URL:        "http://example.com/crud/",
+					InsertOnly: true,
+				},
+			)
+			require.NoError(t, err)
+
+			err = w.WriteData(t.Context(), &entities.Event{
+				PrimaryKeys: entities.PkFields{
+					{Key: "key1", Value: "12345"},
+					{Key: "key2", Value: "98765"},
+				},
+				OperationType: entities.Delete,
+				OriginalRaw:   []byte(`{"data": "some data"}`),
+			})
+			require.NoError(t, err)
 		})
 	})
 
