@@ -34,7 +34,7 @@ type Writer[T entities.PipelineEvent] struct {
 }
 
 func NewWriter[T entities.PipelineEvent](config *Config) (sinks.Sink[T], error) {
-	client, err := newCRUDClient[T](config.URL, "_pk")
+	client, err := newCRUDClient[T](config.URL, config.PrimaryKey)
 	if err != nil {
 		return nil, err
 	}

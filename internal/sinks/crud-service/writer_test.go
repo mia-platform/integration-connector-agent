@@ -42,7 +42,8 @@ func TestWriteData(t *testing.T) {
 
 			w, err := NewWriter[entities.PipelineEvent](
 				&Config{
-					URL: "http://example.com/crud",
+					URL:        "http://example.com/crud",
+					PrimaryKey: "_pk",
 				},
 			)
 			require.NoError(t, err)
@@ -71,7 +72,8 @@ func TestWriteData(t *testing.T) {
 
 			w, err := NewWriter[entities.PipelineEvent](
 				&Config{
-					URL: "http://example.com/crud",
+					URL:        "http://example.com/crud",
+					PrimaryKey: "_pk",
 				},
 			)
 			require.NoError(t, err)
@@ -93,6 +95,7 @@ func TestWriteData(t *testing.T) {
 			w, err := NewWriter[entities.PipelineEvent](
 				&Config{
 					URL:        "http://example.com/crud/",
+					PrimaryKey: "_pk",
 					InsertOnly: true,
 				},
 			)
@@ -125,7 +128,8 @@ func TestWriteData(t *testing.T) {
 
 			w, err := NewWriter[entities.PipelineEvent](
 				&Config{
-					URL: "http://example.com/crud/",
+					URL:        "http://example.com/crud/",
+					PrimaryKey: "_pk",
 				},
 			)
 			require.NoError(t, err)
@@ -155,7 +159,8 @@ func TestWriteData(t *testing.T) {
 
 			w, err := NewWriter[entities.PipelineEvent](
 				&Config{
-					URL: "http://example.com/crud/",
+					URL:        "http://example.com/crud/",
+					PrimaryKey: "_pk",
 				},
 			)
 			require.NoError(t, err)
@@ -178,6 +183,7 @@ func TestWriteData(t *testing.T) {
 			w, err := NewWriter[entities.PipelineEvent](
 				&Config{
 					URL:        "http://example.com/crud/",
+					PrimaryKey: "_pk",
 					InsertOnly: true,
 				},
 			)
@@ -201,6 +207,7 @@ func TestWriteData(t *testing.T) {
 			w, err := NewWriter[entities.PipelineEvent](
 				&Config{
 					URL:        "http://example.com/crud/",
+					PrimaryKey: "_pk",
 					InsertOnly: true,
 				},
 			)

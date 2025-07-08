@@ -26,6 +26,8 @@ var (
 	ErrInvalidURL = errors.New("invalid URL in CRUD service sink configuration")
 )
 
+const DefaultPrimaryKey = "_eventId"
+
 type Config struct {
 	URL        string `json:"url"`
 	InsertOnly bool   `json:"insertOnly,omitempty"`
@@ -42,7 +44,7 @@ func (c *Config) Validate() error {
 	}
 
 	if c.PrimaryKey == "" {
-		c.PrimaryKey = "_eventId"
+		c.PrimaryKey = DefaultPrimaryKey
 	}
 
 	return nil
