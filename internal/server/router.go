@@ -73,7 +73,7 @@ func NewApp(ctx context.Context, env config.EnvironmentVariables, log *logrus.Lo
 		return nil, err
 	}
 
-	go func(integrations []Integration) {
+	go func(integrations []*Integration) {
 		ch := ctx.Done()
 		<-ch
 
