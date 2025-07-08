@@ -29,10 +29,10 @@ var (
 
 type Writer[T entities.PipelineEvent] struct {
 	url    string
-	client *client[T]
+	client crudclient[T]
 }
 
-func NewWriter[T entities.PipelineEvent](ctx context.Context, config *Config) (sinks.Sink[T], error) {
+func NewWriter[T entities.PipelineEvent](config *Config) (sinks.Sink[T], error) {
 	client, err := newCRUDClient[T](config.URL)
 	if err != nil {
 		return nil, err

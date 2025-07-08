@@ -40,7 +40,6 @@ func TestWriteData(t *testing.T) {
 				Reply(200).BodyString("1")
 
 			w, err := NewWriter[entities.PipelineEvent](
-				t.Context(),
 				&Config{
 					URL: "http://example.com/crud",
 				},
@@ -70,7 +69,6 @@ func TestWriteData(t *testing.T) {
 				Reply(500).JSON(map[string]any{"error": "Internal Server Error"})
 
 			w, err := NewWriter[entities.PipelineEvent](
-				t.Context(),
 				&Config{
 					URL: "http://example.com/crud",
 				},
@@ -103,7 +101,6 @@ func TestWriteData(t *testing.T) {
 				Reply(200).JSON(map[string]any{})
 
 			w, err := NewWriter[entities.PipelineEvent](
-				t.Context(),
 				&Config{
 					URL: "http://example.com/crud/",
 				},
@@ -135,7 +132,6 @@ func TestWriteData(t *testing.T) {
 				Reply(500).JSON(map[string]any{"error": "Internal Server Error"})
 
 			w, err := NewWriter[entities.PipelineEvent](
-				t.Context(),
 				&Config{
 					URL: "http://example.com/crud/",
 				},

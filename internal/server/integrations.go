@@ -186,7 +186,7 @@ func setupSinks(ctx context.Context, writers config.Sinks) ([]sinks.Sink[entitie
 			if err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
 			}
-			crudServiceWriter, err := crudservice.NewWriter[entities.PipelineEvent](ctx, config)
+			crudServiceWriter, err := crudservice.NewWriter[entities.PipelineEvent](config)
 			if err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
 			}

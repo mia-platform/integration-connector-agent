@@ -95,7 +95,7 @@ func TestUpsert(t *testing.T) {
 	t.Run("failure on json serialization error", func(t *testing.T) {
 		client := &client[entities.PipelineEvent]{
 			c: &mock.CRUD[any]{
-				UpsertOneAssertionFunc: func(_ context.Context, body crud.UpsertBody, options crud.Options) {
+				UpsertOneAssertionFunc: func(_ context.Context, _ crud.UpsertBody, _ crud.Options) {
 					t.Fatalf("should not reach this point, expected json serialization error")
 				},
 			},

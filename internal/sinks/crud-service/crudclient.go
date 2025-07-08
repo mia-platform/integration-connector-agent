@@ -24,7 +24,7 @@ import (
 	"github.com/mia-platform/go-crud-service-client"
 )
 
-type iClient[T entities.PipelineEvent] interface {
+type crudclient[T entities.PipelineEvent] interface {
 	Upsert(ctx context.Context, event T) error
 	Delete(ctx context.Context, event T) error
 }
@@ -33,7 +33,7 @@ type client[T entities.PipelineEvent] struct {
 	c crud.CrudClient[any]
 }
 
-func newCRUDClient[T entities.PipelineEvent](url string) (*client[T], error) {
+func newCRUDClient[T entities.PipelineEvent](url string) (crudclient[T], error) {
 	c, err := crud.NewClient[any](crud.ClientOptions{
 		BaseURL: url,
 	})
