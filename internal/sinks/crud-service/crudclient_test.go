@@ -138,3 +138,79 @@ func TestUpsert(t *testing.T) {
 		require.ErrorContains(t, err, "some error from crud")
 	})
 }
+
+func TestInsert(t *testing.T) {
+	t.Run("successfully insert event with primary keys", func(t *testing.T) {
+		var invoked bool
+		client := &client[entities.PipelineEvent]{
+			c: &mock.CRUD[any]{
+				CreateAssertionFunc: func(ctx context.Context, body any, options crud.Options) {
+					invoked = true
+					require.Empty(t, options.Filter.Fields)
+					require.Equal(t, map[string]any{
+						"data": "some data",
+						"key1": "12345",
+						"key2": "98765",
+					}, body)
+				},
+			},
+		}
+
+		event := &entities.Event{
+			PrimaryKeys: entities.PkFields{
+				{Key: "key1", Value: "12345"},
+				{Key: "key2", Value: "98765"},
+			},
+			OriginalRaw: []byte(`{"data": "some data"}`),
+		}
+		err := client.Insert(context.Background(), event)
+		require.NoError(t, err)
+		require.True(t, invoked, "Create should have been called")
+	})
+
+	t.Run("failure on json serialization error", func(t *testing.T) {
+		client := &client[entities.PipelineEvent]{
+			c: &mock.CRUD[any]{
+				CreateAssertionFunc: func(_ context.Context, _ any, _ crud.Options) {
+					t.Fatalf("should not reach this point, expected json serialization error")
+				},
+			},
+		}
+
+		event := &entities.Event{
+			PrimaryKeys: entities.PkFields{
+				{Key: "key1", Value: "12345"},
+				{Key: "key2", Value: "98765"},
+			},
+			OriginalRaw: []byte(`This ain't valid JSON`),
+		}
+		err := client.Insert(context.Background(), event)
+		require.ErrorContains(t, err, "invalid character")
+	})
+
+	t.Run("failure on client error", func(t *testing.T) {
+		client := &client[entities.PipelineEvent]{
+			c: &mock.CRUD[any]{
+				CreateAssertionFunc: func(ctx context.Context, body any, options crud.Options) {
+					require.Empty(t, options.Filter.Fields)
+					require.Equal(t, map[string]any{
+						"data": "some data",
+						"key1": "12345",
+						"key2": "98765",
+					}, body)
+				},
+				CreateError: errors.New("some error from crud"),
+			},
+		}
+
+		event := &entities.Event{
+			PrimaryKeys: entities.PkFields{
+				{Key: "key1", Value: "12345"},
+				{Key: "key2", Value: "98765"},
+			},
+			OriginalRaw: []byte(`{"data": "some data"}`),
+		}
+		err := client.Insert(context.Background(), event)
+		require.ErrorContains(t, err, "some error from crud")
+	})
+}

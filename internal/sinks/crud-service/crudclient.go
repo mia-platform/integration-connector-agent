@@ -27,6 +27,7 @@ import (
 type crudclient[T entities.PipelineEvent] interface {
 	Upsert(ctx context.Context, event T) error
 	Delete(ctx context.Context, event T) error
+	Insert(ctx context.Context, event T) error
 }
 
 type client[T entities.PipelineEvent] struct {
@@ -45,26 +46,23 @@ func newCRUDClient[T entities.PipelineEvent](url string) (crudclient[T], error) 
 }
 
 func (c *client[T]) Upsert(ctx context.Context, event T) error {
-	m := map[string]any{}
-	if err := json.Unmarshal(event.Data(), &m); err != nil {
+	m, err := c.prepareData(event)
+	if err != nil {
 		return err
 	}
 
-	pks := event.GetPrimaryKeys().Map()
-	for k, v := range pks {
-		if _, ok := m[k]; !ok {
-			m[k] = v
-		}
-	}
-
-	upsert := crud.UpsertBody{Set: m}
-	_, err := c.c.UpsertOne(ctx, upsert, crud.Options{
-		Filter: crud.Filter{
-			Fields: pks,
+	_, err = c.c.UpsertOne(
+		ctx,
+		crud.UpsertBody{Set: m},
+		crud.Options{
+			Filter: crud.Filter{
+				Fields: event.GetPrimaryKeys().Map(),
+			},
 		},
-	})
+	)
 	return err
 }
+
 func (c *client[T]) Delete(ctx context.Context, event T) error {
 	_, err := c.c.DeleteMany(ctx, crud.Options{
 		Filter: crud.Filter{
@@ -72,4 +70,30 @@ func (c *client[T]) Delete(ctx context.Context, event T) error {
 		},
 	})
 	return err
+}
+
+func (c *client[T]) Insert(ctx context.Context, event T) error {
+	data, err := c.prepareData(event)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.c.Create(ctx, data, crud.Options{})
+	return err
+}
+
+func (c *client[T]) prepareData(event T) (map[string]any, error) {
+	data := map[string]any{}
+	if err := json.Unmarshal(event.Data(), &data); err != nil {
+		return nil, err
+	}
+
+	pks := event.GetPrimaryKeys().Map()
+	for k, v := range pks {
+		if _, ok := data[k]; !ok {
+			data[k] = v
+		}
+	}
+
+	return data, nil
 }

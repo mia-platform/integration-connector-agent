@@ -160,6 +160,25 @@
                           "url",
                           "collection"
                         ]
+                      },
+                       {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "crud-service"
+                          },
+                          "url": {
+                            "type": "string"
+                          },
+                          "insertOnly": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "url"
+                        ]
                       }
                     ]
                   }

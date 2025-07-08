@@ -15,19 +15,30 @@
 
 package crudservice
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"net/url"
+)
 
 var (
-	ErrURLNotSet = errors.New("URL not set in CRUD service sink configuration")
+	ErrURLNotSet  = errors.New("URL not set in CRUD service sink configuration")
+	ErrInvalidURL = errors.New("invalid URL in CRUD service sink configuration")
 )
 
 type Config struct {
-	URL string `json:"url"`
+	URL        string `json:"url"`
+	InsertOnly bool   `json:"insertOnly,omitempty"`
 }
 
 func (c *Config) Validate() error {
 	if c.URL == "" {
 		return ErrURLNotSet
 	}
+
+	if _, err := url.Parse(c.URL); err != nil {
+		return fmt.Errorf("%w: %s", ErrInvalidURL, err)
+	}
+
 	return nil
 }

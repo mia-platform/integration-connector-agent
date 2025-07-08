@@ -28,8 +28,9 @@ var (
 )
 
 type Writer[T entities.PipelineEvent] struct {
-	url    string
-	client crudclient[T]
+	url        string
+	insertOnly bool
+	client     crudclient[T]
 }
 
 func NewWriter[T entities.PipelineEvent](config *Config) (sinks.Sink[T], error) {
@@ -39,8 +40,9 @@ func NewWriter[T entities.PipelineEvent](config *Config) (sinks.Sink[T], error) 
 	}
 
 	return &Writer[T]{
-		url:    config.URL,
-		client: client,
+		url:        config.URL,
+		insertOnly: config.InsertOnly,
+		client:     client,
 	}, nil
 }
 
@@ -48,16 +50,13 @@ func (w *Writer[T]) WriteData(ctx context.Context, data T) error {
 	op := data.Operation()
 	switch op {
 	case entities.Delete:
-		if err := w.client.Delete(ctx, data); err != nil {
-			return err
-		}
+		return w.client.Delete(ctx, data)
 	case entities.Write:
-		if err := w.client.Upsert(ctx, data); err != nil {
-			return err
+		if w.insertOnly {
+			return w.client.Insert(ctx, data)
 		}
+		return w.client.Upsert(ctx, data)
 	default:
 		return ErrUnsupportedOperation
 	}
-
-	return nil
 }

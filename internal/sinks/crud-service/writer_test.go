@@ -86,7 +86,7 @@ func TestWriteData(t *testing.T) {
 		})
 	})
 
-	t.Run("upsert operation", func(t *testing.T) {
+	t.Run("write operation", func(t *testing.T) {
 		t.Run("successful upsert", func(t *testing.T) {
 			filter := crud.Filter{
 				Fields: map[string]string{
@@ -134,6 +134,52 @@ func TestWriteData(t *testing.T) {
 			w, err := NewWriter[entities.PipelineEvent](
 				&Config{
 					URL: "http://example.com/crud/",
+				},
+			)
+			require.NoError(t, err)
+
+			err = w.WriteData(t.Context(), &entities.Event{
+				PrimaryKeys: entities.PkFields{
+					{Key: "key1", Value: "12345"},
+					{Key: "key2", Value: "98765"},
+				},
+				OperationType: entities.Write,
+				OriginalRaw:   []byte(`{"data": "some data"}`),
+			})
+			require.Error(t, err)
+		})
+
+		t.Run("successful insert with insertOnly set to true", func(t *testing.T) {
+			gock.NewGockScope(t, "http://example.com/crud/", http.MethodPost, "").
+				Reply(200).JSON(map[string]any{})
+
+			w, err := NewWriter[entities.PipelineEvent](
+				&Config{
+					URL:        "http://example.com/crud/",
+					InsertOnly: true,
+				},
+			)
+			require.NoError(t, err)
+
+			err = w.WriteData(t.Context(), &entities.Event{
+				PrimaryKeys: entities.PkFields{
+					{Key: "key1", Value: "12345"},
+					{Key: "key2", Value: "98765"},
+				},
+				OperationType: entities.Write,
+				OriginalRaw:   []byte(`{"data": "some data"}`),
+			})
+			require.NoError(t, err)
+		})
+
+		t.Run("failure insert with insertOnly set to true for status code != 200", func(t *testing.T) {
+			gock.NewGockScope(t, "http://example.com/crud/", http.MethodPost, "").
+				Reply(500).JSON(map[string]any{"error": "Internal Server Error"})
+
+			w, err := NewWriter[entities.PipelineEvent](
+				&Config{
+					URL:        "http://example.com/crud/",
+					InsertOnly: true,
 				},
 			)
 			require.NoError(t, err)
