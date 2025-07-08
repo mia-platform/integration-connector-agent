@@ -67,8 +67,8 @@ func (i Integration) Close() error {
 }
 
 // TODO: write an integration test to test this setup
-func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) ([]Integration, error) { //nolint:gocyclo
-	integrations := make([]Integration, 0)
+func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Configuration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) ([]*Integration, error) { //nolint:gocyclo
+	integrations := make([]*Integration, 0)
 	for _, cfgIntegration := range cfg.Integrations {
 		log.WithFields(logrus.Fields{
 			"sourceType":   cfgIntegration.Source.Type,
@@ -81,52 +81,17 @@ func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Conf
 		}
 
 		pg := pipeline.NewGroup(log, pipelines...)
-		integration := Integration{
-			PipelineGroup: pg,
-		}
-		source := cfgIntegration.Source
-		switch source.Type {
-		case sources.Jira:
-			if err := jira.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
-				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
-			}
-		case sources.Console:
-			if err := console.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
-				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
-			}
-		case sources.GCPInventoryPubSub:
-			pubsub, err := gcppubsub.New(&gcppubsub.ConsumerOptions{
-				Ctx: ctx,
-				Log: log,
-			}, source, pg, gcppubsubevents.NewInventoryEventBuilder())
-			if err != nil {
-				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
-			}
 
-			integration.appendCloseableSource(pubsub)
-		case sources.AWSCloudTrailSQS:
-			awsConsumer, err := awssqs.New(&awssqs.ConsumerOptions{
-				Ctx: ctx,
-				Log: log,
-			}, source, pg, awssqsevents.NewCloudTrailEventBuilder())
-			if err != nil {
-				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
-			}
-			integration.appendCloseableSource(awsConsumer)
-		case sources.Github:
-			if err := github.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
-				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
-			}
-		case sources.AzureActivityLogEventHub:
-			if err := azureactivitylogeventhub.AddSource(ctx, source, pg, log); err != nil {
-				return nil, fmt.Errorf("%w: %s", errSetupSource, err)
-			}
-		case "test":
-			// skip this source as it is only used for test
+		// skip this source as it is only used for test
+		if cfgIntegration.Source.Type == "test" {
 			continue
-		default:
-			return nil, fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)
 		}
+
+		integration, err := runIntegration(ctx, log, pg, cfgIntegration, oasRouter)
+		if err != nil {
+			return nil, err
+		}
+
 		integrations = append(integrations, integration)
 	}
 
@@ -203,4 +168,52 @@ func setupSinks(ctx context.Context, writers config.Sinks) ([]sinks.Sink[entitie
 	}
 
 	return w, nil
+}
+
+func runIntegration(ctx context.Context, log *logrus.Logger, pg pipeline.IPipelineGroup, cfgIntegration config.Integration, oasRouter *swagger.Router[fiber.Handler, fiber.Router]) (*Integration, error) {
+	integration := &Integration{
+		PipelineGroup: pg,
+	}
+	source := cfgIntegration.Source
+	switch source.Type {
+	case sources.Jira:
+		if err := jira.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
+			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+		}
+	case sources.Console:
+		if err := console.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
+			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+		}
+	case sources.GCPInventoryPubSub:
+		pubsub, err := gcppubsub.New(&gcppubsub.ConsumerOptions{
+			Ctx: ctx,
+			Log: log,
+		}, source, pg, gcppubsubevents.NewInventoryEventBuilder())
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+		}
+
+		integration.appendCloseableSource(pubsub)
+	case sources.AWSCloudTrailSQS:
+		awsConsumer, err := awssqs.New(&awssqs.ConsumerOptions{
+			Ctx: ctx,
+			Log: log,
+		}, source, pg, awssqsevents.NewCloudTrailEventBuilder())
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+		}
+		integration.appendCloseableSource(awsConsumer)
+	case sources.AzureActivityLogEventHub:
+		if err := azureactivitylogeventhub.AddSource(ctx, source, pg, log); err != nil {
+			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+		}
+	case sources.Github:
+		if err := github.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
+			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+		}
+	default:
+		return nil, fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)
+	}
+
+	return integration, nil
 }
