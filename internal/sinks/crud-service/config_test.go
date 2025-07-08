@@ -54,4 +54,11 @@ func TestConfigValidate(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("injects default primary key", func(t *testing.T) {
+		config := &Config{URL: "http://example.com"}
+		err := config.Validate()
+		require.NoError(t, err)
+		require.Equal(t, "_eventId", config.PrimaryKey)
+	})
 }

@@ -29,6 +29,7 @@ var (
 type Config struct {
 	URL        string `json:"url"`
 	InsertOnly bool   `json:"insertOnly,omitempty"`
+	PrimaryKey string `json:"primaryKey,omitempty"`
 }
 
 func (c *Config) Validate() error {
@@ -38,6 +39,10 @@ func (c *Config) Validate() error {
 
 	if _, err := url.Parse(c.URL); err != nil {
 		return fmt.Errorf("%w: %s", ErrInvalidURL, err)
+	}
+
+	if c.PrimaryKey == "" {
+		c.PrimaryKey = "_eventId"
 	}
 
 	return nil
