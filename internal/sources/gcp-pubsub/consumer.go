@@ -26,7 +26,6 @@ import (
 )
 
 type pubsubConsumer struct {
-	config   *pubSubConfig
 	pipeline pipeline.IPipelineGroup
 	log      *logrus.Logger
 	client   internal.PubSub
@@ -42,28 +41,13 @@ type pubSubConfig struct {
 	CredentialsJSON    string
 }
 
-func newPubSub(cfg *pubSubConfig, pipeline pipeline.IPipelineGroup, eventBuilder entities.EventBuilder) (*pubsubConsumer, error) {
-	client, err := internal.New(
-		cfg.ctx,
-		cfg.log,
-		internal.PubSubConfig{
-			ProjectID:          cfg.ProjectID,
-			TopicName:          cfg.TopicName,
-			SubscriptionID:     cfg.SubscriptionID,
-			AckDeadlineSeconds: cfg.AckDeadlineSeconds,
-			CredentialsJSON:    cfg.CredentialsJSON,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return newPubSubWithClient(pipeline, eventBuilder, cfg, client)
-}
-
-func newPubSubWithClient(pipeline pipeline.IPipelineGroup, eventBuilder entities.EventBuilder, config *pubSubConfig, client internal.PubSub) (*pubsubConsumer, error) {
-	pipeline.Start(config.ctx)
-
+func newPubSub(
+	ctx context.Context,
+	log *logrus.Logger,
+	pipeline pipeline.IPipelineGroup,
+	eventBuilder entities.EventBuilder,
+	client internal.PubSub,
+) (*pubsubConsumer, error) {
 	go func(ctx context.Context, log *logrus.Logger, client internal.PubSub) {
 		err := client.Listen(ctx, func(ctx context.Context, data []byte) error {
 			event, err := eventBuilder.GetPipelineEvent(ctx, data)
@@ -79,11 +63,10 @@ func newPubSubWithClient(pipeline pipeline.IPipelineGroup, eventBuilder entities
 		}
 
 		client.Close()
-	}(config.ctx, config.log, client)
+	}(ctx, log, client)
 
 	return &pubsubConsumer{
-		log:      config.log,
-		config:   config,
+		log:      log,
 		client:   client,
 		pipeline: pipeline,
 	}, nil

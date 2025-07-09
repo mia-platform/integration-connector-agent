@@ -38,8 +38,11 @@ func (c *InventorySourceConfig) Validate() error {
 }
 
 type InventorySource struct {
-	pubsub internal.PubSub
+	ctx    context.Context
+	log    *logrus.Logger
 	config *InventorySourceConfig
+
+	pubsub sources.CloseableSource
 }
 
 func NewInventorySource(
@@ -49,35 +52,55 @@ func NewInventorySource(
 	pipeline pipeline.IPipelineGroup,
 	oasRouter *swagger.Router[fiber.Handler, fiber.Router],
 ) (sources.CloseableSource, error) {
-	eventBuilder := gcppubsubevents.NewInventoryEventBuilder()
-
 	config, err := config.GetConfig[*InventorySourceConfig](cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	pubsub, err := newPubSub(&pubSubConfig{
-		ctx:                ctx,
-		log:                log,
-		ProjectID:          config.ProjectID,
-		TopicName:          config.TopicName,
-		SubscriptionID:     config.SubscriptionID,
-		AckDeadlineSeconds: config.AckDeadlineSeconds,
-		CredentialsJSON:    config.CredentialsJSON.String(),
-	}, pipeline, eventBuilder)
+	pipeline.Start(ctx)
+
+	eventBuilder := gcppubsubevents.NewInventoryEventBuilder()
+
+	client, err := internal.New(
+		ctx,
+		log,
+		internal.PubSubConfig{
+			ProjectID:          config.ProjectID,
+			TopicName:          config.TopicName,
+			SubscriptionID:     config.SubscriptionID,
+			AckDeadlineSeconds: config.AckDeadlineSeconds,
+			CredentialsJSON:    config.CredentialsJSON.String(),
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
 
+	pubsub, err := newPubSub(ctx, log, pipeline, eventBuilder, client)
+	if err != nil {
+		return nil, err
+	}
+
+	return newInventorySource(ctx, log, config, pipeline, oasRouter, pubsub)
+}
+
+func newInventorySource(
+	ctx context.Context,
+	log *logrus.Logger,
+	config *InventorySourceConfig,
+	pipeline pipeline.IPipelineGroup,
+	oasRouter *swagger.Router[fiber.Handler, fiber.Router],
+	pubsub *pubsubConsumer,
+) (*InventorySource, error) {
 	s := &InventorySource{
-		pubsub: pubsub.client,
+		ctx:    ctx,
+		log:    log,
 		config: config,
+		pubsub: pubsub,
 	}
 
 	return s, nil
 }
-
-// func newInventorySource()
 
 func (s *InventorySource) Close() error {
 	if err := s.pubsub.Close(); err != nil {

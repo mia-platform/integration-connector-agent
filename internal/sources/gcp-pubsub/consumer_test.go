@@ -42,10 +42,7 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 		e := &eventBuilderMock{}
 		client := &internal.MockPubSub{}
 
-		consumer, err := newPubSubWithClient(pg, e, &pubSubConfig{
-			ctx: ctx,
-			log: log,
-		}, client)
+		consumer, err := newPubSub(ctx, log, pg, e, client)
 		require.NoError(t, err)
 		require.NotNil(t, consumer)
 
@@ -94,10 +91,7 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		consumer, err := newPubSubWithClient(pg, e, &pubSubConfig{
-			ctx: ctx,
-			log: log,
-		}, client)
+		consumer, err := newPubSub(ctx, log, pg, e, client)
 		require.NoError(t, err)
 		require.NotNil(t, consumer)
 
@@ -141,10 +135,7 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		consumer, err := newPubSubWithClient(pg, e, &pubSubConfig{
-			ctx: ctx,
-			log: log,
-		}, client)
+		consumer, err := newPubSub(ctx, log, pg, e, client)
 		require.NoError(t, err)
 		require.NotNil(t, consumer)
 
@@ -200,10 +191,7 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		consumer, err := newPubSubWithClient(pg, e, &pubSubConfig{
-			ctx: ctx,
-			log: log,
-		}, client)
+		consumer, err := newPubSub(ctx, log, pg, e, client)
 		require.NoError(t, err)
 		require.NotNil(t, consumer)
 
