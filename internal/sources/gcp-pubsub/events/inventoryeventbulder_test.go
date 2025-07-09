@@ -42,7 +42,7 @@ func TestGetPipelineEvent(t *testing.T) {
 					{Key: "resourceName", Value: "//storage.googleapis.com/testbucketname"},
 					{Key: "resourceType", Value: "storage.googleapis.com/Bucket"},
 				},
-				Type:          "storage.googleapis.com/Bucket",
+				Type:          RealtimeSyncEventType,
 				OperationType: entities.Write,
 				OriginalRaw:   []byte(bucketCreationEvent),
 			},
@@ -55,7 +55,7 @@ func TestGetPipelineEvent(t *testing.T) {
 					{Key: "resourceName", Value: "//storage.googleapis.com/testbucketname"},
 					{Key: "resourceType", Value: "storage.googleapis.com/Bucket"},
 				},
-				Type:          "storage.googleapis.com/Bucket",
+				Type:          RealtimeSyncEventType,
 				OperationType: entities.Write,
 				OriginalRaw:   []byte(bucketUpdateEvent),
 			},
@@ -68,7 +68,7 @@ func TestGetPipelineEvent(t *testing.T) {
 					{Key: "resourceName", Value: "//storage.googleapis.com/testbucketname"},
 					{Key: "resourceType", Value: "storage.googleapis.com/Bucket"},
 				},
-				Type:          "storage.googleapis.com/Bucket",
+				Type:          RealtimeSyncEventType,
 				OperationType: entities.Delete,
 				OriginalRaw:   []byte(bucketDeletionEvent),
 			},
@@ -77,7 +77,7 @@ func TestGetPipelineEvent(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			builder := NewInventoryEventBuilder()
+			builder := NewInventoryEventBuilder[InventoryEvent]()
 
 			event, err := builder.GetPipelineEvent(t.Context(), tc.data)
 

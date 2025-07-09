@@ -28,7 +28,7 @@ import (
 type pubsubConsumer struct {
 	pipeline pipeline.IPipelineGroup
 	log      *logrus.Logger
-	client   internal.PubSub
+	client   internal.GCP
 }
 
 type pubSubConfig struct {
@@ -46,9 +46,9 @@ func newPubSub(
 	log *logrus.Logger,
 	pipeline pipeline.IPipelineGroup,
 	eventBuilder entities.EventBuilder,
-	client internal.PubSub,
+	client internal.GCP,
 ) (*pubsubConsumer, error) {
-	go func(ctx context.Context, log *logrus.Logger, client internal.PubSub) {
+	go func(ctx context.Context, log *logrus.Logger, client internal.GCP) {
 		err := client.Listen(ctx, func(ctx context.Context, data []byte) error {
 			event, err := eventBuilder.GetPipelineEvent(ctx, data)
 			if err != nil {

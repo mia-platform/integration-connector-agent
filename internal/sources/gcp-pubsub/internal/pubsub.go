@@ -17,28 +17,34 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/storage"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
 type ListenerFunc func(ctx context.Context, data []byte) error
 
-type PubSub interface {
+type GCP interface {
+	ListBuckets(ctx context.Context) ([]*Bucket, error)
 	Listen(ctx context.Context, handler ListenerFunc) error
 	Close() error
 }
 
-type ConcretePubSub struct {
-	c      *pubsub.Client
-	config PubSubConfig
+type concrete struct {
+	config GCPConfig
 	log    *logrus.Logger
+
+	p *pubsub.Client
+	s *storage.Client
 }
 
-type PubSubConfig struct {
+type GCPConfig struct {
 	ProjectID          string
 	AckDeadlineSeconds int
 	TopicName          string
@@ -46,26 +52,32 @@ type PubSubConfig struct {
 	CredentialsJSON    string
 }
 
-func New(ctx context.Context, log *logrus.Logger, config PubSubConfig) (PubSub, error) {
+func New(ctx context.Context, log *logrus.Logger, config GCPConfig) (GCP, error) {
 	options := make([]option.ClientOption, 0)
 	if config.CredentialsJSON != "" {
 		log.Debug("using credentials JSON for Pub/Sub client")
 		options = append(options, option.WithCredentialsJSON([]byte(config.CredentialsJSON)))
 	}
 
-	client, err := pubsub.NewClient(ctx, config.ProjectID, options...)
+	pubSubClient, err := pubsub.NewClient(ctx, config.ProjectID, options...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pubsub client: %w", err)
 	}
 
-	return &ConcretePubSub{
-		c:      client,
+	storageClient, err := storage.NewClient(ctx, options...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create storage client: %w", err)
+	}
+
+	return &concrete{
 		log:    log,
 		config: config,
+		p:      pubSubClient,
+		s:      storageClient,
 	}, nil
 }
 
-func (p *ConcretePubSub) Listen(ctx context.Context, handler ListenerFunc) error {
+func (p *concrete) Listen(ctx context.Context, handler ListenerFunc) error {
 	subscription, err := p.ensureSubscription(ctx, p.config.TopicName, p.config.SubscriptionID)
 	if err != nil {
 		return err
@@ -110,15 +122,19 @@ func (p *ConcretePubSub) Listen(ctx context.Context, handler ListenerFunc) error
 	})
 }
 
-func (p *ConcretePubSub) Close() error {
-	if err := p.c.Close(); err != nil {
+func (p *concrete) Close() error {
+	if err := p.p.Close(); err != nil {
 		return fmt.Errorf("failed to close pubsub client: %w", err)
+	}
+
+	if err := p.s.Close(); err != nil {
+		return fmt.Errorf("failed to close storage client: %w", err)
 	}
 	return nil
 }
 
-func (p *ConcretePubSub) ensureSubscription(ctx context.Context, topicName, subscriptionID string) (*pubsub.Subscription, error) {
-	subscription := p.c.Subscription(subscriptionID)
+func (p *concrete) ensureSubscription(ctx context.Context, topicName, subscriptionID string) (*pubsub.Subscription, error) {
+	subscription := p.p.Subscription(subscriptionID)
 	exists, err := subscription.Exists(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if subscription exists: %w", err)
@@ -132,12 +148,36 @@ func (p *ConcretePubSub) ensureSubscription(ctx context.Context, topicName, subs
 		ackDeadline = time.Duration(p.config.AckDeadlineSeconds) * time.Second
 	}
 
-	subscription, err = p.c.CreateSubscription(ctx, subscriptionID, pubsub.SubscriptionConfig{
-		Topic:       p.c.Topic(topicName),
+	subscription, err = p.p.CreateSubscription(ctx, subscriptionID, pubsub.SubscriptionConfig{
+		Topic:       p.p.Topic(topicName),
 		AckDeadline: ackDeadline,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create subscription: %w", err)
 	}
 	return subscription, nil
+}
+
+type Bucket struct {
+	Name string
+}
+
+func (p *concrete) ListBuckets(ctx context.Context) ([]*Bucket, error) {
+	buckets := make([]*Bucket, 0)
+
+	it := p.s.Buckets(ctx, p.config.ProjectID)
+	for {
+		bucket, err := it.Next()
+		if err != nil {
+			if errors.Is(err, iterator.Done) {
+				break
+			}
+			return nil, fmt.Errorf("failed to list buckets: %w", err)
+		}
+
+		buckets = append(buckets, &Bucket{
+			Name: bucket.Name,
+		})
+	}
+	return buckets, nil
 }

@@ -26,9 +26,14 @@ type MockPubSub struct {
 	listenInvoked     bool
 	listenInvokedLock sync.Mutex
 
-	CloseError      error
-	closeInvoked    bool
-	closInvokedLock sync.Mutex
+	CloseError       error
+	closeInvoked     bool
+	closrInvokedLock sync.Mutex
+
+	ListBucketsResult      []*Bucket
+	ListBucketsError       error
+	listBucketsInvoked     bool
+	listBucketsInvokedLock sync.Mutex
 }
 
 func (m *MockPubSub) Listen(ctx context.Context, handler ListenerFunc) error {
@@ -50,14 +55,28 @@ func (m *MockPubSub) ListenInvoked() bool {
 }
 
 func (m *MockPubSub) Close() error {
-	m.closInvokedLock.Lock()
-	defer m.closInvokedLock.Unlock()
+	m.closrInvokedLock.Lock()
+	defer m.closrInvokedLock.Unlock()
 	m.closeInvoked = true
 	return m.CloseError
 }
 
 func (m *MockPubSub) CloseInvoked() bool {
-	m.closInvokedLock.Lock()
-	defer m.closInvokedLock.Unlock()
+	m.closrInvokedLock.Lock()
+	defer m.closrInvokedLock.Unlock()
 	return m.closeInvoked
+}
+
+func (m *MockPubSub) ListBuckets(ctx context.Context) ([]*Bucket, error) {
+	m.listBucketsInvokedLock.Lock()
+	defer m.listBucketsInvokedLock.Unlock()
+
+	m.listBucketsInvoked = true
+	return m.ListBucketsResult, m.ListBucketsError
+}
+
+func (m *MockPubSub) ListBucketsInvoked() bool {
+	m.listBucketsInvokedLock.Lock()
+	defer m.listBucketsInvokedLock.Unlock()
+	return m.listBucketsInvoked
 }

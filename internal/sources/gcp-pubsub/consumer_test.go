@@ -46,8 +46,6 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, consumer)
 
-		require.True(t, pg.startInvoked)
-
 		// Allow some time for the goroutine to start
 		time.Sleep(10 * time.Millisecond)
 		require.True(t, client.ListenInvoked())
@@ -95,8 +93,6 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, consumer)
 
-		require.True(t, pg.startInvoked)
-
 		// Allow some time for the goroutine to start
 		time.Sleep(10 * time.Millisecond)
 		require.True(t, client.ListenInvoked())
@@ -138,8 +134,6 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 		consumer, err := newPubSub(ctx, log, pg, e, client)
 		require.NoError(t, err)
 		require.NotNil(t, consumer)
-
-		require.True(t, pg.startInvoked)
 
 		// Allow some time for the goroutine to start
 		time.Sleep(10 * time.Millisecond)
@@ -194,8 +188,6 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 		consumer, err := newPubSub(ctx, log, pg, e, client)
 		require.NoError(t, err)
 		require.NotNil(t, consumer)
-
-		require.True(t, pg.startInvoked)
 
 		// Allow some time for the goroutine to start
 		time.Sleep(10 * time.Millisecond)

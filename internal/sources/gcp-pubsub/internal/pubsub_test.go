@@ -27,7 +27,7 @@ import (
 
 func TestNew(t *testing.T) {
 	log, _ := test.NewNullLogger()
-	c, err := New(t.Context(), log, PubSubConfig{
+	c, err := New(t.Context(), log, GCPConfig{
 		ProjectID:          "test-project",
 		AckDeadlineSeconds: 10,
 		TopicName:          "test-topic",

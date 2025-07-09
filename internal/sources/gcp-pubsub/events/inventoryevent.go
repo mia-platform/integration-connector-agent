@@ -16,61 +16,8 @@
 package gcppubsubevents
 
 import (
-	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
-
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
-
-var (
-	ErrMalformedEvent = errors.New("malformed event")
-)
-
-type InventoryEventBuilder struct{}
-
-func NewInventoryEventBuilder() entities.EventBuilder {
-	return &InventoryEventBuilder{}
-}
-
-func (b *InventoryEventBuilder) GetPipelineEvent(_ context.Context, data []byte) (entities.PipelineEvent, error) {
-	rawEvent := InventoryEvent{}
-	if err := json.Unmarshal(data, &rawEvent); err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrMalformedEvent, err.Error())
-	}
-
-	return &entities.Event{
-		PrimaryKeys:   b.primaryKeys(rawEvent),
-		OperationType: b.operationType(rawEvent),
-		Type:          b.eventType(rawEvent),
-		OriginalRaw:   data,
-	}, nil
-}
-
-func (*InventoryEventBuilder) primaryKeys(event InventoryEvent) entities.PkFields {
-	return entities.PkFields{
-		{Key: "resourceName", Value: event.Asset.Name},
-		{Key: "resourceType", Value: event.Asset.AssetType},
-	}
-}
-
-func (*InventoryEventBuilder) operationType(event InventoryEvent) entities.Operation {
-	switch {
-	case event.Deleted:
-		return entities.Delete
-	case event.PriorAssetState == "DOES_NOT_EXIST":
-		return entities.Write
-	case event.PriorAssetState == "PRESENT":
-		return entities.Write
-	default:
-		return entities.Write
-	}
-}
-
-func (*InventoryEventBuilder) eventType(event InventoryEvent) string {
-	return event.Asset.AssetType
-}
 
 type InventoryEventAsset struct {
 	Ancestors  []string               `json:"ancestors"`
@@ -90,4 +37,29 @@ type InventoryEvent struct {
 	PriorAssetState string               `json:"priorAssetState"`
 	Window          InventoryEventWindow `json:"window"`
 	Deleted         bool                 `json:"deleted"`
+}
+
+func (e InventoryEvent) Name() string {
+	return e.Asset.Name
+}
+
+func (e InventoryEvent) AssetType() string {
+	return e.Asset.AssetType
+}
+
+func (e InventoryEvent) Operation() entities.Operation {
+	switch {
+	case e.Deleted:
+		return entities.Delete
+	case e.PriorAssetState == "DOES_NOT_EXIST":
+		return entities.Write
+	case e.PriorAssetState == "PRESENT":
+		return entities.Write
+	default:
+		return entities.Write
+	}
+}
+
+func (e InventoryEvent) EventType() string {
+	return RealtimeSyncEventType
 }
