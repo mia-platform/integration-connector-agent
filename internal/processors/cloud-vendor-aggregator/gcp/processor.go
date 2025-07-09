@@ -27,8 +27,8 @@ import (
 	storageclient "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/gcp/clients/storage"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/gcp/services/service"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/gcp/services/storage"
-
 	gcppubsubevents "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/events"
+
 	"github.com/sirupsen/logrus"
 	gcpOptions "google.golang.org/api/option"
 )

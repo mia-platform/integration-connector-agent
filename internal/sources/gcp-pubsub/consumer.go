@@ -19,47 +19,50 @@ import (
 	"context"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/internal"
 
 	"github.com/sirupsen/logrus"
 )
 
-type ConsumerOptions struct {
-	Ctx context.Context
-	Log *logrus.Logger
-}
-
-type GCPConsumer struct {
-	config   *Config
+type pubsubConsumer struct {
+	config   *pubSubConfig
 	pipeline pipeline.IPipelineGroup
 	log      *logrus.Logger
 	client   internal.PubSub
 }
 
-func New(options *ConsumerOptions, cfg config.GenericConfig, pipeline pipeline.IPipelineGroup, eventBuilder entities.EventBuilder) (*GCPConsumer, error) {
-	config, err := config.GetConfig[*Config](cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := internal.New(options.Ctx, options.Log, internal.PubSubConfig{
-		ProjectID:          config.ProjectID,
-		TopicName:          config.TopicName,
-		SubscriptionID:     config.SubscriptionID,
-		AckDeadlineSeconds: config.AckDeadlineSeconds,
-		CredentialsJSON:    config.CredentialsJSON.String(),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return newWithClient(options, pipeline, eventBuilder, config, client)
+type pubSubConfig struct {
+	log                *logrus.Logger
+	ctx                context.Context
+	ProjectID          string
+	TopicName          string
+	SubscriptionID     string
+	AckDeadlineSeconds int
+	CredentialsJSON    string
 }
 
-func newWithClient(options *ConsumerOptions, pipeline pipeline.IPipelineGroup, eventBuilder entities.EventBuilder, config *Config, client internal.PubSub) (*GCPConsumer, error) {
-	pipeline.Start(options.Ctx)
+func newPubSub(cfg *pubSubConfig, pipeline pipeline.IPipelineGroup, eventBuilder entities.EventBuilder) (*pubsubConsumer, error) {
+	client, err := internal.New(
+		cfg.ctx,
+		cfg.log,
+		internal.PubSubConfig{
+			ProjectID:          cfg.ProjectID,
+			TopicName:          cfg.TopicName,
+			SubscriptionID:     cfg.SubscriptionID,
+			AckDeadlineSeconds: cfg.AckDeadlineSeconds,
+			CredentialsJSON:    cfg.CredentialsJSON,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return newPubSubWithClient(pipeline, eventBuilder, cfg, client)
+}
+
+func newPubSubWithClient(pipeline pipeline.IPipelineGroup, eventBuilder entities.EventBuilder, config *pubSubConfig, client internal.PubSub) (*pubsubConsumer, error) {
+	pipeline.Start(config.ctx)
 
 	go func(ctx context.Context, log *logrus.Logger, client internal.PubSub) {
 		err := client.Listen(ctx, func(ctx context.Context, data []byte) error {
@@ -76,16 +79,16 @@ func newWithClient(options *ConsumerOptions, pipeline pipeline.IPipelineGroup, e
 		}
 
 		client.Close()
-	}(options.Ctx, options.Log, client)
+	}(config.ctx, config.log, client)
 
-	return &GCPConsumer{
-		log:      options.Log,
+	return &pubsubConsumer{
+		log:      config.log,
 		config:   config,
 		client:   client,
 		pipeline: pipeline,
 	}, nil
 }
 
-func (g *GCPConsumer) Close() error {
+func (g *pubsubConsumer) Close() error {
 	return g.client.Close()
 }
