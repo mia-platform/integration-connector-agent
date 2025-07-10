@@ -11,7 +11,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
 	gcppubsubevents "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/events"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/internal"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/gcpclient"
 	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	swagger "github.com/davidebianchi/gswagger"
@@ -49,7 +49,7 @@ type InventorySource struct {
 	config   *InventorySourceConfig
 	pipeline pipeline.IPipelineGroup
 
-	gcp    internal.GCP
+	gcp    gcpclient.GCP
 	pubsub sources.CloseableSource
 	router *swagger.Router[fiber.Handler, fiber.Router]
 }
@@ -66,10 +66,10 @@ func NewInventorySource(
 		return nil, err
 	}
 
-	client, err := internal.New(
+	client, err := gcpclient.New(
 		ctx,
 		log,
-		internal.GCPConfig{
+		gcpclient.GCPConfig{
 			ProjectID:          config.ProjectID,
 			TopicName:          config.TopicName,
 			SubscriptionID:     config.SubscriptionID,
@@ -104,7 +104,7 @@ func newInventorySource(
 	}
 }
 
-func (s *InventorySource) init(client internal.GCP) error {
+func (s *InventorySource) init(client gcpclient.GCP) error {
 	s.pipeline.Start(s.ctx)
 
 	s.gcp = client

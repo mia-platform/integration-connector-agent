@@ -16,7 +16,7 @@
 //go:build integration
 // +build integration
 
-package internal
+package gcpclient
 
 import (
 	"testing"

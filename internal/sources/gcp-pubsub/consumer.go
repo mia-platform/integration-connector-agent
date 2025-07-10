@@ -20,7 +20,7 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/internal"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/gcpclient"
 
 	"github.com/sirupsen/logrus"
 )
@@ -28,7 +28,7 @@ import (
 type pubsubConsumer struct {
 	pipeline pipeline.IPipelineGroup
 	log      *logrus.Logger
-	client   internal.GCP
+	client   gcpclient.GCP
 }
 
 type pubSubConfig struct {
@@ -46,9 +46,9 @@ func newPubSub(
 	log *logrus.Logger,
 	pipeline pipeline.IPipelineGroup,
 	eventBuilder entities.EventBuilder,
-	client internal.GCP,
+	client gcpclient.GCP,
 ) (*pubsubConsumer, error) {
-	go func(ctx context.Context, log *logrus.Logger, client internal.GCP) {
+	go func(ctx context.Context, log *logrus.Logger, client gcpclient.GCP) {
 		err := client.Listen(ctx, func(ctx context.Context, data []byte) error {
 			event, err := eventBuilder.GetPipelineEvent(ctx, data)
 			if err != nil {

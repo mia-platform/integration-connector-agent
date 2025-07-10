@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/internal"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/gcpclient"
 
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
@@ -40,7 +40,7 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 		ctx, cancel := context.WithCancel(t.Context())
 		pg := &pipelineGroupMock{}
 		e := &eventBuilderMock{}
-		client := &internal.MockPubSub{}
+		client := &gcpclient.MockPubSub{}
 
 		consumer, err := newPubSub(ctx, log, pg, e, client)
 		require.NoError(t, err)
@@ -78,8 +78,8 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		client := &internal.MockPubSub{
-			ListenAssert: func(ctx context.Context, handler internal.ListenerFunc) {
+		client := &gcpclient.MockPubSub{
+			ListenAssert: func(ctx context.Context, handler gcpclient.ListenerFunc) {
 				require.NotNil(t, ctx)
 				require.NotNil(t, handler)
 
@@ -120,8 +120,8 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			returnedErr: fmt.Errorf("some error from event builder"),
 		}
 
-		client := &internal.MockPubSub{
-			ListenAssert: func(ctx context.Context, handler internal.ListenerFunc) {
+		client := &gcpclient.MockPubSub{
+			ListenAssert: func(ctx context.Context, handler gcpclient.ListenerFunc) {
 				require.NotNil(t, ctx)
 				require.NotNil(t, handler)
 
@@ -171,10 +171,10 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		var handlerRef internal.ListenerFunc
+		var handlerRef gcpclient.ListenerFunc
 		var handlerRefLock sync.Mutex
-		client := &internal.MockPubSub{
-			ListenAssert: func(ctx context.Context, handler internal.ListenerFunc) {
+		client := &gcpclient.MockPubSub{
+			ListenAssert: func(ctx context.Context, handler gcpclient.ListenerFunc) {
 				require.NotNil(t, ctx)
 				require.NotNil(t, handler)
 

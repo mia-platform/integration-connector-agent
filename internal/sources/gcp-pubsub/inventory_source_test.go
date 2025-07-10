@@ -9,7 +9,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	gcppubsubevents "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/events"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/internal"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/gcpclient"
 	"github.com/mia-platform/integration-connector-agent/internal/testutils"
 
 	swagger "github.com/davidebianchi/gswagger"
@@ -58,7 +58,7 @@ func TestImportWebhook(t *testing.T) {
 
 		consumer := newInventorySource(t.Context(), log, config, pg, router)
 		require.NotNil(t, consumer)
-		require.NoError(t, consumer.init(&internal.MockPubSub{}))
+		require.NoError(t, consumer.init(&gcpclient.MockPubSub{}))
 
 		resp, err := app.Test(getWebhookRequest(t, nil))
 		require.NoError(t, err)
@@ -74,8 +74,8 @@ func TestImportWebhook(t *testing.T) {
 		}
 
 		app, router := testutils.GetTestRouter(t)
-		client := &internal.MockPubSub{
-			ListBucketsResult: []*internal.Bucket{
+		client := &gcpclient.MockPubSub{
+			ListBucketsResult: []*gcpclient.Bucket{
 				{Name: "bucket1"},
 				{Name: "bucket2"},
 			},
