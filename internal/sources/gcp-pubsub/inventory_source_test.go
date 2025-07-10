@@ -1,3 +1,18 @@
+// Copyright Mia srl
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package gcppubsub
 
 import (
@@ -65,6 +80,7 @@ func TestImportWebhook(t *testing.T) {
 
 		resp, err := app.Test(getWebhookRequest(t, nil))
 		require.NoError(t, err)
+		defer resp.Body.Close()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
@@ -79,6 +95,7 @@ func TestImportWebhook(t *testing.T) {
 
 		resp, err := app.Test(getWebhookRequest(t, nil))
 		require.NoError(t, err)
+		defer resp.Body.Close()
 		require.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 
@@ -101,6 +118,7 @@ func TestImportWebhook(t *testing.T) {
 			req.Header.Set("X-Hmac-Signature", "sha256=66a0c074deaa0f489ead6537e0d32f9a344b90bbeda705b6ed45ecd3b413fb40")
 			resp, err := app.Test(req)
 			require.NoError(t, err)
+			defer resp.Body.Close()
 
 			respBody, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
@@ -126,6 +144,7 @@ func TestImportWebhook(t *testing.T) {
 			req.Header.Set("X-Hmac-Signature", "sha256=0000000000000000000000000000000000000000000000000000000000000000")
 			resp, err := app.Test(req)
 			require.NoError(t, err)
+			defer resp.Body.Close()
 
 			respBody, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
@@ -160,6 +179,8 @@ func TestImportWebhook(t *testing.T) {
 
 		resp, err := app.Test(getWebhookRequest(t, nil), -1)
 		require.NoError(t, err)
+		defer resp.Body.Close()
+
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		require.True(t, client.ListBucketsInvoked())
@@ -200,7 +221,7 @@ func TestImportWebhook(t *testing.T) {
 func getWebhookRequest(t *testing.T, body []byte) *http.Request {
 	t.Helper()
 
-	req := httptest.NewRequest("POST", "/gcppubsub/import", bytes.NewBuffer(body))
+	req := httptest.NewRequest(http.MethodPost, "/gcppubsub/import", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	return req
 }

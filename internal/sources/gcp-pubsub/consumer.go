@@ -31,16 +31,6 @@ type pubsubConsumer struct {
 	client   gcpclient.GCP
 }
 
-type pubSubConfig struct {
-	log                *logrus.Logger
-	ctx                context.Context
-	ProjectID          string
-	TopicName          string
-	SubscriptionID     string
-	AckDeadlineSeconds int
-	CredentialsJSON    string
-}
-
 func newPubSub(
 	ctx context.Context,
 	log *logrus.Logger,

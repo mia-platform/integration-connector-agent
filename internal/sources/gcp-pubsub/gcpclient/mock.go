@@ -20,7 +20,7 @@ import (
 	"sync"
 )
 
-var mockinterfaceimpltest GCP = &MockPubSub{}
+var _mockinterfaceimpltest GCP = &MockPubSub{} //nolint: unused
 
 type MockPubSub struct {
 	ListenError       error
@@ -74,7 +74,7 @@ func (m *MockPubSub) CloseInvoked() bool {
 	return m.closeInvoked
 }
 
-func (m *MockPubSub) ListBuckets(ctx context.Context) ([]*Bucket, error) {
+func (m *MockPubSub) ListBuckets(_ context.Context) ([]*Bucket, error) {
 	m.listBucketsInvokedLock.Lock()
 	defer m.listBucketsInvokedLock.Unlock()
 
@@ -88,7 +88,7 @@ func (m *MockPubSub) ListBucketsInvoked() bool {
 	return m.listBucketsInvoked
 }
 
-func (m *MockPubSub) ListFunctions(ctx context.Context) ([]*Function, error) {
+func (m *MockPubSub) ListFunctions(_ context.Context) ([]*Function, error) {
 	m.listFunctionsInvokedLock.Lock()
 	defer m.listFunctionsInvokedLock.Unlock()
 

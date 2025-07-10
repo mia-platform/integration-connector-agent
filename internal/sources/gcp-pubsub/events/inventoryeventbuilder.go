@@ -36,9 +36,7 @@ const (
 	InventoryEventFunctionType = "run.googleapis.com/Service"
 )
 
-type InventoryEventBuilder[T IInventoryEvent] struct {
-	builtEventType string
-}
+type InventoryEventBuilder[T IInventoryEvent] struct{}
 
 type IInventoryEvent interface {
 	Name() string

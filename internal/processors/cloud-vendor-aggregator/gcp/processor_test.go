@@ -60,7 +60,7 @@ func TestProcessWithStandardAssetInventoryEvent(t *testing.T) {
 					Name:   "projects/the-project/locations/europe-west1/services/test-function",
 					Labels: map[string]string{"label1": "value1", "label2": "value2"},
 				},
-				GetServiceAssert: func(ctx context.Context, name string) {
+				GetServiceAssert: func(_ context.Context, name string) {
 					require.Equal(t, "projects/the-project/locations/europe-west1/services/test-function", name)
 				},
 			},
@@ -86,7 +86,7 @@ func TestProcessWithStandardAssetInventoryEvent(t *testing.T) {
 					Location: "europe-west1",
 					Labels:   map[string]string{"label1": "value1", "label2": "value2"},
 				},
-				GetBucketAssert: func(ctx context.Context, name string) {
+				GetBucketAssert: func(_ context.Context, name string) {
 					require.Equal(t, "//storage.googleapis.com/test-bucket", name)
 				},
 			},
@@ -157,7 +157,7 @@ func TestProcessWithImportAssetInventoryEvent(t *testing.T) {
 					Name:   "projects/test-project/locations/europe-west1/services/test-function",
 					Labels: map[string]string{"label1": "value1", "label2": "value2"},
 				},
-				GetServiceAssert: func(ctx context.Context, name string) {
+				GetServiceAssert: func(_ context.Context, name string) {
 					require.Equal(t, "projects/test-project/locations/europe-west1/services/test-function", name)
 				},
 			},
@@ -181,7 +181,7 @@ func TestProcessWithImportAssetInventoryEvent(t *testing.T) {
 					Location: "europe-west1",
 					Labels:   map[string]string{"label1": "value1", "label2": "value2"},
 				},
-				GetBucketAssert: func(ctx context.Context, name string) {
+				GetBucketAssert: func(_ context.Context, name string) {
 					require.Equal(t, "//storage.googleapis.com/bucket1", name)
 				},
 			},
