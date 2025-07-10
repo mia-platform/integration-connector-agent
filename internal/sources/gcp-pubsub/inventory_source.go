@@ -11,6 +11,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
 	gcppubsubevents "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/events"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/gcpclient"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	swagger "github.com/davidebianchi/gswagger"
@@ -25,7 +26,8 @@ type InventorySourceConfig struct {
 	AckDeadlineSeconds int                 `json:"ackDeadlineSeconds,omitempty"`
 	CredentialsJSON    config.SecretSource `json:"credentialsJson,omitempty"`
 
-	ImportTriggerWebhookPath string `json:"importTriggerWebhookPath,omitempty"`
+	WebhookPath    string       `json:"webhookPath,omitempty"`
+	Authentication webhook.HMAC `json:"authentication"`
 }
 
 func (c *InventorySourceConfig) Validate() error {
@@ -115,8 +117,8 @@ func (s *InventorySource) init(client gcpclient.GCP) error {
 	}
 	s.pubsub = pubsub
 
-	if s.config.ImportTriggerWebhookPath != "" {
-		s.log.WithField("webhookPath", s.config.ImportTriggerWebhookPath).Info("Registering import webhook")
+	if s.config.WebhookPath != "" {
+		s.log.WithField("webhookPath", s.config.WebhookPath).Info("Registering import webhook")
 		if err := s.registerImportWebhook(); err != nil {
 			return fmt.Errorf("failed to register import webhook: %w", err)
 		}
@@ -133,13 +135,18 @@ func (s *InventorySource) Close() error {
 }
 
 func (s *InventorySource) registerImportWebhook() error {
-	apiPath := s.config.ImportTriggerWebhookPath
+	apiPath := s.config.WebhookPath
 
 	_, err := s.router.AddRoute(http.MethodPost, apiPath, s.webhookHandler, swagger.Definitions{})
 	return err
 }
 
 func (s *InventorySource) webhookHandler(c *fiber.Ctx) error {
+	if err := s.config.Authentication.CheckSignature(c); err != nil {
+		s.log.WithError(err).Error("error validating webhook request")
+		return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
+	}
+
 	buckets, err := s.gcp.ListBuckets(c.UserContext())
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(utils.InternalServerError("failed to list buckets: " + err.Error()))
