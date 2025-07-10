@@ -32,13 +32,8 @@ const (
 	RealtimeSyncEventType = "sync-event"
 	ImportEventType       = "import-event"
 
-	InventoryEventStorageType  = "storage.googleapis.com/Bucket"
-	InventoryEventBucketPrefix = "//storage.googleapis.com/"
+	InventoryEventStorageType = "storage.googleapis.com/Bucket"
 )
-
-func BucketName(name string) string {
-	return InventoryEventBucketPrefix + name
-}
 
 type InventoryEventBuilder[T IInventoryEvent] struct {
 	builtEventType string

@@ -22,19 +22,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	run "cloud.google.com/go/run/apiv2"
+	"cloud.google.com/go/run/apiv2/runpb"
 	"cloud.google.com/go/storage"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
-
-type ListenerFunc func(ctx context.Context, data []byte) error
-
-type GCP interface {
-	ListBuckets(ctx context.Context) ([]*Bucket, error)
-	Listen(ctx context.Context, handler ListenerFunc) error
-	Close() error
-}
 
 type concrete struct {
 	config GCPConfig
@@ -42,6 +36,7 @@ type concrete struct {
 
 	p *pubsub.Client
 	s *storage.Client
+	f *run.ServicesClient
 }
 
 type GCPConfig struct {
@@ -69,11 +64,17 @@ func New(ctx context.Context, log *logrus.Logger, config GCPConfig) (GCP, error)
 		return nil, fmt.Errorf("failed to create storage client: %w", err)
 	}
 
+	functionServiceClient, err := run.NewServicesClient(ctx, options...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GCP run service client: %w", err)
+	}
+
 	return &concrete{
 		log:    log,
 		config: config,
 		p:      pubSubClient,
 		s:      storageClient,
+		f:      functionServiceClient,
 	}, nil
 }
 
@@ -158,10 +159,6 @@ func (p *concrete) ensureSubscription(ctx context.Context, topicName, subscripti
 	return subscription, nil
 }
 
-type Bucket struct {
-	Name string
-}
-
 func (p *concrete) ListBuckets(ctx context.Context) ([]*Bucket, error) {
 	buckets := make([]*Bucket, 0)
 
@@ -180,4 +177,26 @@ func (p *concrete) ListBuckets(ctx context.Context) ([]*Bucket, error) {
 		})
 	}
 	return buckets, nil
+}
+
+func (p *concrete) ListFunctions(ctx context.Context) ([]*Function, error) {
+	functions := make([]*Function, 0)
+
+	it := p.f.ListServices(ctx, &runpb.ListServicesRequest{
+		Parent: fmt.Sprintf("projects/%s/locations/-", p.config.ProjectID),
+	})
+	for {
+		function, err := it.Next()
+		if err != nil {
+			if errors.Is(err, iterator.Done) {
+				break
+			}
+			return nil, fmt.Errorf("failed to list functions: %w", err)
+		}
+
+		functions = append(functions, &Function{
+			Name: function.Name,
+		})
+	}
+	return functions, nil
 }

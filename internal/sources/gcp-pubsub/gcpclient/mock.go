@@ -20,6 +20,8 @@ import (
 	"sync"
 )
 
+var mockinterfaceimpltest GCP = &MockPubSub{}
+
 type MockPubSub struct {
 	ListenError       error
 	ListenAssert      func(ctx context.Context, handler ListenerFunc)
@@ -34,6 +36,11 @@ type MockPubSub struct {
 	ListBucketsError       error
 	listBucketsInvoked     bool
 	listBucketsInvokedLock sync.Mutex
+
+	ListFunctionsResult      []*Function
+	ListFunctionsError       error
+	listFunctionsInvoked     bool
+	listFunctionsInvokedLock sync.Mutex
 }
 
 func (m *MockPubSub) Listen(ctx context.Context, handler ListenerFunc) error {
@@ -79,4 +86,18 @@ func (m *MockPubSub) ListBucketsInvoked() bool {
 	m.listBucketsInvokedLock.Lock()
 	defer m.listBucketsInvokedLock.Unlock()
 	return m.listBucketsInvoked
+}
+
+func (m *MockPubSub) ListFunctions(ctx context.Context) ([]*Function, error) {
+	m.listFunctionsInvokedLock.Lock()
+	defer m.listFunctionsInvokedLock.Unlock()
+
+	m.listFunctionsInvoked = true
+	return m.ListFunctionsResult, m.ListFunctionsError
+}
+
+func (m *MockPubSub) ListFunctionsInvoked() bool {
+	m.listFunctionsInvokedLock.Lock()
+	defer m.listFunctionsInvokedLock.Unlock()
+	return m.listFunctionsInvoked
 }

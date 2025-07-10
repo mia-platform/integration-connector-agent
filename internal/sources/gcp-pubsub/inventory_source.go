@@ -147,7 +147,7 @@ func (s *InventorySource) webhookHandler(c *fiber.Ctx) error {
 
 	for _, bucket := range buckets {
 		fakeInventoryEvent := InventoryImportEvent{
-			AssetName: gcppubsubevents.BucketName(bucket.Name),
+			AssetName: bucket.AssetName(),
 			Type:      gcppubsubevents.InventoryEventStorageType,
 		}
 		data, err := json.Marshal(fakeInventoryEvent)

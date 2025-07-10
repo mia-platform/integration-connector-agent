@@ -79,6 +79,9 @@ func TestImportWebhook(t *testing.T) {
 				{Name: "bucket1"},
 				{Name: "bucket2"},
 			},
+			ListFunctionsResult: []*gcpclient.Function{
+				{Name: "function1"},
+			},
 		}
 
 		consumer := newInventorySource(t.Context(), log, config, pg, router)
@@ -90,6 +93,7 @@ func TestImportWebhook(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		require.True(t, client.ListBucketsInvoked())
+		// require.True(t, client.ListFunctionsInvoked())
 
 		require.Len(t, pg.Messages, 2)
 
