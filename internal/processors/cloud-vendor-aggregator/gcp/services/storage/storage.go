@@ -32,17 +32,17 @@ type GCPStorageDataAdapter struct {
 	client storage.Client
 }
 
-func NewGCPRunServiceDataAdapter(client storage.Client) commons.DataAdapter[*gcppubsubevents.InventoryEvent] {
+func NewGCPRunServiceDataAdapter(client storage.Client) commons.DataAdapter[gcppubsubevents.IInventoryEvent] {
 	return &GCPStorageDataAdapter{
 		client: client,
 	}
 }
 
-func (g *GCPStorageDataAdapter) GetData(ctx context.Context, event *gcppubsubevents.InventoryEvent) ([]byte, error) {
+func (g *GCPStorageDataAdapter) GetData(ctx context.Context, event gcppubsubevents.IInventoryEvent) ([]byte, error) {
 	// it cannot fail because the event is already validated from the main processor
 	data, _ := json.Marshal(event)
 
-	bucket, err := g.client.GetBucket(ctx, event.Asset.Name)
+	bucket, err := g.client.GetBucket(ctx, event.Name())
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (g *GCPStorageDataAdapter) GetData(ctx context.Context, event *gcppubsubeve
 		commons.NewAsset(bucket.Name, StorageAssetType, commons.GCPAssetProvider).
 			WithLocation(bucket.Location).
 			WithTags(bucket.Labels).
-			WithRelationships(event.Asset.Ancestors).
+			WithRelationships(event.Ancestors()).
 			WithRawData(data),
 	)
 }

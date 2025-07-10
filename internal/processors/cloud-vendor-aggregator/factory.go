@@ -32,7 +32,7 @@ type CloudVendorAggregator struct {
 func New(logger *logrus.Logger, cfg config.Config) (entities.Processor, error) {
 	switch cfg.CloudVendorName {
 	case commons.GCPAssetProvider:
-		return gcpaggregator.New(logger, cfg.AuthOptions), nil
+		return gcpaggregator.New(logger, cfg.AuthOptions)
 	case commons.AWSAssetProvider:
 		return awsaggergator.New(logger, cfg.AuthOptions), nil
 	case commons.AzureAssetProvider:

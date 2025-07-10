@@ -18,7 +18,8 @@ package gcpclient
 import "context"
 
 const (
-	InventoryEventBucketPrefix = "//storage.googleapis.com/"
+	InventoryEventBucketPrefix   = "//storage.googleapis.com/"
+	InventoryEventFunctionPrefix = "//run.googleapis.com/"
 )
 
 type ListenerFunc func(ctx context.Context, data []byte) error
@@ -40,4 +41,8 @@ func (b *Bucket) AssetName() string {
 
 type Function struct {
 	Name string `json:"name"`
+}
+
+func (f *Function) AssetName() string {
+	return InventoryEventFunctionPrefix + f.Name
 }

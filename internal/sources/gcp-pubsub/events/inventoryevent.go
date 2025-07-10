@@ -63,3 +63,29 @@ func (e InventoryEvent) Operation() entities.Operation {
 func (e InventoryEvent) EventType() string {
 	return RealtimeSyncEventType
 }
+
+func (e InventoryEvent) Ancestors() []string {
+	return e.Asset.Ancestors
+}
+
+type InventoryImportEvent struct {
+	AssetName string
+	Type      string
+}
+
+func (e InventoryImportEvent) Name() string {
+	return e.AssetName
+}
+func (e InventoryImportEvent) AssetType() string {
+	return e.Type
+}
+func (e InventoryImportEvent) Operation() entities.Operation {
+	return entities.Write
+}
+func (e InventoryImportEvent) EventType() string {
+	return ImportEventType
+}
+func (e InventoryImportEvent) Ancestors() []string {
+	// TODO: find a way to get ancestors for import events on each resource type
+	return []string{}
+}

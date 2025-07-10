@@ -32,7 +32,8 @@ const (
 	RealtimeSyncEventType = "sync-event"
 	ImportEventType       = "import-event"
 
-	InventoryEventStorageType = "storage.googleapis.com/Bucket"
+	InventoryEventStorageType  = "storage.googleapis.com/Bucket"
+	InventoryEventFunctionType = "run.googleapis.com/Service"
 )
 
 type InventoryEventBuilder[T IInventoryEvent] struct {
@@ -42,6 +43,7 @@ type InventoryEventBuilder[T IInventoryEvent] struct {
 type IInventoryEvent interface {
 	Name() string
 	AssetType() string
+	Ancestors() []string
 	Operation() entities.Operation
 	EventType() string
 }

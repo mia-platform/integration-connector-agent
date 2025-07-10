@@ -36,36 +36,52 @@ import (
 type GCPCloudVendorAggregator struct {
 	logger  *logrus.Logger
 	options gcpOptions.ClientOption
+
+	s storageclient.Client
+	f runservice.Client
 }
 
-func New(logger *logrus.Logger, authOptions config.AuthOptions) entities.Processor {
+func New(logger *logrus.Logger, authOptions config.AuthOptions) (entities.Processor, error) {
+	options := gcpOptions.WithCredentialsJSON([]byte(authOptions.CredenialsJSON.String()))
+
+	storageClient, err := storageclient.NewClient(context.Background(), options)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GCP storage client: %w", err)
+	}
+
+	runServiceClient, err := runservice.NewClient(context.Background(), options)
+	if err != nil {
+		return nil, err
+	}
+
 	return &GCPCloudVendorAggregator{
 		logger:  logger,
-		options: gcpOptions.WithCredentialsJSON([]byte(authOptions.CredenialsJSON.String())),
-	}
+		options: options,
+
+		s: storageClient,
+		f: runServiceClient,
+	}, nil
 }
 
 func (c *GCPCloudVendorAggregator) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
-	assetInventory := new(gcppubsubevents.InventoryEvent)
-
-	if err := json.Unmarshal(input.Data(), &assetInventory); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
-	}
-
 	output := input.Clone()
 
-	if assetInventory.Deleted {
+	if input.Operation() == entities.Delete {
 		c.logger.Debug("Delete operation detected, skipping processing")
 		return output, nil
 	}
 
-	processor, client, err := c.EventDataProcessor(assetInventory)
+	assetInventory, err := c.ParseEvent(input)
+	if err != nil {
+		c.logger.WithError(err).Error("Failed to parse event")
+		return nil, fmt.Errorf("failed to parse event: %w", err)
+	}
+
+	processor, err := c.EventDataProcessor(assetInventory)
 	if err != nil {
 		c.logger.WithError(err).Error("Failed to process event data")
 		return nil, fmt.Errorf("failed to process event data: %w", err)
 	}
-
-	defer client.Close()
 
 	newData, err := processor.GetData(context.Background(), assetInventory)
 	if err != nil {
@@ -77,22 +93,40 @@ func (c *GCPCloudVendorAggregator) Process(input entities.PipelineEvent) (entiti
 	return output, nil
 }
 
-func (c *GCPCloudVendorAggregator) EventDataProcessor(event *gcppubsubevents.InventoryEvent) (commons.DataAdapter[*gcppubsubevents.InventoryEvent], commons.Closable, error) {
-	assetType := event.Asset.AssetType
+func (c *GCPCloudVendorAggregator) EventDataProcessor(event gcppubsubevents.IInventoryEvent) (commons.DataAdapter[gcppubsubevents.IInventoryEvent], error) {
+	assetType := event.AssetType()
+
 	switch assetType {
 	case storage.StorageAssetType:
-		client, err := storageclient.NewClient(context.Background(), c.options)
-		if err != nil {
-			return nil, nil, err
-		}
-		return storage.NewGCPRunServiceDataAdapter(client), client, nil
+		return storage.NewGCPRunServiceDataAdapter(c.s), nil
 	case service.RunServiceAssetType:
-		client, err := runservice.NewClient(context.Background(), c.options)
-		if err != nil {
-			return nil, nil, err
-		}
-		return service.NewGCPRunServiceDataAdapter(client), client, nil
+		return service.NewGCPRunServiceDataAdapter(c.f), nil
 	default:
-		return nil, nil, fmt.Errorf("unsupported asset type: %s", assetType)
+		return nil, fmt.Errorf("unsupported asset type: %s", assetType)
+	}
+}
+
+func (c *GCPCloudVendorAggregator) ParseEvent(event entities.PipelineEvent) (gcppubsubevents.IInventoryEvent, error) {
+	eventType := event.GetType()
+
+	switch eventType {
+	case gcppubsubevents.ImportEventType:
+
+		var assetInventory gcppubsubevents.InventoryImportEvent
+		if err := json.Unmarshal(event.Data(), &assetInventory); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
+		}
+		return assetInventory, nil
+
+	case gcppubsubevents.RealtimeSyncEventType:
+
+		var assetInventory gcppubsubevents.InventoryEvent
+		if err := json.Unmarshal(event.Data(), &assetInventory); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
+		}
+		return assetInventory, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported event type: %s", eventType)
 	}
 }

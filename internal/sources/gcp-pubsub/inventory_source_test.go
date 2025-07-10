@@ -80,7 +80,8 @@ func TestImportWebhook(t *testing.T) {
 				{Name: "bucket2"},
 			},
 			ListFunctionsResult: []*gcpclient.Function{
-				{Name: "function1"},
+				{Name: "projects/test-project/locations/eu-west-1/services/function1"},
+				{Name: "projects/test-project/locations/eu-west-1/services/function2"},
 			},
 		}
 
@@ -93,9 +94,9 @@ func TestImportWebhook(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		require.True(t, client.ListBucketsInvoked())
-		// require.True(t, client.ListFunctionsInvoked())
+		require.True(t, client.ListFunctionsInvoked())
 
-		require.Len(t, pg.Messages, 2)
+		require.Len(t, pg.Messages, 4)
 
 		require.Equal(t, gcppubsubevents.ImportEventType, pg.Messages[0].GetType())
 		require.Equal(t, entities.Write, pg.Messages[0].Operation())
@@ -110,6 +111,20 @@ func TestImportWebhook(t *testing.T) {
 			entities.PkField{Key: "resourceName", Value: "//storage.googleapis.com/bucket2"},
 			entities.PkField{Key: "resourceType", Value: gcppubsubevents.InventoryEventStorageType},
 		}, pg.Messages[1].GetPrimaryKeys())
+
+		require.Equal(t, gcppubsubevents.ImportEventType, pg.Messages[2].GetType())
+		require.Equal(t, entities.Write, pg.Messages[2].Operation())
+		require.Equal(t, entities.PkFields{
+			entities.PkField{Key: "resourceName", Value: "//run.googleapis.com/projects/test-project/locations/eu-west-1/services/function1"},
+			entities.PkField{Key: "resourceType", Value: gcppubsubevents.InventoryEventFunctionType},
+		}, pg.Messages[2].GetPrimaryKeys())
+
+		require.Equal(t, gcppubsubevents.ImportEventType, pg.Messages[3].GetType())
+		require.Equal(t, entities.Write, pg.Messages[3].Operation())
+		require.Equal(t, entities.PkFields{
+			entities.PkField{Key: "resourceName", Value: "//run.googleapis.com/projects/test-project/locations/eu-west-1/services/function2"},
+			entities.PkField{Key: "resourceType", Value: gcppubsubevents.InventoryEventFunctionType},
+		}, pg.Messages[3].GetPrimaryKeys())
 	})
 }
 

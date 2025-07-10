@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
@@ -143,16 +142,16 @@ func (s *InventorySource) webhookHandler(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(utils.InternalServerError("failed to list buckets: " + err.Error()))
 	}
 
-	eventBuilder := gcppubsubevents.NewInventoryEventBuilder[InventoryImportEvent]()
+	eventBuilder := gcppubsubevents.NewInventoryEventBuilder[gcppubsubevents.InventoryImportEvent]()
 
 	for _, bucket := range buckets {
-		fakeInventoryEvent := InventoryImportEvent{
+		importEvent := gcppubsubevents.InventoryImportEvent{
 			AssetName: bucket.AssetName(),
 			Type:      gcppubsubevents.InventoryEventStorageType,
 		}
-		data, err := json.Marshal(fakeInventoryEvent)
+		data, err := json.Marshal(importEvent)
 		if err != nil {
-			s.log.WithField("bucketName", bucket.Name).WithError(err).Warn("failed to create import event for bucket")
+			s.log.WithField("bucketName", bucket.Name).WithError(err).Warn("failed to create import event data for bucket")
 			continue
 		}
 
@@ -165,23 +164,29 @@ func (s *InventorySource) webhookHandler(c *fiber.Ctx) error {
 		s.pipeline.AddMessage(event)
 	}
 
+	functions, err := s.gcp.ListFunctions(c.UserContext())
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(utils.InternalServerError("failed to list functions: " + err.Error()))
+	}
+	for _, function := range functions {
+		importEvent := gcppubsubevents.InventoryImportEvent{
+			AssetName: function.AssetName(),
+			Type:      gcppubsubevents.InventoryEventFunctionType,
+		}
+		data, err := json.Marshal(importEvent)
+		if err != nil {
+			s.log.WithField("functionName", function.Name).WithError(err).Warn("failed to create import event data for function")
+			continue
+		}
+
+		event, err := eventBuilder.GetPipelineEvent(s.ctx, data)
+		if err != nil {
+			s.log.WithField("functionName", function.Name).WithError(err).Warn("failed to create import event for function")
+			continue
+		}
+
+		s.pipeline.AddMessage(event)
+	}
+
 	return nil
-}
-
-type InventoryImportEvent struct {
-	AssetName string
-	Type      string
-}
-
-func (e InventoryImportEvent) Name() string {
-	return e.AssetName
-}
-func (e InventoryImportEvent) AssetType() string {
-	return e.Type
-}
-func (e InventoryImportEvent) Operation() entities.Operation {
-	return entities.Write
-}
-func (e InventoryImportEvent) EventType() string {
-	return gcppubsubevents.ImportEventType
 }
