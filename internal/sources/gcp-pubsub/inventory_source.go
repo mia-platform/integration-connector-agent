@@ -115,8 +115,11 @@ func (s *InventorySource) init(client gcpclient.GCP) error {
 	}
 	s.pubsub = pubsub
 
-	if err := s.registerImportWebhook(); err != nil {
-		return fmt.Errorf("failed to register import webhook: %w", err)
+	if s.config.ImportTriggerWebhookPath != "" {
+		s.log.WithField("webhookPath", s.config.ImportTriggerWebhookPath).Info("Registering import webhook")
+		if err := s.registerImportWebhook(); err != nil {
+			return fmt.Errorf("failed to register import webhook: %w", err)
+		}
 	}
 
 	return nil

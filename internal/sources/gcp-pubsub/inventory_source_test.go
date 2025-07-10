@@ -65,6 +65,20 @@ func TestImportWebhook(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
+	t.Run("does not expose import webhook on missing path from configuration", func(t *testing.T) {
+		app, router := testutils.GetTestRouter(t)
+		config := &InventorySourceConfig{
+			ImportTriggerWebhookPath: "",
+		}
+		consumer := newInventorySource(t.Context(), log, config, pg, router)
+		require.NotNil(t, consumer)
+		require.NoError(t, consumer.init(&gcpclient.MockPubSub{}))
+
+		resp, err := app.Test(getWebhookRequest(t, nil))
+		require.NoError(t, err)
+		require.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+
 	t.Run("produces a message for each asset returned by gcp", func(t *testing.T) {
 		pg := &pipelineGroupMock{
 			assertAddMessage: func(data entities.PipelineEvent) {
