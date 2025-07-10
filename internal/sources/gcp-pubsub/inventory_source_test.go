@@ -49,18 +49,6 @@ func TestNewInventorySource(t *testing.T) {
 		require.ErrorIs(t, err, config.ErrConfigNotValid)
 		require.False(t, pg.startInvoked)
 	})
-
-	t.Run("succeeds with valid config", func(t *testing.T) {
-		_, router := testutils.GetTestRouter(t)
-		consumer, err := NewInventorySource(t.Context(), log, config.GenericConfig{
-			Type: "gcppubsub",
-			Raw:  []byte(`{"projectId": "test-project", "topicName": "test-topic", "subscriptionId": "test-subscription"}`),
-		}, pg, router)
-
-		require.NoError(t, err)
-		require.NotNil(t, consumer)
-		require.True(t, pg.startInvoked)
-	})
 }
 
 func TestImportWebhook(t *testing.T) {

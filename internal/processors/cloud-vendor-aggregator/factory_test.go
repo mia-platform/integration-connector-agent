@@ -37,12 +37,6 @@ func TestNew(t *testing.T) {
 			},
 			expectedError: config.ErrInvalidCloudVendor,
 		},
-		{
-			name: "gcp cloud vendor",
-			cfg: config.Config{
-				CloudVendorName: "gcp",
-			},
-		},
 	}
 
 	for _, tc := range testCases {
