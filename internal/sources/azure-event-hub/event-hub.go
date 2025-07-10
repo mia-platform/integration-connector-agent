@@ -18,27 +18,24 @@ package azureeventhub
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
+	"github.com/mia-platform/integration-connector-agent/internal/azure"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2/checkpoints"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/sirupsen/logrus"
 )
 
-type EventConsumer func(event *azeventhubs.ReceivedEventData) error
-
-func SetupEventHub(ctx context.Context, config *Config, pg pipeline.IPipelineGroup, logger *logrus.Logger) error {
+func SetupEventHub(ctx context.Context, config *azure.EventHubConfig, pg pipeline.IPipelineGroup, logger *logrus.Logger) error {
 	var credential azcore.TokenCredential
 	var store azeventhubs.CheckpointStore
 	var err error
 
-	if credential, err = azureCredential(config); err != nil {
+	if credential, err = config.AzureTokenProvider(); err != nil {
 		return err
 	}
 
@@ -72,31 +69,6 @@ func SetupEventHub(ctx context.Context, config *Config, pg pipeline.IPipelineGro
 	return nil
 }
 
-func azureCredential(config *Config) (azcore.TokenCredential, error) {
-	credentials := make([]azcore.TokenCredential, 0)
-
-	if len(config.TenantID) > 0 && len(config.ClientID) > 0 && len(config.ClientSecret) > 0 {
-		secretCredential, err := azidentity.NewClientSecretCredential(
-			config.TenantID,
-			config.ClientID.String(),
-			config.ClientSecret.String(),
-			nil, // Options
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create an Azure client secret credential: %w", err)
-		}
-		credentials = append(credentials, secretCredential)
-	}
-
-	defaultCredential, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create a default Azure credential: %w", err)
-	}
-	credentials = append(credentials, defaultCredential)
-
-	return azidentity.NewChainedTokenCredential(credentials, nil)
-}
-
 func checkpointStore(credential azcore.TokenCredential, storageAccountName, storageContainerName string) (azeventhubs.CheckpointStore, error) {
 	var blobClient *azblob.Client
 	var err error
@@ -109,7 +81,7 @@ func checkpointStore(credential azcore.TokenCredential, storageAccountName, stor
 	return checkpoints.NewBlobStore(azBlobContainerClient, nil)
 }
 
-func dispatchPartitionClients(ctx context.Context, processor *azeventhubs.Processor, consumer EventConsumer, logger *logrus.Logger) {
+func dispatchPartitionClients(ctx context.Context, processor *azeventhubs.Processor, consumer azure.EventConsumer, logger *logrus.Logger) {
 	for {
 		var processorPartitionClient *azeventhubs.ProcessorPartitionClient
 		if processorPartitionClient = processor.NextPartitionClient(ctx); processorPartitionClient == nil {
@@ -124,7 +96,7 @@ func dispatchPartitionClients(ctx context.Context, processor *azeventhubs.Proces
 	}
 }
 
-func processEventsForPartition(ctx context.Context, partitionClient *azeventhubs.ProcessorPartitionClient, consumer EventConsumer) error {
+func processEventsForPartition(ctx context.Context, partitionClient *azeventhubs.ProcessorPartitionClient, consumer azure.EventConsumer) error {
 	defer partitionClient.Close(ctx)
 
 	for {

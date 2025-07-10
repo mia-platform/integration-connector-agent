@@ -13,10 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commons
+package azure
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -24,19 +25,9 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 )
 
-type Client interface {
-	GetByID(resourceID, apiVersion string) (*Resource, error)
-}
-
-func NewClient(credentials azcore.TokenCredential) Client {
-	return &azureClient{
-		credentials: credentials,
-	}
-}
-
-type azureClient struct {
-	credentials azcore.TokenCredential
-}
+var (
+	ErrClientInitialization = errors.New("failed to initialize Azure client")
+)
 
 type Resource struct {
 	Name     string
@@ -45,13 +36,27 @@ type Resource struct {
 	Location string
 }
 
-func (a *azureClient) GetByID(resourceID, apiVersion string) (*Resource, error) {
-	genericClient, err := armresources.NewClient("", a.credentials, nil)
+type ClientInterface interface {
+	GetByID(ctx context.Context, resourceID, apiVersion string) (*Resource, error)
+}
+
+type Client struct {
+	armClient *armresources.Client
+}
+
+func NewClient(credentials azcore.TokenCredential) (ClientInterface, error) {
+	client, err := armresources.NewClient("", credentials, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Azure resources client: %w", err)
+		return nil, fmt.Errorf("%w: %s", ErrClientInitialization, err)
 	}
 
-	res, err := genericClient.GetByID(context.Background(), resourceID, apiVersion, nil)
+	return &Client{
+		armClient: client,
+	}, nil
+}
+
+func (c *Client) GetByID(ctx context.Context, resourceID, apiVersion string) (*Resource, error) {
+	res, err := c.armClient.GetByID(ctx, resourceID, apiVersion, nil)
 	if err != nil {
 		return nil, err
 	}

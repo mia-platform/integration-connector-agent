@@ -19,12 +19,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/azure"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
-	azureactivitylogeventhubevents "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub/events"
 	azureeventhub "github.com/mia-platform/integration-connector-agent/internal/sources/azure-event-hub"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2"
@@ -40,8 +39,8 @@ func AddSource(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipel
 	return azureeventhub.SetupEventHub(ctx, eventHubConfig, pg, logger)
 }
 
-func configFromGeneric(cfg config.GenericConfig, pg pipeline.IPipelineGroup) (*azureeventhub.Config, error) {
-	eventHubConfig, err := config.GetConfig[*azureeventhub.Config](cfg)
+func configFromGeneric(cfg config.GenericConfig, pg pipeline.IPipelineGroup) (*azure.EventHubConfig, error) {
+	eventHubConfig, err := config.GetConfig[*azure.EventHubConfig](cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -50,9 +49,9 @@ func configFromGeneric(cfg config.GenericConfig, pg pipeline.IPipelineGroup) (*a
 	return eventHubConfig, nil
 }
 
-func activityLogConsumer(pg pipeline.IPipelineGroup) azureeventhub.EventConsumer {
+func activityLogConsumer(pg pipeline.IPipelineGroup) azure.EventConsumer {
 	return func(eventData *azeventhubs.ReceivedEventData) error {
-		activityLogEventData := new(azureactivitylogeventhubevents.ActivityLogEventData)
+		activityLogEventData := new(azure.ActivityLogEventData)
 		if err := json.Unmarshal(eventData.Body, activityLogEventData); err != nil {
 			return fmt.Errorf("failed to read activity log event data: %w", err)
 		}
@@ -67,38 +66,16 @@ func activityLogConsumer(pg pipeline.IPipelineGroup) azureeventhub.EventConsumer
 	}
 }
 
-func pipelineEventFromRecord(record *azureactivitylogeventhubevents.ActivityLogEventRecord) *entities.Event {
+func pipelineEventFromRecord(record *azure.ActivityLogEventRecord) *entities.Event {
 	rawRecord, err := json.Marshal(record)
 	if err != nil {
 		return nil
 	}
 
 	return &entities.Event{
-		PrimaryKeys: entities.PkFields{
-			{
-				Key:   "resourceId",
-				Value: strings.ToLower(record.ResourceID),
-			},
-		},
-		OperationType: eventOperationTypeFromRecord(record),
-		Type:          eventTypeFromRecord(record),
+		PrimaryKeys:   record.PrimaryKeys(),
+		OperationType: record.EntityOperationType(),
+		Type:          "",
 		OriginalRaw:   rawRecord,
 	}
-}
-
-func eventOperationTypeFromRecord(record *azureactivitylogeventhubevents.ActivityLogEventRecord) entities.Operation {
-	if strings.HasSuffix(strings.ToLower(record.OperationName), "delete") ||
-		strings.HasSuffix(strings.ToLower(record.OperationName), "delete/action") {
-		return entities.Delete
-	}
-
-	return entities.Write
-}
-
-func eventTypeFromRecord(record *azureactivitylogeventhubevents.ActivityLogEventRecord) string {
-	eventType := fmt.Sprintf("%s:%s", strings.ToLower(record.OperationName), strings.ToLower(record.Category))
-	eventType = strings.ReplaceAll(eventType, "microsoft", "azure")
-	eventType = strings.ReplaceAll(eventType, ".", ":")
-	eventType = strings.ReplaceAll(eventType, "/", ":")
-	return eventType
 }

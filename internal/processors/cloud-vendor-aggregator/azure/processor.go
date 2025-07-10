@@ -22,36 +22,41 @@ import (
 	"slices"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
-	azurecommons "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/commons"
+	"github.com/mia-platform/integration-connector-agent/internal/azure"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/services/functions"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/services/storage"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/config"
-	azureactivitylogeventhubevents "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub/events"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/sirupsen/logrus"
 )
 
 type Processor struct {
-	logger      *logrus.Logger
-	credentials azcore.TokenCredential
+	logger *logrus.Logger
+	client azure.ClientInterface
 }
 
 func New(logger *logrus.Logger, authOptions config.AuthOptions) (*Processor, error) {
-	credentials, err := azureCredentialFromData(authOptions)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Azure credentials: %w", err)
+	var credentials azcore.TokenCredential
+	var client azure.ClientInterface
+	var err error
+	if credentials, err = authOptions.AzureTokenProvider(); err != nil {
+		return nil, err
 	}
+
+	if client, err = azure.NewClient(credentials); err != nil {
+		return nil, err
+	}
+
 	return &Processor{
-		logger:      logger,
-		credentials: credentials,
+		logger: logger,
+		client: client,
 	}, nil
 }
 
 func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
-	activityLogEvent := new(azureactivitylogeventhubevents.ActivityLogEventRecord)
+	activityLogEvent := new(azure.ActivityLogEventRecord)
 	if err := json.Unmarshal(input.Data(), &activityLogEvent); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
 	}
@@ -90,38 +95,13 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 	return output, nil
 }
 
-func (p *Processor) EventDataProcessor(activityLogEvent *azureactivitylogeventhubevents.ActivityLogEventRecord) (commons.DataAdapter[*azureactivitylogeventhubevents.ActivityLogEventRecord], error) {
+func (p *Processor) EventDataProcessor(activityLogEvent *azure.ActivityLogEventRecord) (commons.DataAdapter[*azure.ActivityLogEventRecord], error) {
 	switch {
-	case azurecommons.EventIsForSource(activityLogEvent, storage.EventSource):
-		return storage.New(azurecommons.NewClient(p.credentials)), nil
-	case azurecommons.EventIsForSource(activityLogEvent, functions.EventSource):
-		return functions.New(azurecommons.NewClient(p.credentials)), nil
+	case azure.EventIsForSource(activityLogEvent, azure.StorageAccountEventSource):
+		return storage.New(p.client), nil
+	case azure.EventIsForSource(activityLogEvent, azure.FunctionEventSource):
+		return functions.New(p.client), nil
 	default:
 		return nil, fmt.Errorf("unsupported event source: %s", activityLogEvent.OperationName)
 	}
-}
-
-func azureCredentialFromData(config config.AuthOptions) (azcore.TokenCredential, error) {
-	credentials := make([]azcore.TokenCredential, 0)
-
-	if len(config.TenantID) > 0 && len(config.ClientID) > 0 && len(config.ClientSecret) > 0 {
-		secretCredential, err := azidentity.NewClientSecretCredential(
-			config.TenantID,
-			config.ClientID.String(),
-			config.ClientSecret.String(),
-			nil, // Options
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create an Azure client secret credential: %w", err)
-		}
-		credentials = append(credentials, secretCredential)
-	}
-
-	defaultCredential, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create a default Azure credential: %w", err)
-	}
-	credentials = append(credentials, defaultCredential)
-
-	return azidentity.NewChainedTokenCredential(credentials, nil)
 }
