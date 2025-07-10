@@ -18,6 +18,7 @@ package azure
 import (
 	"testing"
 
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -94,4 +95,19 @@ func TestEventIsForResourceType(t *testing.T) {
 			assert.Equal(t, test.expected, result)
 		})
 	}
+}
+
+func TestPrimaryKeys(t *testing.T) {
+	t.Parallel()
+
+	resourceID := "/SUBSCRIPTIONS/00000000-0000-0000-0000-000000000000/RESOURCEGROUPS/GROUP/PROVIDERS/MICROSOFT.COMPUTE/VIRTUALMACHINESCALESETS/SCALESET"
+
+	expectedKeys := entities.PkFields{
+		{
+			Key:   "resourceId",
+			Value: "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/group/providers/microsoft.compute/virtualmachinescalesets/scaleset",
+		},
+	}
+
+	assert.Equal(t, expectedKeys, primaryKeys(resourceID))
 }

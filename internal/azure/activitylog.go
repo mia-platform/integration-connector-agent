@@ -43,22 +43,13 @@ type ActivityLogEventRecord struct {
 	Properties      map[string]any            `json:"properties,omitempty"`
 }
 
-func (r *ActivityLogEventRecord) EntityOperationType() entities.Operation {
+func (r *ActivityLogEventRecord) entityOperationType() entities.Operation {
 	if strings.HasSuffix(strings.ToLower(r.OperationName), "delete") ||
 		strings.HasSuffix(strings.ToLower(r.OperationName), "delete/action") {
 		return entities.Delete
 	}
 
 	return entities.Write
-}
-
-func (r *ActivityLogEventRecord) PrimaryKeys() entities.PkFields {
-	return entities.PkFields{
-		{
-			Key:   "resourceId",
-			Value: strings.ToLower(r.ResourceID),
-		},
-	}
 }
 
 type ActivityLogEventIdentity struct {

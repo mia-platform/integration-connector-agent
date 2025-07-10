@@ -28,7 +28,6 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/config"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/sirupsen/logrus"
 )
 
@@ -38,14 +37,8 @@ type Processor struct {
 }
 
 func New(logger *logrus.Logger, authOptions config.AuthOptions) (*Processor, error) {
-	var credentials azcore.TokenCredential
-	var client azure.ClientInterface
-	var err error
-	if credentials, err = authOptions.AzureTokenProvider(); err != nil {
-		return nil, err
-	}
-
-	if client, err = azure.NewClient(credentials); err != nil {
+	client, err := azure.NewClient(authOptions.AuthConfig)
+	if err != nil {
 		return nil, err
 	}
 

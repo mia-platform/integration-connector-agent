@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
 const (
@@ -53,4 +55,13 @@ func EventIsForSource(event *ActivityLogEventRecord, resourceType string) bool {
 
 	return eventSource == resourceType+"/write" ||
 		(eventSource == TagsEventSource+"/write" && strings.Contains(resourceID, resourceType))
+}
+
+func primaryKeys(resourceID string) entities.PkFields {
+	return entities.PkFields{
+		{
+			Key:   "resourceId",
+			Value: strings.ToLower(resourceID),
+		},
+	}
 }

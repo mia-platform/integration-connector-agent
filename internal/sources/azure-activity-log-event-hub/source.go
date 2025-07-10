@@ -19,34 +19,71 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
-	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/azure"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	azureeventhub "github.com/mia-platform/integration-connector-agent/internal/sources/azure-event-hub"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2"
+	swagger "github.com/davidebianchi/gswagger"
+	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 )
 
-func AddSource(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipelineGroup, logger *logrus.Logger) error {
-	eventHubConfig, err := configFromGeneric(cfg, pg)
+type Config struct {
+	azure.EventHubConfig
+
+	ImportTriggerWebhookPath string `json:"importTriggerWebhookPath,omitempty"`
+}
+
+func (c *Config) Validate() error {
+	if err := c.EventHubConfig.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func AddSource(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipelineGroup, logger *logrus.Logger, router *swagger.Router[fiber.Handler, fiber.Router]) error {
+	config, err := configFromGeneric(cfg, pg)
 	if err != nil {
 		return err
 	}
 
-	return azureeventhub.SetupEventHub(ctx, eventHubConfig, pg, logger)
+	pg.Start(ctx)
+	go func(ctx context.Context, config azure.EventHubConfig, logger *logrus.Logger) {
+		azureeventhub.SetupEventHub(ctx, config, logger)
+	}(ctx, config.EventHubConfig, logger)
+
+	if len(config.ImportTriggerWebhookPath) > 0 {
+		client, err := azure.NewClient(config.AuthConfig)
+		if err != nil {
+			return err
+		}
+		_, err = router.AddRoute(
+			http.MethodPost,
+			config.ImportTriggerWebhookPath,
+			webhookHandler(client, pg),
+			swagger.Definitions{},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func configFromGeneric(cfg config.GenericConfig, pg pipeline.IPipelineGroup) (*azure.EventHubConfig, error) {
-	eventHubConfig, err := config.GetConfig[*azure.EventHubConfig](cfg)
+func configFromGeneric(cfg config.GenericConfig, pg pipeline.IPipelineGroup) (*Config, error) {
+	sourceCfg, err := config.GetConfig[*Config](cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	eventHubConfig.EventConsumer = activityLogConsumer(pg)
-	return eventHubConfig, nil
+	sourceCfg.EventConsumer = activityLogConsumer(pg)
+	return sourceCfg, nil
 }
 
 func activityLogConsumer(pg pipeline.IPipelineGroup) azure.EventConsumer {
@@ -57,7 +94,7 @@ func activityLogConsumer(pg pipeline.IPipelineGroup) azure.EventConsumer {
 		}
 
 		for _, record := range activityLogEventData.Records {
-			if event := pipelineEventFromRecord(record); event != nil {
+			if event := azure.EventFromRecord(record); event != nil {
 				pg.AddMessage(event)
 			}
 		}
@@ -66,16 +103,8 @@ func activityLogConsumer(pg pipeline.IPipelineGroup) azure.EventConsumer {
 	}
 }
 
-func pipelineEventFromRecord(record *azure.ActivityLogEventRecord) *entities.Event {
-	rawRecord, err := json.Marshal(record)
-	if err != nil {
-		return nil
-	}
-
-	return &entities.Event{
-		PrimaryKeys:   record.PrimaryKeys(),
-		OperationType: record.EntityOperationType(),
-		Type:          "",
-		OriginalRaw:   rawRecord,
+func webhookHandler(client azure.ClientInterface, pg pipeline.IPipelineGroup) func(c *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		return c.SendStatus(http.StatusOK)
 	}
 }

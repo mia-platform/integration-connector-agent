@@ -44,9 +44,16 @@ type Client struct {
 	armClient *armresources.Client
 }
 
-func NewClient(credentials azcore.TokenCredential) (ClientInterface, error) {
-	client, err := armresources.NewClient("", credentials, nil)
-	if err != nil {
+func NewClient(config AuthConfig) (ClientInterface, error) {
+	var credentials azcore.TokenCredential
+	var client *armresources.Client
+	var err error
+
+	if credentials, err = config.AzureTokenProvider(); err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrClientInitialization, err)
+	}
+
+	if client, err = armresources.NewClient("", credentials, nil); err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrClientInitialization, err)
 	}
 

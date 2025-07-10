@@ -57,24 +57,7 @@ func TestEntityOperationType(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
-			assert.Equal(t, test.expectedType, test.record.EntityOperationType())
+			assert.Equal(t, test.expectedType, test.record.entityOperationType())
 		})
 	}
-}
-
-func TestPrimaryKeys(t *testing.T) {
-	t.Parallel()
-
-	record := ActivityLogEventRecord{
-		ResourceID: "/SUBSCRIPTIONS/00000000-0000-0000-0000-000000000000/RESOURCEGROUPS/GROUP/PROVIDERS/MICROSOFT.COMPUTE/VIRTUALMACHINESCALESETS/SCALESET",
-	}
-
-	expectedKeys := entities.PkFields{
-		{
-			Key:   "resourceId",
-			Value: "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/group/providers/microsoft.compute/virtualmachinescalesets/scaleset",
-		},
-	}
-
-	assert.Equal(t, expectedKeys, record.PrimaryKeys())
 }

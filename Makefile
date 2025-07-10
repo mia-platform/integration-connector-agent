@@ -106,3 +106,10 @@ include tools/make/release.mk
 ci: test-integration-coverage
 
 ### Put your custom import, define or goals under here ###
+
+generate-deps: $(TOOLS_BIN)/stringer
+$(TOOLS_BIN)/stringer: $(TOOLS_DIR)/STRINGER_VERSION
+	$(eval STRINGER_VERSION:= $(shell cat $<))
+	mkdir -p $(TOOLS_BIN)
+	$(info Installing stringer $(STRINGER_VERSION) bin in $(TOOLS_BIN))
+	GOBIN=$(TOOLS_BIN) go install golang.org/x/tools/cmd/stringer@$(STRINGER_VERSION)
