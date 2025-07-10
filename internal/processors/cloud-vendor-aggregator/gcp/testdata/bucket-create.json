@@ -1,0 +1,17 @@
+{
+	"asset": {
+		"ancestors": [
+			"projects/123123123123",
+			"folders/456456456456",
+			"organizations/789789789789"
+		],
+		"assetType": "storage.googleapis.com/Bucket",
+		"name": "//storage.googleapis.com/test-bucket",
+		"resource": {},
+		"updateTime": "2025-06-17T15:33:46.875574Z"
+	},
+	"priorAssetState": "DOES_NOT_EXIST",
+	"window": {
+		"startTime": "2025-06-17T15:33:46.875574Z"
+	}
+}
