@@ -19,49 +19,26 @@ import (
 	"context"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/internal"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/gcpclient"
 
 	"github.com/sirupsen/logrus"
 )
 
-type ConsumerOptions struct {
-	Ctx context.Context
-	Log *logrus.Logger
-}
-
-type GCPConsumer struct {
-	config   *Config
+type pubsubConsumer struct {
 	pipeline pipeline.IPipelineGroup
 	log      *logrus.Logger
-	client   internal.PubSub
+	client   gcpclient.GCP
 }
 
-func New(options *ConsumerOptions, cfg config.GenericConfig, pipeline pipeline.IPipelineGroup, eventBuilder entities.EventBuilder) (*GCPConsumer, error) {
-	config, err := config.GetConfig[*Config](cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := internal.New(options.Ctx, options.Log, internal.PubSubConfig{
-		ProjectID:          config.ProjectID,
-		TopicName:          config.TopicName,
-		SubscriptionID:     config.SubscriptionID,
-		AckDeadlineSeconds: config.AckDeadlineSeconds,
-		CredentialsJSON:    config.CredentialsJSON.String(),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return newWithClient(options, pipeline, eventBuilder, config, client)
-}
-
-func newWithClient(options *ConsumerOptions, pipeline pipeline.IPipelineGroup, eventBuilder entities.EventBuilder, config *Config, client internal.PubSub) (*GCPConsumer, error) {
-	pipeline.Start(options.Ctx)
-
-	go func(ctx context.Context, log *logrus.Logger, client internal.PubSub) {
+func newPubSub(
+	ctx context.Context,
+	log *logrus.Logger,
+	pipeline pipeline.IPipelineGroup,
+	eventBuilder entities.EventBuilder,
+	client gcpclient.GCP,
+) (*pubsubConsumer, error) {
+	go func(ctx context.Context, log *logrus.Logger, client gcpclient.GCP) {
 		err := client.Listen(ctx, func(ctx context.Context, data []byte) error {
 			event, err := eventBuilder.GetPipelineEvent(ctx, data)
 			if err != nil {
@@ -76,16 +53,15 @@ func newWithClient(options *ConsumerOptions, pipeline pipeline.IPipelineGroup, e
 		}
 
 		client.Close()
-	}(options.Ctx, options.Log, client)
+	}(ctx, log, client)
 
-	return &GCPConsumer{
-		log:      options.Log,
-		config:   config,
+	return &pubsubConsumer{
+		log:      log,
 		client:   client,
 		pipeline: pipeline,
 	}, nil
 }
 
-func (g *GCPConsumer) Close() error {
+func (g *pubsubConsumer) Close() error {
 	return g.client.Close()
 }

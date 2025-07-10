@@ -1,0 +1,17 @@
+{
+  "asset": {
+    "ancestors": [
+      "projects/123123123123",
+      "folders/456456456456",
+      "organizations/789789789789"
+    ],
+    "assetType": "run.googleapis.com/Service",
+    "name": "//run.googleapis.com/projects/the-project/locations/europe-west1/services/test-function",
+    "resource": {},
+    "updateTime": "2025-07-03T10:43:09.645866Z"
+  },
+  "priorAssetState": "DOES_NOT_EXIST",
+  "window": {
+    "startTime": "2025-07-03T10:43:09.645866Z"
+  }
+}

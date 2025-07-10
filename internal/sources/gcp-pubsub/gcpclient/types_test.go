@@ -13,26 +13,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build integration
-// +build integration
-
-package internal
+package gcpclient
 
 import (
 	"testing"
 
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
 
-func TestNew(t *testing.T) {
-	log, _ := test.NewNullLogger()
-	c, err := New(t.Context(), log, PubSubConfig{
-		ProjectID:          "test-project",
-		AckDeadlineSeconds: 10,
-		TopicName:          "test-topic",
-		SubscriptionID:     "test-subscription",
-	})
-	require.NoError(t, err)
-	require.NotNil(t, c)
+func TestBucketAssetName(t *testing.T) {
+	bucket := &Bucket{Name: "test-bucket"}
+	require.Equal(t, "//storage.googleapis.com/test-bucket", bucket.AssetName())
 }

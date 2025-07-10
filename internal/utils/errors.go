@@ -32,3 +32,10 @@ func ValidationError(message string) *HTTPError {
 		Message: message,
 	}
 }
+
+func InternalServerError(message string) *HTTPError {
+	return &HTTPError{
+		Error:   "Internal Server Error",
+		Message: message,
+	}
+}

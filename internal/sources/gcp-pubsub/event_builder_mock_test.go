@@ -49,6 +49,8 @@ type pipelineGroupMock struct {
 
 	assertAddMessage func(data entities.PipelineEvent)
 	closeErr         error
+
+	Messages []entities.PipelineEvent
 }
 
 func (p *pipelineGroupMock) AddMessage(data entities.PipelineEvent) {
@@ -56,6 +58,7 @@ func (p *pipelineGroupMock) AddMessage(data entities.PipelineEvent) {
 	if p.assertAddMessage != nil {
 		p.assertAddMessage(data)
 	}
+	p.Messages = append(p.Messages, data)
 }
 
 func (p *pipelineGroupMock) Start(_ context.Context) {

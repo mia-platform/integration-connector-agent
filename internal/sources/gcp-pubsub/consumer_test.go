@@ -23,42 +23,11 @@ import (
 	"time"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/config"
-	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/internal"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/gcpclient"
 
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
-
-func TestNew(t *testing.T) {
-	pg := &pipeline.Group{}
-	log, _ := test.NewNullLogger()
-
-	options := &ConsumerOptions{
-		Ctx: t.Context(),
-		Log: log,
-	}
-
-	t.Run("fails on invalid config", func(t *testing.T) {
-		_, err := New(options, config.GenericConfig{
-			Type: "gcppubsub",
-			Raw:  []byte(`{"projectId": "", "topicName": "", "subscriptionId": ""}`),
-		}, pg, &eventBuilderMock{})
-
-		require.ErrorIs(t, err, config.ErrConfigNotValid)
-	})
-
-	t.Run("succeeds with valid config", func(t *testing.T) {
-		consumer, err := New(options, config.GenericConfig{
-			Type: "gcppubsub",
-			Raw:  []byte(`{"projectId": "test-project", "topicName": "test-topic", "subscriptionId": "test-subscription"}`),
-		}, pg, &eventBuilderMock{})
-
-		require.NoError(t, err)
-		require.NotNil(t, consumer)
-	})
-}
 
 func TestClientIntegrationWithEventBuilder(t *testing.T) {
 	log, _ := test.NewNullLogger()
@@ -69,17 +38,13 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 	// https://pkg.go.dev/cloud.google.com/go/pubsub@v1.49.0#Subscription.Receive
 	t.Run("client lifecycle with cancelable context", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(t.Context())
-		o := &ConsumerOptions{Ctx: ctx, Log: log}
 		pg := &pipelineGroupMock{}
 		e := &eventBuilderMock{}
-		config := &Config{}
-		client := &internal.MockPubSub{}
+		client := &gcpclient.MockPubSub{}
 
-		consumer, err := newWithClient(o, pg, e, config, client)
+		consumer, err := newPubSub(ctx, log, pg, e, client)
 		require.NoError(t, err)
 		require.NotNil(t, consumer)
-
-		require.True(t, pg.startInvoked)
 
 		// Allow some time for the goroutine to start
 		time.Sleep(10 * time.Millisecond)
@@ -98,7 +63,6 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 		dataFromPubSub := []byte("test-data-from-pubsub")
 
 		ctx, cancel := context.WithCancel(t.Context())
-		o := &ConsumerOptions{Ctx: ctx, Log: log}
 		pg := &pipelineGroupMock{
 			assertAddMessage: func(data entities.PipelineEvent) {
 				require.NotNil(t, data)
@@ -113,10 +77,9 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 				Type: "some-type",
 			},
 		}
-		config := &Config{}
 
-		client := &internal.MockPubSub{
-			ListenAssert: func(ctx context.Context, handler internal.ListenerFunc) {
+		client := &gcpclient.MockPubSub{
+			ListenAssert: func(ctx context.Context, handler gcpclient.ListenerFunc) {
 				require.NotNil(t, ctx)
 				require.NotNil(t, handler)
 
@@ -126,11 +89,9 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		consumer, err := newWithClient(o, pg, e, config, client)
+		consumer, err := newPubSub(ctx, log, pg, e, client)
 		require.NoError(t, err)
 		require.NotNil(t, consumer)
-
-		require.True(t, pg.startInvoked)
 
 		// Allow some time for the goroutine to start
 		time.Sleep(10 * time.Millisecond)
@@ -146,7 +107,6 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 		dataFromPubSub := []byte("test-data-from-pubsub")
 
 		ctx, cancel := context.WithCancel(t.Context())
-		o := &ConsumerOptions{Ctx: ctx, Log: log}
 		pg := &pipelineGroupMock{
 			assertAddMessage: func(data entities.PipelineEvent) {
 				require.NotNil(t, data)
@@ -159,10 +119,9 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 			returnedErr: fmt.Errorf("some error from event builder"),
 		}
-		config := &Config{}
 
-		client := &internal.MockPubSub{
-			ListenAssert: func(ctx context.Context, handler internal.ListenerFunc) {
+		client := &gcpclient.MockPubSub{
+			ListenAssert: func(ctx context.Context, handler gcpclient.ListenerFunc) {
 				require.NotNil(t, ctx)
 				require.NotNil(t, handler)
 
@@ -172,11 +131,9 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		consumer, err := newWithClient(o, pg, e, config, client)
+		consumer, err := newPubSub(ctx, log, pg, e, client)
 		require.NoError(t, err)
 		require.NotNil(t, consumer)
-
-		require.True(t, pg.startInvoked)
 
 		// Allow some time for the goroutine to start
 		time.Sleep(10 * time.Millisecond)
@@ -192,7 +149,7 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 		dataFromPubSub := []byte("test-data-from-pubsub")
 
 		ctx, cancel := context.WithCancel(t.Context())
-		o := &ConsumerOptions{Ctx: ctx, Log: log}
+
 		pg := &pipelineGroupMock{
 			assertAddMessage: func(data entities.PipelineEvent) {
 				require.NotNil(t, data)
@@ -213,12 +170,11 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 				}, nil
 			},
 		}
-		config := &Config{}
 
-		var handlerRef internal.ListenerFunc
+		var handlerRef gcpclient.ListenerFunc
 		var handlerRefLock sync.Mutex
-		client := &internal.MockPubSub{
-			ListenAssert: func(ctx context.Context, handler internal.ListenerFunc) {
+		client := &gcpclient.MockPubSub{
+			ListenAssert: func(ctx context.Context, handler gcpclient.ListenerFunc) {
 				require.NotNil(t, ctx)
 				require.NotNil(t, handler)
 
@@ -229,11 +185,9 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		consumer, err := newWithClient(o, pg, e, config, client)
+		consumer, err := newPubSub(ctx, log, pg, e, client)
 		require.NoError(t, err)
 		require.NotNil(t, consumer)
-
-		require.True(t, pg.startInvoked)
 
 		// Allow some time for the goroutine to start
 		time.Sleep(10 * time.Millisecond)
