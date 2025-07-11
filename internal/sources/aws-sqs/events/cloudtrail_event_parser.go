@@ -139,32 +139,6 @@ func (e CloudTrailEvent) ResourceName() (string, error) {
 	}
 
 	return "", fmt.Errorf("resource name field %s not found in event detail", resourceNameField)
-
-	// var usedResponseElements bool
-	// params := e.Detail.RequestParameters
-	// if slices.Contains(eventMappedData.resourceNameFromResponseEvents, e.Detail.EventName) {
-	// 	usedResponseElements = true
-	// 	params = e.Detail.ResponseElements
-	// }
-
-	// value, exists := params[resourceNameField]
-	// if !exists {
-	// 	if usedResponseElements {
-	// 		value, exists = e.Detail.RequestParameters[resourceNameField]
-	// 		if !exists {
-	// 			return "", fmt.Errorf("resource name field %s not found neither in response elements nor in request params event detail", resourceNameField)
-	// 		}
-	// 	} else {
-	// 		return "", fmt.Errorf("resource name field %s not found in response elements", resourceNameField)
-	// 	}
-	// }
-
-	// strVal, ok := value.(string)
-	// if !ok {
-	// 	return "", fmt.Errorf("resource name field %s is not a string", resourceNameField)
-	// }
-
-	// return strVal, nil
 }
 
 func (e CloudTrailEvent) EventSource() string {

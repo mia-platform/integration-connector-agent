@@ -30,45 +30,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// func TestNew(t *testing.T) {
-// 	pg := &pipeline.Group{}
-// 	log, _ := test.NewNullLogger()
-
-// 	options := &ConsumerOptions{
-// 		Ctx: t.Context(),
-// 		Log: log,
-// 	}
-
-// 	t.Run("invalid configurations", func(t *testing.T) {
-// 		testCases := []struct {
-// 			config string
-// 		}{
-// 			{config: `{"queueUrl": ""}`},
-// 		}
-
-// 		for _, tc := range testCases {
-// 			t.Run(tc.config, func(t *testing.T) {
-// 				_, err := New(options, config.GenericConfig{
-// 					Type: "aws-sqs",
-// 					Raw:  []byte(tc.config),
-// 				}, pg, &awssqsevents.EventBuilderMock{})
-// 				require.ErrorIs(t, err, config.ErrConfigNotValid)
-// 			})
-// 		}
-// 	})
-
-// 	t.Run("succeeds with valid config", func(t *testing.T) {
-// 		t.Setenv("MY_SECRET_ENV", "SECRET_VALUE")
-// 		consumer, err := New(options, config.GenericConfig{
-// 			Type: "awssqs",
-// 			Raw:  []byte(`{"queueUrl": "https://something.com","secretAccessKey":{"fromEnv":"MY_SECRET_ENV"},"accessKeyId":"key","region":"us-east-1"}`),
-// 		}, pg, &awssqsevents.EventBuilderMock{})
-
-// 		require.NoError(t, err)
-// 		require.NotNil(t, consumer)
-// 	})
-// }
-
 func TestClientIntegrationWithEventBuilder(t *testing.T) {
 	log, _ := test.NewNullLogger()
 
