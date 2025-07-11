@@ -24,6 +24,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
 	fakeazcore "github.com/Azure/azure-sdk-for-go/sdk/azcore/fake"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources/v3"
 	fakearmresources "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources/v3/fake"
 	"github.com/stretchr/testify/assert"
@@ -38,9 +39,6 @@ func TestClient(t *testing.T) {
 	t.Parallel()
 
 	resourceID := "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/testGroup/providers/Microsoft.Test/testResources/testResource"
-	pointString := func(s string) *string {
-		return &s
-	}
 	testCases := map[string]struct {
 		responder        fakeazcore.Responder[armresources.ClientGetByIDResponse]
 		errorResponder   fakeazcore.ErrorResponder
@@ -52,11 +50,11 @@ func TestClient(t *testing.T) {
 				responder := fakeazcore.Responder[armresources.ClientGetByIDResponse]{}
 				responder.SetResponse(http.StatusOK, armresources.ClientGetByIDResponse{
 					GenericResource: armresources.GenericResource{
-						Name:     pointString("testResource"),
-						Type:     pointString("Microsoft.Test/testResources"),
-						Location: pointString("eastus"),
+						Name:     to.Ptr("testResource"),
+						Type:     to.Ptr("Microsoft.Test/testResources"),
+						Location: to.Ptr("eastus"),
 						Tags: map[string]*string{
-							"tagName":  pointString("tagValue"),
+							"tagName":  to.Ptr("tagValue"),
 							"tagName2": nil,
 						},
 					},
