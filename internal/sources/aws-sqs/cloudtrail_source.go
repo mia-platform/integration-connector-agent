@@ -17,6 +17,7 @@ package awssqs
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -157,6 +158,56 @@ func (s *CloudTrailSource) webhookHandler(c *fiber.Ctx) error {
 	if err := s.config.Authentication.CheckSignature(c); err != nil {
 		s.log.WithError(err).Error("error validating webhook request")
 		return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
+	}
+
+	eventBuilder := awssqsevents.NewCloudTrailEventBuilder[*awssqsevents.CloudTrailImportEvent]()
+
+	buckets, err := s.aws.ListBuckets(c.UserContext())
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(utils.InternalServerError("failed to list buckets: " + err.Error()))
+	}
+	for _, bucket := range buckets {
+		importEvent := awssqsevents.CloudTrailImportEvent{
+			Name:   bucket.Name,
+			Source: awssqsevents.CloudTrailEventStorageType,
+		}
+		data, err := json.Marshal(importEvent)
+		if err != nil {
+			s.log.WithField("bucketName", bucket.Name).WithError(err).Warn("failed to create import event data for bucket")
+			continue
+		}
+
+		event, err := eventBuilder.GetPipelineEvent(s.ctx, data)
+		if err != nil {
+			s.log.WithField("bucketName", bucket.Name).WithError(err).Warn("failed to create import event for bucket")
+			continue
+		}
+
+		s.pipeline.AddMessage(event)
+	}
+
+	functions, err := s.aws.ListFunctions(c.UserContext())
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(utils.InternalServerError("failed to list functions: " + err.Error()))
+	}
+	for _, function := range functions {
+		importEvent := awssqsevents.CloudTrailImportEvent{
+			Name:   function.Name,
+			Source: awssqsevents.CloudTrailEventFunctionType,
+		}
+		data, err := json.Marshal(importEvent)
+		if err != nil {
+			s.log.WithField("functionName", function.Name).WithError(err).Warn("failed to create import event data for function")
+			continue
+		}
+
+		event, err := eventBuilder.GetPipelineEvent(s.ctx, data)
+		if err != nil {
+			s.log.WithField("functionName", function.Name).WithError(err).Warn("failed to create import event for function")
+			continue
+		}
+
+		s.pipeline.AddMessage(event)
 	}
 
 	return nil

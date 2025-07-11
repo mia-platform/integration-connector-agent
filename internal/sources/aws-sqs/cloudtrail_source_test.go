@@ -22,9 +22,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/awsclient"
+	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 	"github.com/mia-platform/integration-connector-agent/internal/testutils"
 
@@ -140,6 +142,70 @@ func TestImportWebhook(t *testing.T) {
 
 			require.Equal(t, http.StatusBadRequest, resp.StatusCode, "Resp: %s", string(respBody))
 		})
+	})
+
+	t.Run("procudes a message for each asset returned by AWS", func(t *testing.T) {
+		pg := &pipeline.PipelineGroupMock{
+			AssertAddMessage: func(data entities.PipelineEvent) {
+				require.NotNil(t, data)
+				require.Equal(t, awssqsevents.ImportEventType, data.GetType())
+			},
+		}
+
+		app, router := testutils.GetTestRouter(t)
+		client := &awsclient.AWSMock{
+			ListBucketsResult: []*awsclient.Bucket{
+				{Name: "bucket1"},
+				{Name: "bucket2"},
+			},
+			ListFunctionsResult: []*awsclient.Function{
+				{Name: "function1"},
+				{Name: "function2"},
+			},
+		}
+
+		consumer := newCloudTrailSource(t.Context(), log, config, pg, router)
+		require.NotNil(t, consumer)
+		require.NoError(t, consumer.init(client))
+
+		resp, err := app.Test(getWebhookRequest(t, nil), -1)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		require.True(t, client.ListBucketsInvoked())
+		require.True(t, client.ListFunctionsInvoked())
+
+		require.Len(t, pg.Messages, 4)
+
+		require.Equal(t, awssqsevents.ImportEventType, pg.Messages[0].GetType())
+		require.Equal(t, entities.Write, pg.Messages[0].Operation())
+		require.Equal(t, entities.PkFields{
+			entities.PkField{Key: "resourceName", Value: "bucket1"},
+			entities.PkField{Key: "eventSource", Value: awssqsevents.CloudTrailEventStorageType},
+		}, pg.Messages[0].GetPrimaryKeys())
+
+		require.Equal(t, awssqsevents.ImportEventType, pg.Messages[1].GetType())
+		require.Equal(t, entities.Write, pg.Messages[1].Operation())
+		require.Equal(t, entities.PkFields{
+			entities.PkField{Key: "resourceName", Value: "bucket2"},
+			entities.PkField{Key: "eventSource", Value: awssqsevents.CloudTrailEventStorageType},
+		}, pg.Messages[1].GetPrimaryKeys())
+
+		require.Equal(t, awssqsevents.ImportEventType, pg.Messages[2].GetType())
+		require.Equal(t, entities.Write, pg.Messages[2].Operation())
+		require.Equal(t, entities.PkFields{
+			entities.PkField{Key: "resourceName", Value: "function1"},
+			entities.PkField{Key: "eventSource", Value: awssqsevents.CloudTrailEventFunctionType},
+		}, pg.Messages[2].GetPrimaryKeys())
+
+		require.Equal(t, awssqsevents.ImportEventType, pg.Messages[3].GetType())
+		require.Equal(t, entities.Write, pg.Messages[3].Operation())
+		require.Equal(t, entities.PkFields{
+			entities.PkField{Key: "resourceName", Value: "function2"},
+			entities.PkField{Key: "eventSource", Value: awssqsevents.CloudTrailEventFunctionType},
+		}, pg.Messages[3].GetPrimaryKeys())
 	})
 }
 
