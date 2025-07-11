@@ -161,8 +161,11 @@ func (s *concrete) ListBuckets(ctx context.Context) ([]*Bucket, error) {
 	result := make([]*Bucket, 0, len(buckets.Buckets))
 	for _, bucket := range buckets.Buckets {
 		b := &Bucket{
-			Name:   *bucket.Name,
-			Region: *bucket.BucketRegion,
+			Name: *bucket.Name,
+		}
+
+		if bucket.BucketRegion != nil {
+			b.Region = *bucket.BucketRegion
 		}
 
 		parsedArn, err := arn.Parse(*bucket.BucketArn)
