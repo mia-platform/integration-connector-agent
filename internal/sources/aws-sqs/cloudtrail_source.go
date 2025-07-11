@@ -18,12 +18,15 @@ package awssqs
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
 	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/internal"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
@@ -36,6 +39,9 @@ type CloudTrailSourceConfig struct {
 	AccessKeyID     string              `json:"accessKeyId,omitempty"`
 	SecretAccessKey config.SecretSource `json:"secretAccessKey,omitempty"`
 	SessionToken    config.SecretSource `json:"sessionToken,omitempty"`
+
+	WebhookPath    string       `json:"webhookPath,omitempty"`
+	Authentication webhook.HMAC `json:"authentication"`
 }
 
 func (c *CloudTrailSourceConfig) Validate() error {
@@ -52,7 +58,8 @@ type CloudTrailSource struct {
 	config   *CloudTrailSourceConfig
 	pipeline pipeline.IPipelineGroup
 
-	sqs    internal.SQS
+	aws    internal.SQS
+	sqs    *sqsConsumer
 	router *swagger.Router[fiber.Handler, fiber.Router]
 }
 
@@ -111,16 +118,46 @@ func newCloudTrailSource(
 func (s *CloudTrailSource) init(client internal.SQS) error {
 	s.pipeline.Start(s.ctx)
 
-	s.sqs = client
+	s.aws = client
 
 	eventBuilder := awssqsevents.NewCloudTrailEventBuilder()
-	newSQS(s.ctx, s.log, s.pipeline, eventBuilder, s.sqs)
+	sqsConsumer, err := newSQS(s.ctx, s.log, s.pipeline, eventBuilder, s.aws)
+	if err != nil {
+		return fmt.Errorf("failed to create SQS consumer: %w", err)
+	}
+	s.sqs = sqsConsumer
+
+	if s.config.WebhookPath != "" {
+		s.log.WithField("webhookPath", s.config.WebhookPath).Info("Registering import webhook")
+		if err := s.registerImportWebhook(); err != nil {
+			return fmt.Errorf("failed to register import webhook: %w", err)
+		}
+	}
 	return nil
 }
 
 func (s *CloudTrailSource) Close() error {
+	if s.aws != nil {
+		return s.aws.Close()
+	}
 	if s.sqs != nil {
 		return s.sqs.Close()
 	}
+	return nil
+}
+
+func (s *CloudTrailSource) registerImportWebhook() error {
+	apiPath := s.config.WebhookPath
+
+	_, err := s.router.AddRoute(http.MethodPost, apiPath, s.webhookHandler, swagger.Definitions{})
+	return err
+}
+
+func (s *CloudTrailSource) webhookHandler(c *fiber.Ctx) error {
+	if err := s.config.Authentication.CheckSignature(c); err != nil {
+		s.log.WithError(err).Error("error validating webhook request")
+		return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
+	}
+
 	return nil
 }
