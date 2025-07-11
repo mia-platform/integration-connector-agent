@@ -18,7 +18,6 @@ package lambda
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/aws/clients/lambda"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
@@ -75,7 +74,6 @@ func (l *Lambda) lambdaName(event awssqsevents.IEvent) string {
 	if err == nil {
 		return name
 	}
-	fmt.Printf("\nxzRRRRRRRRRRR %+v\n", err)
 	l.logger.WithError(err).Debug("failed to get resource name from event")
 	return ""
 }
