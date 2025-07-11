@@ -37,7 +37,7 @@ import (
 )
 
 func TestNewInventorySource(t *testing.T) {
-	pg := &pipelineGroupMock{}
+	pg := &pipeline.PipelineGroupMock{}
 	log, _ := test.NewNullLogger()
 
 	t.Run("fails on invalid config", func(t *testing.T) {
@@ -47,7 +47,7 @@ func TestNewInventorySource(t *testing.T) {
 		}, pg, &swagger.Router[fiber.Handler, fiber.Router]{})
 
 		require.ErrorIs(t, err, config.ErrConfigNotValid)
-		require.False(t, pg.startInvoked)
+		require.False(t, pg.StartInvoked)
 	})
 }
 
@@ -142,8 +142,8 @@ func TestImportWebhook(t *testing.T) {
 	})
 
 	t.Run("produces a message for each asset returned by gcp", func(t *testing.T) {
-		pg := &pipelineGroupMock{
-			assertAddMessage: func(data entities.PipelineEvent) {
+		pg := &pipeline.PipelineGroupMock{
+			AssertAddMessage: func(data entities.PipelineEvent) {
 				require.NotNil(t, data)
 				require.Equal(t, gcppubsubevents.ImportEventType, data.GetType())
 			},

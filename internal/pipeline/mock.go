@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gcppubsub
+package pipeline
 
 import (
 	"context"
@@ -21,23 +21,30 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
-type eventBuilderMock struct {
-	getPipelineEventInvoked bool
-	GetPipelineEventFunc    func(ctx context.Context, data []byte) (entities.PipelineEvent, error)
+type PipelineGroupMock struct {
+	AddMessageInvoked bool
+	StartInvoked      bool
+	CloseInvoked      bool
 
-	assertData    func(data []byte)
-	returnedEvent *entities.Event
-	returnedErr   error
+	AssertAddMessage func(data entities.PipelineEvent)
+	CloseErr         error
+
+	Messages []entities.PipelineEvent
 }
 
-func (e *eventBuilderMock) GetPipelineEvent(_ context.Context, data []byte) (entities.PipelineEvent, error) {
-	e.getPipelineEventInvoked = true
-	if e.GetPipelineEventFunc != nil {
-		return e.GetPipelineEventFunc(context.Background(), data)
+func (p *PipelineGroupMock) AddMessage(data entities.PipelineEvent) {
+	p.AddMessageInvoked = true
+	if p.AssertAddMessage != nil {
+		p.AssertAddMessage(data)
 	}
+	p.Messages = append(p.Messages, data)
+}
 
-	if e.assertData != nil {
-		e.assertData(data)
-	}
-	return e.returnedEvent, e.returnedErr
+func (p *PipelineGroupMock) Start(_ context.Context) {
+	p.StartInvoked = true
+}
+
+func (p *PipelineGroupMock) Close() error {
+	p.CloseInvoked = true
+	return p.CloseErr
 }
