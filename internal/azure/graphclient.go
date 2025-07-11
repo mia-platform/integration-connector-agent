@@ -25,6 +25,14 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
+type GraphLiveData struct {
+	ID       string            `json:"id"`
+	Name     string            `json:"name"`
+	Type     string            `json:"type"`
+	Location string            `json:"location"`
+	Tags     map[string]string `json:"tags"`
+}
+
 type GraphClientInterface interface {
 	Resources(ctx context.Context) ([]*entities.Event, error)
 }

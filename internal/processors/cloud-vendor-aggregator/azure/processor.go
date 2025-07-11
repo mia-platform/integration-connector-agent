@@ -49,16 +49,26 @@ func New(logger *logrus.Logger, authOptions config.AuthOptions) (*Processor, err
 }
 
 func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
-	activityLogEvent := new(azure.ActivityLogEventRecord)
-	if err := json.Unmarshal(input.Data(), &activityLogEvent); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
-	}
-
 	output := input.Clone()
 
 	if input.Operation() == entities.Delete {
 		p.logger.Debug("Delete operation detected, skipping processing")
 		return output, nil
+	}
+
+	if input.GetType() == azure.EventTypeFromLiveLoad.String() {
+		newData, err := p.GetDataFromLiveEvent(input)
+		if err != nil {
+			p.logger.WithError(err).Error("Failed to get data from Azure service")
+			return nil, fmt.Errorf("failed to get data from Azure service: %w", err)
+		}
+		output.WithData(newData)
+		return output, nil
+	}
+
+	activityLogEvent := new(azure.ActivityLogEventRecord)
+	if err := json.Unmarshal(input.Data(), &activityLogEvent); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
 	}
 
 	successResultTypes := []string{"Success", "Succeeded"}
@@ -97,4 +107,19 @@ func (p *Processor) EventDataProcessor(activityLogEvent *azure.ActivityLogEventR
 	default:
 		return nil, fmt.Errorf("unsupported event source: %s", activityLogEvent.OperationName)
 	}
+}
+
+func (p *Processor) GetDataFromLiveEvent(event entities.PipelineEvent) ([]byte, error) {
+	liveData := new(azure.GraphLiveData)
+	if err := json.Unmarshal(event.Data(), liveData); err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(
+		commons.NewAsset(liveData.Name, liveData.Type, commons.AzureAssetProvider).
+			WithLocation(liveData.Location).
+			WithTags(liveData.Tags).
+			WithRelationships(azure.RelationshipFromID(liveData.ID)).
+			WithRawData(event.Data()),
+	)
 }

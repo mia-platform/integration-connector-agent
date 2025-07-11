@@ -25,17 +25,21 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	azureeventhub "github.com/mia-platform/integration-connector-agent/internal/sources/azure-event-hub"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2"
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
+	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
 	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
 	azure.EventHubConfig
 
-	ImportTriggerWebhookPath string `json:"importTriggerWebhookPath,omitempty"`
+	Authentication *webhook.HMAC `json:"authentication,omitempty"`
+	WebhookPath    string        `json:"webhookPath"`
 }
 
 func (c *Config) Validate() error {
@@ -44,6 +48,14 @@ func (c *Config) Validate() error {
 	}
 
 	return nil
+}
+
+func (c *Config) checkSignature(ctx *fiber.Ctx) error {
+	if c.Authentication == nil {
+		return nil
+	}
+
+	return c.Authentication.CheckSignature(ctx)
 }
 
 func AddSource(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipelineGroup, logger *logrus.Logger, router *swagger.Router[fiber.Handler, fiber.Router]) error {
@@ -57,15 +69,15 @@ func AddSource(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipel
 		azureeventhub.SetupEventHub(ctx, config, logger)
 	}(ctx, config.EventHubConfig, logger)
 
-	if len(config.ImportTriggerWebhookPath) > 0 {
-		client, err := azure.NewClient(config.AuthConfig)
+	if len(config.WebhookPath) > 0 {
+		client, err := azure.NewGraphClient(config.AuthConfig)
 		if err != nil {
 			return err
 		}
 		_, err = router.AddRoute(
 			http.MethodPost,
-			config.ImportTriggerWebhookPath,
-			webhookHandler(client, pg),
+			config.WebhookPath,
+			webhookHandler(client, config, pg),
 			swagger.Definitions{},
 		)
 		if err != nil {
@@ -103,8 +115,25 @@ func activityLogConsumer(pg pipeline.IPipelineGroup) azure.EventConsumer {
 	}
 }
 
-func webhookHandler(client azure.ClientInterface, pg pipeline.IPipelineGroup) func(c *fiber.Ctx) error {
+func webhookHandler(client azure.GraphClientInterface, config *Config, pg pipeline.IPipelineGroup) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
+		log := glogrus.FromContext(c.UserContext())
+
+		if err := config.checkSignature(c); err != nil {
+			log.WithError(err).Error("error validating webhook request")
+			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
+		}
+
+		entities, err := client.Resources(c.UserContext())
+		if err != nil {
+			log.WithError(err).Error("failed to fetch Azure resources")
+			return c.Status(http.StatusInternalServerError).JSON(utils.ValidationError(err.Error()))
+		}
+
+		for _, entity := range entities {
+			pg.AddMessage(entity)
+		}
+
 		return c.SendStatus(http.StatusOK)
 	}
 }
