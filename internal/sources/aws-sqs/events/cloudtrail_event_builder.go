@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
@@ -29,14 +28,31 @@ var (
 	ErrMalformedEvent = errors.New("malformed event")
 )
 
-func NewCloudTrailEventBuilder() entities.EventBuilder {
-	return &CloudTrailEventBuilder{}
+const (
+	RealtimeSyncEventType = "sync-event"
+	ImportEventType       = "import-event"
+
+	CloudTrailEventStorageType  = "s3.amazonaws.com"
+	CloudTrailEventFunctionType = "lambda.amazonaws.com"
+)
+
+type IEvent interface {
+	ResourceName() (string, error)
+	EventSource() string
+	GetRegion() string
+	AccountID() string
+	Operation() (entities.Operation, error)
+	EventType() string
 }
 
-type CloudTrailEventBuilder struct{}
+func NewCloudTrailEventBuilder[T IEvent]() entities.EventBuilder {
+	return &CloudTrailEventBuilder[T]{}
+}
 
-func (b CloudTrailEventBuilder) GetPipelineEvent(_ context.Context, data []byte) (entities.PipelineEvent, error) {
-	rawEvent := CloudTrailEvent{}
+type CloudTrailEventBuilder[T IEvent] struct{}
+
+func (b CloudTrailEventBuilder[T]) GetPipelineEvent(_ context.Context, data []byte) (entities.PipelineEvent, error) {
+	var rawEvent T
 	if err := json.Unmarshal(data, &rawEvent); err != nil {
 		return nil, fmt.Errorf("%w: %s", ErrMalformedEvent, err.Error())
 	}
@@ -59,43 +75,21 @@ func (b CloudTrailEventBuilder) GetPipelineEvent(_ context.Context, data []byte)
 	}, nil
 }
 
-func (CloudTrailEventBuilder) primaryKeys(event CloudTrailEvent) (entities.PkFields, error) {
+func (CloudTrailEventBuilder[T]) primaryKeys(event T) (entities.PkFields, error) {
 	resourceName, err := event.ResourceName()
 	if err != nil {
 		return nil, err
 	}
 	return entities.PkFields{
 		{Key: "resourceName", Value: resourceName},
-		{Key: "eventSource", Value: event.Detail.EventSource},
+		{Key: "eventSource", Value: event.EventSource()},
 	}, nil
 }
 
-func (CloudTrailEventBuilder) operationType(event CloudTrailEvent) (entities.Operation, error) {
-	eventName := event.Detail.EventName
-	switch {
-	case strings.HasPrefix(eventName, "Delete"):
-		return entities.Delete, nil
-
-	case strings.HasPrefix(eventName, "Create"):
-		return entities.Write, nil
-
-	case strings.HasPrefix(eventName, "Update"):
-		return entities.Write, nil
-
-	case strings.HasPrefix(eventName, "Publish"):
-		return entities.Write, nil
-
-	case strings.HasPrefix(eventName, "Put"):
-		return entities.Write, nil
-
-	case strings.HasPrefix(eventName, "Tag"):
-		return entities.Write, nil
-
-	default:
-		return entities.Write, fmt.Errorf("unsupported event name: %s", eventName)
-	}
+func (CloudTrailEventBuilder[T]) operationType(event T) (entities.Operation, error) {
+	return event.Operation()
 }
 
-func (CloudTrailEventBuilder) eventType(_ CloudTrailEvent) string {
-	return ""
+func (CloudTrailEventBuilder[T]) eventType(event T) string {
+	return event.EventType()
 }

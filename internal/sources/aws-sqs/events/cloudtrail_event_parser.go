@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws/arn"
+	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
 type CloudTrailEventDetail struct {
@@ -120,20 +121,97 @@ func (e CloudTrailEvent) ResourceName() (string, error) {
 
 	resourceNameField := eventMappedData.resourceNameField
 
-	params := e.Detail.RequestParameters
-	if slices.Contains(eventMappedData.resourceNameFromResponseEvents, e.Detail.EventName) {
-		params = e.Detail.ResponseElements
+	if e.Detail.ResponseElements != nil {
+		if name, ok := e.Detail.ResponseElements[resourceNameField]; ok {
+			nameStr, ok := name.(string)
+			if ok {
+				return nameStr, nil
+			}
+		}
 	}
 
-	value, exists := params[resourceNameField]
-	if !exists {
-		return "", fmt.Errorf("resource name field %s not found in event detail", resourceNameField)
+	if e.Detail.RequestParameters != nil {
+		name := e.Detail.RequestParameters[resourceNameField]
+		nameStr, ok := name.(string)
+		if ok {
+			return nameStr, nil
+		}
 	}
 
-	strVal, ok := value.(string)
-	if !ok {
-		return "", fmt.Errorf("resource name field %s is not a string", resourceNameField)
-	}
+	return "", fmt.Errorf("resource name field %s not found in event detail", resourceNameField)
+}
 
-	return strVal, nil
+func (e CloudTrailEvent) EventSource() string {
+	return e.Detail.EventSource
+}
+
+func (e CloudTrailEvent) Operation() (entities.Operation, error) {
+	eventName := e.Detail.EventName
+	switch {
+	case strings.HasPrefix(eventName, "Delete"):
+		return entities.Delete, nil
+
+	case strings.HasPrefix(eventName, "Create"):
+		return entities.Write, nil
+
+	case strings.HasPrefix(eventName, "Update"):
+		return entities.Write, nil
+
+	case strings.HasPrefix(eventName, "Publish"):
+		return entities.Write, nil
+
+	case strings.HasPrefix(eventName, "Put"):
+		return entities.Write, nil
+
+	case strings.HasPrefix(eventName, "Tag"):
+		return entities.Write, nil
+
+	default:
+		return entities.Write, fmt.Errorf("unsupported event name: %s", eventName)
+	}
+}
+
+func (e CloudTrailEvent) EventType() string {
+	return RealtimeSyncEventType
+}
+
+func (e CloudTrailEvent) GetRegion() string {
+	return e.Detail.AWSRegion
+}
+
+func (e CloudTrailEvent) AccountID() string {
+	return "account/" + e.Account
+}
+
+// -----
+
+type CloudTrailImportEvent struct {
+	Name    string `json:"name"`
+	Source  string `json:"source"`
+	Region  string `json:"region"`
+	Account string `json:"account"`
+}
+
+func (e CloudTrailImportEvent) ResourceName() (string, error) {
+	return e.Name, nil
+}
+
+func (e CloudTrailImportEvent) EventSource() string {
+	return e.Source
+}
+
+func (e CloudTrailImportEvent) Operation() (entities.Operation, error) {
+	return entities.Write, nil
+}
+
+func (e CloudTrailImportEvent) EventType() string {
+	return ImportEventType
+}
+
+func (e CloudTrailImportEvent) GetRegion() string {
+	return e.Region
+}
+
+func (e CloudTrailImportEvent) AccountID() string {
+	return "account/" + e.Account
 }

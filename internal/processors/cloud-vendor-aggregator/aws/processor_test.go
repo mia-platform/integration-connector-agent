@@ -22,6 +22,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/config"
+	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
 	"github.com/sirupsen/logrus/hooks/test"
 
 	"github.com/stretchr/testify/require"
@@ -31,7 +32,9 @@ func TestProcess(t *testing.T) {
 	l, _ := test.NewNullLogger()
 	p := New(l, config.AuthOptions{})
 
-	e := &entities.Event{}
+	e := &entities.Event{
+		Type: awssqsevents.RealtimeSyncEventType,
+	}
 	e.WithData([]byte(`{
   "version": "0",
   "id": "77dd1b93-f3df-ac5c-ea6d-3b487ca64730",

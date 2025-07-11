@@ -19,49 +19,26 @@ import (
 	"context"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/internal"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/awsclient"
 
 	"github.com/sirupsen/logrus"
 )
 
-type AWSConsumer struct {
-	config   *Config
+type sqsConsumer struct {
 	pipeline pipeline.IPipelineGroup
 	log      *logrus.Logger
-	client   internal.SQS
+	client   awsclient.AWS
 }
 
-type ConsumerOptions struct {
-	Ctx context.Context
-	Log *logrus.Logger
-}
-
-func New(options *ConsumerOptions, cfg config.GenericConfig, pipeline pipeline.IPipelineGroup, eventBuilder entities.EventBuilder) (*AWSConsumer, error) {
-	config, err := config.GetConfig[*Config](cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := internal.New(options.Ctx, options.Log, internal.Config{
-		QueueURL:        config.QueueURL,
-		Region:          config.Region,
-		AccessKeyID:     config.AccessKeyID,
-		SecretAccessKey: config.SecretAccessKey.String(),
-		SessionToken:    config.SessionToken.String(),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return newWithClient(options, pipeline, eventBuilder, config, client)
-}
-
-func newWithClient(options *ConsumerOptions, pipeline pipeline.IPipelineGroup, eventBuilder entities.EventBuilder, config *Config, client internal.SQS) (*AWSConsumer, error) {
-	pipeline.Start(options.Ctx)
-
-	go func(ctx context.Context, log *logrus.Logger, client internal.SQS) {
+func newSQS(
+	ctx context.Context,
+	log *logrus.Logger,
+	pipeline pipeline.IPipelineGroup,
+	eventBuilder entities.EventBuilder,
+	client awsclient.AWS,
+) (*sqsConsumer, error) {
+	go func(ctx context.Context, log *logrus.Logger, client awsclient.AWS) {
 		err := client.Listen(ctx, func(ctx context.Context, data []byte) error {
 			event, err := eventBuilder.GetPipelineEvent(ctx, data)
 			if err != nil {
@@ -69,7 +46,6 @@ func newWithClient(options *ConsumerOptions, pipeline pipeline.IPipelineGroup, e
 			}
 
 			log.WithFields(logrus.Fields{
-				"queueUrl":         config.QueueURL,
 				"eventPrimaryKeys": event.GetPrimaryKeys(),
 			}).Debug("received event from AWS SQS queue")
 
@@ -77,20 +53,19 @@ func newWithClient(options *ConsumerOptions, pipeline pipeline.IPipelineGroup, e
 			return nil
 		})
 		if err != nil {
-			log.WithField("queueUrl", config.QueueURL).WithError(err).Error("error listening to AWS SQS queue")
+			log.WithError(err).Error("error listening to AWS SQS queue")
 		}
 
 		client.Close()
-	}(options.Ctx, options.Log, client)
+	}(ctx, log, client)
 
-	return &AWSConsumer{
-		config:   config,
+	return &sqsConsumer{
 		pipeline: pipeline,
-		log:      options.Log,
+		log:      log,
 		client:   client,
 	}, nil
 }
 
-func (a *AWSConsumer) Close() error {
+func (a *sqsConsumer) Close() error {
 	return a.client.Close()
 }

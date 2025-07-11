@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gcppubsub
+package awssqs
 
 import (
 	"bytes"
@@ -25,29 +25,47 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
-	gcppubsubevents "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/events"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/gcpclient"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/awsclient"
+	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 	"github.com/mia-platform/integration-connector-agent/internal/testutils"
 
-	swagger "github.com/davidebianchi/gswagger"
-	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewInventorySource(t *testing.T) {
-	pg := &pipeline.PipelineGroupMock{}
+func TestNew(t *testing.T) {
+	pg := &pipeline.Group{}
 	log, _ := test.NewNullLogger()
+	_, router := testutils.GetTestRouter(t)
 
-	t.Run("fails on invalid config", func(t *testing.T) {
-		_, err := NewInventorySource(t.Context(), log, config.GenericConfig{
-			Type: "gcppubsub",
-			Raw:  []byte(`{"projectId": "", "topicName": "", "subscriptionId": ""}`),
-		}, pg, &swagger.Router[fiber.Handler, fiber.Router]{})
+	t.Run("invalid configurations", func(t *testing.T) {
+		testCases := []struct {
+			config string
+		}{
+			{config: `{"queueUrl": ""}`},
+		}
 
-		require.ErrorIs(t, err, config.ErrConfigNotValid)
-		require.False(t, pg.StartInvoked)
+		for _, tc := range testCases {
+			t.Run(tc.config, func(t *testing.T) {
+				_, err := NewCloudTrailSource(t.Context(), log, config.GenericConfig{
+					Type: "aws-sqs",
+					Raw:  []byte(tc.config),
+				}, pg, router)
+				require.ErrorIs(t, err, config.ErrConfigNotValid)
+			})
+		}
+	})
+
+	t.Run("succeeds with valid config", func(t *testing.T) {
+		t.Setenv("MY_SECRET_ENV", "SECRET_VALUE")
+		consumer, err := NewCloudTrailSource(t.Context(), log, config.GenericConfig{
+			Type: "awssqs",
+			Raw:  []byte(`{"queueUrl": "https://something.com","secretAccessKey":{"fromEnv":"MY_SECRET_ENV"},"accessKeyId":"key","region":"us-east-1"}`),
+		}, pg, router)
+
+		require.NoError(t, err)
+		require.NotNil(t, consumer)
 	})
 }
 
@@ -55,16 +73,16 @@ func TestImportWebhook(t *testing.T) {
 	pg := &pipeline.Group{}
 	log, _ := test.NewNullLogger()
 
-	config := &InventorySourceConfig{
-		WebhookPath: "/gcppubsub/import",
+	config := &CloudTrailSourceConfig{
+		WebhookPath: "/awssqs/import",
 	}
 
 	t.Run("exposes import webhook", func(t *testing.T) {
 		app, router := testutils.GetTestRouter(t)
 
-		consumer := newInventorySource(t.Context(), log, config, pg, router)
+		consumer := newCloudTrailSource(t.Context(), log, config, pg, router)
 		require.NotNil(t, consumer)
-		require.NoError(t, consumer.init(&gcpclient.MockPubSub{}))
+		require.NoError(t, consumer.init(&awsclient.AWSMock{}))
 
 		resp, err := app.Test(getWebhookRequest(t, nil))
 		require.NoError(t, err)
@@ -72,35 +90,20 @@ func TestImportWebhook(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("does not expose import webhook on missing path from configuration", func(t *testing.T) {
-		app, router := testutils.GetTestRouter(t)
-		config := &InventorySourceConfig{
-			WebhookPath: "",
-		}
-		consumer := newInventorySource(t.Context(), log, config, pg, router)
-		require.NotNil(t, consumer)
-		require.NoError(t, consumer.init(&gcpclient.MockPubSub{}))
-
-		resp, err := app.Test(getWebhookRequest(t, nil))
-		require.NoError(t, err)
-		defer resp.Body.Close()
-		require.Equal(t, http.StatusNotFound, resp.StatusCode)
-	})
-
 	t.Run("performs webhook authentication", func(t *testing.T) {
 		t.Run("signature is ok", func(t *testing.T) {
 			app, router := testutils.GetTestRouter(t)
-			config := &InventorySourceConfig{
-				WebhookPath: "/gcppubsub/import",
+			config := &CloudTrailSourceConfig{
+				WebhookPath: "/awssqs/import",
 				Authentication: webhook.HMAC{
 					HeaderName: "X-Hmac-Signature",
 					Secret:     "It's a Secret to Everybody",
 				},
 			}
 
-			consumer := newInventorySource(t.Context(), log, config, pg, router)
+			consumer := newCloudTrailSource(t.Context(), log, config, pg, router)
 			require.NotNil(t, consumer)
-			require.NoError(t, consumer.init(&gcpclient.MockPubSub{}))
+			require.NoError(t, consumer.init(&awsclient.AWSMock{}))
 
 			req := getWebhookRequest(t, nil)
 			req.Header.Set("X-Hmac-Signature", "sha256=66a0c074deaa0f489ead6537e0d32f9a344b90bbeda705b6ed45ecd3b413fb40")
@@ -116,17 +119,17 @@ func TestImportWebhook(t *testing.T) {
 
 		t.Run("signature is NOT ok", func(t *testing.T) {
 			app, router := testutils.GetTestRouter(t)
-			config := &InventorySourceConfig{
-				WebhookPath: "/gcppubsub/import",
+			config := &CloudTrailSourceConfig{
+				WebhookPath: "/awssqs/import",
 				Authentication: webhook.HMAC{
 					HeaderName: "X-Hmac-Signature",
 					Secret:     "It's a Secret to Everybody",
 				},
 			}
 
-			consumer := newInventorySource(t.Context(), log, config, pg, router)
+			consumer := newCloudTrailSource(t.Context(), log, config, pg, router)
 			require.NotNil(t, consumer)
-			require.NoError(t, consumer.init(&gcpclient.MockPubSub{}))
+			require.NoError(t, consumer.init(&awsclient.AWSMock{}))
 
 			req := getWebhookRequest(t, nil)
 			req.Header.Set("X-Hmac-Signature", "sha256=0000000000000000000000000000000000000000000000000000000000000000")
@@ -141,27 +144,27 @@ func TestImportWebhook(t *testing.T) {
 		})
 	})
 
-	t.Run("produces a message for each asset returned by gcp", func(t *testing.T) {
+	t.Run("produces a message for each asset returned by AWS", func(t *testing.T) {
 		pg := &pipeline.PipelineGroupMock{
 			AssertAddMessage: func(data entities.PipelineEvent) {
 				require.NotNil(t, data)
-				require.Equal(t, gcppubsubevents.ImportEventType, data.GetType())
+				require.Equal(t, awssqsevents.ImportEventType, data.GetType())
 			},
 		}
 
 		app, router := testutils.GetTestRouter(t)
-		client := &gcpclient.MockPubSub{
-			ListBucketsResult: []*gcpclient.Bucket{
+		client := &awsclient.AWSMock{
+			ListBucketsResult: []*awsclient.Bucket{
 				{Name: "bucket1"},
 				{Name: "bucket2"},
 			},
-			ListFunctionsResult: []*gcpclient.Function{
-				{Name: "projects/test-project/locations/eu-west-1/services/function1"},
-				{Name: "projects/test-project/locations/eu-west-1/services/function2"},
+			ListFunctionsResult: []*awsclient.Function{
+				{Name: "function1"},
+				{Name: "function2"},
 			},
 		}
 
-		consumer := newInventorySource(t.Context(), log, config, pg, router)
+		consumer := newCloudTrailSource(t.Context(), log, config, pg, router)
 		require.NotNil(t, consumer)
 		require.NoError(t, consumer.init(client))
 
@@ -176,32 +179,32 @@ func TestImportWebhook(t *testing.T) {
 
 		require.Len(t, pg.Messages, 4)
 
-		require.Equal(t, gcppubsubevents.ImportEventType, pg.Messages[0].GetType())
+		require.Equal(t, awssqsevents.ImportEventType, pg.Messages[0].GetType())
 		require.Equal(t, entities.Write, pg.Messages[0].Operation())
 		require.Equal(t, entities.PkFields{
-			entities.PkField{Key: "resourceName", Value: "//storage.googleapis.com/bucket1"},
-			entities.PkField{Key: "resourceType", Value: gcppubsubevents.InventoryEventStorageType},
+			entities.PkField{Key: "resourceName", Value: "bucket1"},
+			entities.PkField{Key: "eventSource", Value: awssqsevents.CloudTrailEventStorageType},
 		}, pg.Messages[0].GetPrimaryKeys())
 
-		require.Equal(t, gcppubsubevents.ImportEventType, pg.Messages[1].GetType())
+		require.Equal(t, awssqsevents.ImportEventType, pg.Messages[1].GetType())
 		require.Equal(t, entities.Write, pg.Messages[1].Operation())
 		require.Equal(t, entities.PkFields{
-			entities.PkField{Key: "resourceName", Value: "//storage.googleapis.com/bucket2"},
-			entities.PkField{Key: "resourceType", Value: gcppubsubevents.InventoryEventStorageType},
+			entities.PkField{Key: "resourceName", Value: "bucket2"},
+			entities.PkField{Key: "eventSource", Value: awssqsevents.CloudTrailEventStorageType},
 		}, pg.Messages[1].GetPrimaryKeys())
 
-		require.Equal(t, gcppubsubevents.ImportEventType, pg.Messages[2].GetType())
+		require.Equal(t, awssqsevents.ImportEventType, pg.Messages[2].GetType())
 		require.Equal(t, entities.Write, pg.Messages[2].Operation())
 		require.Equal(t, entities.PkFields{
-			entities.PkField{Key: "resourceName", Value: "//run.googleapis.com/projects/test-project/locations/eu-west-1/services/function1"},
-			entities.PkField{Key: "resourceType", Value: gcppubsubevents.InventoryEventFunctionType},
+			entities.PkField{Key: "resourceName", Value: "function1"},
+			entities.PkField{Key: "eventSource", Value: awssqsevents.CloudTrailEventFunctionType},
 		}, pg.Messages[2].GetPrimaryKeys())
 
-		require.Equal(t, gcppubsubevents.ImportEventType, pg.Messages[3].GetType())
+		require.Equal(t, awssqsevents.ImportEventType, pg.Messages[3].GetType())
 		require.Equal(t, entities.Write, pg.Messages[3].Operation())
 		require.Equal(t, entities.PkFields{
-			entities.PkField{Key: "resourceName", Value: "//run.googleapis.com/projects/test-project/locations/eu-west-1/services/function2"},
-			entities.PkField{Key: "resourceType", Value: gcppubsubevents.InventoryEventFunctionType},
+			entities.PkField{Key: "resourceName", Value: "function2"},
+			entities.PkField{Key: "eventSource", Value: awssqsevents.CloudTrailEventFunctionType},
 		}, pg.Messages[3].GetPrimaryKeys())
 	})
 }
@@ -209,7 +212,7 @@ func TestImportWebhook(t *testing.T) {
 func getWebhookRequest(t *testing.T, body []byte) *http.Request {
 	t.Helper()
 
-	req := httptest.NewRequest(http.MethodPost, "/gcppubsub/import", bytes.NewBuffer(body))
+	req := httptest.NewRequest(http.MethodPost, "/awssqs/import", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	return req
 }

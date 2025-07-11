@@ -39,6 +39,7 @@ func TestGetData(t *testing.T) {
 		{
 			name: "error if event is missing the functionName in requestParameters and responseElements",
 			event: &awssqsevents.CloudTrailEvent{
+				Source: "aws.lambda",
 				Detail: awssqsevents.CloudTrailEventDetail{
 					EventSource:       "lambda.amazonaws.com",
 					AWSRegion:         "us-west-2",
@@ -49,18 +50,17 @@ func TestGetData(t *testing.T) {
 			expectedError: commons.ErrInvalidEvent,
 		},
 		{
-			name: "returns asset with functionName from responseElements",
+			name: "returns asset with functionName from responseElements if missing from requestParameters",
 			event: &awssqsevents.CloudTrailEvent{
 				Account: "123456789012",
+				Source:  "aws.lambda",
 				Detail: awssqsevents.CloudTrailEventDetail{
 					EventSource: "lambda.amazonaws.com",
 					AWSRegion:   "us-west-2",
 					ResponseElements: map[string]interface{}{
 						"functionName": "test-function",
 					},
-					RequestParameters: map[string]interface{}{
-						"functionName": "IGNORED VALUE",
-					},
+					RequestParameters: map[string]interface{}{},
 				},
 			},
 			expectedAsset: &commons.Asset{
@@ -76,6 +76,7 @@ func TestGetData(t *testing.T) {
 			name: "returns asset with functionName from requestParameters",
 			event: &awssqsevents.CloudTrailEvent{
 				Account: "123456789012",
+				Source:  "aws.lambda",
 				Detail: awssqsevents.CloudTrailEventDetail{
 					EventSource: "lambda.amazonaws.com",
 					AWSRegion:   "us-west-2",
@@ -97,6 +98,7 @@ func TestGetData(t *testing.T) {
 			name: "returns asset with functionName from requestParameters if value in responseElements is not a string",
 			event: &awssqsevents.CloudTrailEvent{
 				Account: "123456789012",
+				Source:  "aws.lambda",
 				Detail: awssqsevents.CloudTrailEventDetail{
 					EventSource: "lambda.amazonaws.com",
 					AWSRegion:   "us-west-2",
@@ -148,6 +150,7 @@ func TestGetData(t *testing.T) {
 			name: "returns tags from function if available",
 			event: &awssqsevents.CloudTrailEvent{
 				Account: "123456789012",
+				Source:  "aws.lambda",
 				Detail: awssqsevents.CloudTrailEventDetail{
 					EventSource: "lambda.amazonaws.com",
 					AWSRegion:   "us-west-2",

@@ -13,26 +13,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package awssqs
+package awsclient
 
-import (
-	"fmt"
+import "context"
 
-	"github.com/mia-platform/integration-connector-agent/internal/config"
-)
+type ListenerFunc func(ctx context.Context, data []byte) error
 
-type Config struct {
-	QueueURL        string              `json:"queueUrl"`
-	Region          string              `json:"region"`
-	AccessKeyID     string              `json:"accessKeyId,omitempty"`
-	SecretAccessKey config.SecretSource `json:"secretAccessKey,omitempty"`
-	SessionToken    config.SecretSource `json:"sessionToken,omitempty"`
+type AWS interface {
+	ListBuckets(ctx context.Context) ([]*Bucket, error)
+	ListFunctions(ctx context.Context) ([]*Function, error)
+	Listen(ctx context.Context, handler ListenerFunc) error
+	Close() error
 }
 
-func (c *Config) Validate() error {
-	if c.QueueURL == "" {
-		return fmt.Errorf("queueId must be provided")
-	}
+type Bucket struct {
+	Name      string
+	AccountID string
+	Region    string
+}
 
-	return nil
+type Function struct {
+	Name      string
+	AccountID string
+	Region    string
 }

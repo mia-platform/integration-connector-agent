@@ -13,25 +13,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package awsclient
 
 import (
 	"context"
 	"sync"
 )
 
-type MockSQS struct {
+type AWSMock struct {
 	ListenError       error
 	ListenAssert      func(ctx context.Context, handler ListenerFunc)
 	listenInvoked     bool
 	listenInvokedLock sync.Mutex
+
+	ListBucketsResult      []*Bucket
+	ListBucketsError       error
+	listBucketsInvoked     bool
+	listBucketsInvokedLock sync.Mutex
+
+	ListFunctionsResult      []*Function
+	ListFunctionsError       error
+	listFunctionsInvoked     bool
+	listFunctionsInvokedLock sync.Mutex
 
 	CloseError      error
 	closeInvoked    bool
 	closInvokedLock sync.Mutex
 }
 
-func (m *MockSQS) Listen(ctx context.Context, handler ListenerFunc) error {
+func (m *AWSMock) Listen(ctx context.Context, handler ListenerFunc) error {
 	m.listenInvokedLock.Lock()
 	m.listenInvoked = true
 	m.listenInvokedLock.Unlock()
@@ -43,21 +53,49 @@ func (m *MockSQS) Listen(ctx context.Context, handler ListenerFunc) error {
 	return m.ListenError
 }
 
-func (m *MockSQS) ListenInvoked() bool {
+func (m *AWSMock) ListenInvoked() bool {
 	m.listenInvokedLock.Lock()
 	defer m.listenInvokedLock.Unlock()
 	return m.listenInvoked
 }
 
-func (m *MockSQS) Close() error {
+func (m *AWSMock) Close() error {
 	m.closInvokedLock.Lock()
 	defer m.closInvokedLock.Unlock()
 	m.closeInvoked = true
 	return m.CloseError
 }
 
-func (m *MockSQS) CloseInvoked() bool {
+func (m *AWSMock) CloseInvoked() bool {
 	m.closInvokedLock.Lock()
 	defer m.closInvokedLock.Unlock()
 	return m.closeInvoked
+}
+
+func (m *AWSMock) ListBuckets(_ context.Context) ([]*Bucket, error) {
+	m.listBucketsInvokedLock.Lock()
+	defer m.listBucketsInvokedLock.Unlock()
+
+	m.listBucketsInvoked = true
+	return m.ListBucketsResult, m.ListBucketsError
+}
+
+func (m *AWSMock) ListBucketsInvoked() bool {
+	m.listBucketsInvokedLock.Lock()
+	defer m.listBucketsInvokedLock.Unlock()
+	return m.listBucketsInvoked
+}
+
+func (m *AWSMock) ListFunctions(_ context.Context) ([]*Function, error) {
+	m.listFunctionsInvokedLock.Lock()
+	defer m.listFunctionsInvokedLock.Unlock()
+
+	m.listFunctionsInvoked = true
+	return m.ListFunctionsResult, m.ListFunctionsError
+}
+
+func (m *AWSMock) ListFunctionsInvoked() bool {
+	m.listFunctionsInvokedLock.Lock()
+	defer m.listFunctionsInvokedLock.Unlock()
+	return m.listFunctionsInvoked
 }

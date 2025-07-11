@@ -13,28 +13,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package awsclient
 
 import (
 	"context"
 	"fmt"
 	"sync"
 
+	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/lambda"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/sirupsen/logrus"
 )
 
-type ListenerFunc func(ctx context.Context, data []byte) error
+type concrete struct {
+	sqs *sqs.Client
+	s3  *s3.Client
+	l   *lambda.Client
 
-type SQS interface {
-	Listen(ctx context.Context, handler ListenerFunc) error
-	Close() error
-}
-
-type concreteSQS struct {
-	c       *sqs.Client
 	log     *logrus.Logger
 	config  Config
 	stopped bool
@@ -49,7 +48,7 @@ type Config struct {
 	SessionToken    string
 }
 
-func New(ctx context.Context, log *logrus.Logger, c Config) (SQS, error) {
+func New(ctx context.Context, log *logrus.Logger, c Config) (AWS, error) {
 	loadOptions := make([]func(*config.LoadOptions) error, 0)
 
 	if c.AccessKeyID != "" && c.SecretAccessKey != "" {
@@ -74,16 +73,17 @@ func New(ctx context.Context, log *logrus.Logger, c Config) (SQS, error) {
 		return nil, fmt.Errorf("failed to create sqs client: %w", err)
 	}
 
-	client := sqs.NewFromConfig(sdkConfig)
-	return &concreteSQS{
-		c:       client,
+	return &concrete{
+		sqs:     sqs.NewFromConfig(sdkConfig),
+		s3:      s3.NewFromConfig(sdkConfig),
+		l:       lambda.NewFromConfig(sdkConfig),
 		log:     log,
 		config:  c,
 		stopped: false,
 	}, nil
 }
 
-func (s *concreteSQS) Listen(ctx context.Context, handler ListenerFunc) error {
+func (s *concrete) Listen(ctx context.Context, handler ListenerFunc) error {
 	for {
 		s.mu.Lock()
 		if s.stopped {
@@ -93,7 +93,7 @@ func (s *concreteSQS) Listen(ctx context.Context, handler ListenerFunc) error {
 		}
 		s.mu.Unlock()
 
-		result, err := s.c.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
+		result, err := s.sqs.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
 			QueueUrl:            &s.config.QueueURL,
 			MaxNumberOfMessages: 5,
 			WaitTimeSeconds:     5,
@@ -125,7 +125,7 @@ func (s *concreteSQS) Listen(ctx context.Context, handler ListenerFunc) error {
 				"queueUrl":  s.config.QueueURL,
 				"messageId": message.MessageId,
 			}).Debug("message processed successfully")
-			_, err := s.c.DeleteMessage(ctx, &sqs.DeleteMessageInput{
+			_, err := s.sqs.DeleteMessage(ctx, &sqs.DeleteMessageInput{
 				QueueUrl:      &s.config.QueueURL,
 				ReceiptHandle: message.ReceiptHandle,
 			})
@@ -145,9 +145,58 @@ func (s *concreteSQS) Listen(ctx context.Context, handler ListenerFunc) error {
 	}
 }
 
-func (s *concreteSQS) Close() error {
+func (s *concrete) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.stopped = true
 	return nil
+}
+
+func (s *concrete) ListBuckets(ctx context.Context) ([]*Bucket, error) {
+	buckets, err := s.s3.ListBuckets(ctx, &s3.ListBucketsInput{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*Bucket, 0, len(buckets.Buckets))
+	for _, bucket := range buckets.Buckets {
+		b := &Bucket{
+			Name:   *bucket.Name,
+			Region: *bucket.BucketRegion,
+		}
+
+		parsedArn, err := arn.Parse(*bucket.BucketArn)
+		if err == nil {
+			b.AccountID = parsedArn.AccountID
+		}
+
+		result = append(result, b)
+	}
+
+	return result, nil
+}
+
+func (s *concrete) ListFunctions(ctx context.Context) ([]*Function, error) {
+	functions, err := s.l.ListFunctions(ctx, &lambda.ListFunctionsInput{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*Function, 0, len(functions.Functions))
+	for _, function := range functions.Functions {
+		f := &Function{
+			Name: *function.FunctionName,
+		}
+
+		if function.FunctionArn != nil {
+			parsedArn, err := arn.Parse(*function.FunctionArn)
+			if err == nil {
+				f.Region = parsedArn.Region
+				f.AccountID = parsedArn.AccountID
+			}
+		}
+
+		result = append(result, f)
+	}
+	return result, nil
 }

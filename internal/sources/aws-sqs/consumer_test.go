@@ -23,53 +23,12 @@ import (
 	"time"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/config"
-	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/awsclient"
 	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/internal"
 
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
-
-func TestNew(t *testing.T) {
-	pg := &pipeline.Group{}
-	log, _ := test.NewNullLogger()
-
-	options := &ConsumerOptions{
-		Ctx: t.Context(),
-		Log: log,
-	}
-
-	t.Run("invalid configurations", func(t *testing.T) {
-		testCases := []struct {
-			config string
-		}{
-			{config: `{"queueUrl": ""}`},
-		}
-
-		for _, tc := range testCases {
-			t.Run(tc.config, func(t *testing.T) {
-				_, err := New(options, config.GenericConfig{
-					Type: "aws-sqs",
-					Raw:  []byte(tc.config),
-				}, pg, &awssqsevents.EventBuilderMock{})
-				require.ErrorIs(t, err, config.ErrConfigNotValid)
-			})
-		}
-	})
-
-	t.Run("succeeds with valid config", func(t *testing.T) {
-		t.Setenv("MY_SECRET_ENV", "SECRET_VALUE")
-		consumer, err := New(options, config.GenericConfig{
-			Type: "awssqs",
-			Raw:  []byte(`{"queueUrl": "https://something.com","secretAccessKey":{"fromEnv":"MY_SECRET_ENV"},"accessKeyId":"key","region":"us-east-1"}`),
-		}, pg, &awssqsevents.EventBuilderMock{})
-
-		require.NoError(t, err)
-		require.NotNil(t, consumer)
-	})
-}
 
 func TestClientIntegrationWithEventBuilder(t *testing.T) {
 	log, _ := test.NewNullLogger()
@@ -78,7 +37,6 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 		dataFromPubSub := []byte("test-data-from-sqs")
 
 		ctx, cancel := context.WithCancel(t.Context())
-		o := &ConsumerOptions{Ctx: ctx, Log: log}
 		pg := &awssqsevents.PipelineGroupMock{
 			AssertAddMessage: func(data entities.PipelineEvent) {
 				require.NotNil(t, data)
@@ -93,10 +51,9 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 				Type: "some-type",
 			},
 		}
-		config := &Config{}
 
-		client := &internal.MockSQS{
-			ListenAssert: func(ctx context.Context, handler internal.ListenerFunc) {
+		client := &awsclient.AWSMock{
+			ListenAssert: func(ctx context.Context, handler awsclient.ListenerFunc) {
 				require.NotNil(t, ctx)
 				require.NotNil(t, handler)
 
@@ -106,11 +63,9 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		consumer, err := newWithClient(o, pg, e, config, client)
+		consumer, err := newSQS(ctx, log, pg, e, client)
 		require.NoError(t, err)
 		require.NotNil(t, consumer)
-
-		require.True(t, pg.StartInvoked)
 
 		// Allow some time for the goroutine to start
 		time.Sleep(10 * time.Millisecond)
@@ -126,7 +81,6 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 		dataFromPubSub := []byte("test-data-from-sqs")
 
 		ctx, cancel := context.WithCancel(t.Context())
-		o := &ConsumerOptions{Ctx: ctx, Log: log}
 		pg := &awssqsevents.PipelineGroupMock{
 			AssertAddMessage: func(data entities.PipelineEvent) {
 				require.NotNil(t, data)
@@ -139,10 +93,9 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 			ReturnedErr: fmt.Errorf("some error from event builder"),
 		}
-		config := &Config{}
 
-		client := &internal.MockSQS{
-			ListenAssert: func(ctx context.Context, handler internal.ListenerFunc) {
+		client := &awsclient.AWSMock{
+			ListenAssert: func(ctx context.Context, handler awsclient.ListenerFunc) {
 				require.NotNil(t, ctx)
 				require.NotNil(t, handler)
 
@@ -152,11 +105,9 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		consumer, err := newWithClient(o, pg, e, config, client)
+		consumer, err := newSQS(ctx, log, pg, e, client)
 		require.NoError(t, err)
 		require.NotNil(t, consumer)
-
-		require.True(t, pg.StartInvoked)
 
 		// Allow some time for the goroutine to start
 		time.Sleep(10 * time.Millisecond)
@@ -172,7 +123,6 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 		dataFromPubSub := []byte("test-data-from-sqs")
 
 		ctx, cancel := context.WithCancel(t.Context())
-		o := &ConsumerOptions{Ctx: ctx, Log: log}
 		pg := &awssqsevents.PipelineGroupMock{
 			AssertAddMessage: func(data entities.PipelineEvent) {
 				require.NotNil(t, data)
@@ -193,12 +143,11 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 				}, nil
 			},
 		}
-		config := &Config{}
 
-		var handlerRef internal.ListenerFunc
+		var handlerRef awsclient.ListenerFunc
 		var handlerRefLock sync.Mutex
-		client := &internal.MockSQS{
-			ListenAssert: func(ctx context.Context, handler internal.ListenerFunc) {
+		client := &awsclient.AWSMock{
+			ListenAssert: func(ctx context.Context, handler awsclient.ListenerFunc) {
 				require.NotNil(t, ctx)
 				require.NotNil(t, handler)
 
@@ -209,11 +158,9 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		consumer, err := newWithClient(o, pg, e, config, client)
+		consumer, err := newSQS(ctx, log, pg, e, client)
 		require.NoError(t, err)
 		require.NotNil(t, consumer)
-
-		require.True(t, pg.StartInvoked)
 
 		// Allow some time for the goroutine to start
 		time.Sleep(10 * time.Millisecond)

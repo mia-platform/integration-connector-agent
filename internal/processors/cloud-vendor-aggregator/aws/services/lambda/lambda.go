@@ -22,6 +22,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/aws/clients/lambda"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -37,7 +38,7 @@ func New(logger *logrus.Logger, client lambda.Client) *Lambda {
 	}
 }
 
-func (l *Lambda) GetData(ctx context.Context, event *awssqsevents.CloudTrailEvent) ([]byte, error) {
+func (l *Lambda) GetData(ctx context.Context, event awssqsevents.IEvent) ([]byte, error) {
 	// it cannot fail because the event is already validated from the main processor
 	data, _ := json.Marshal(event)
 
@@ -57,41 +58,22 @@ func (l *Lambda) GetData(ctx context.Context, event *awssqsevents.CloudTrailEven
 		tags = functionDetails.Tags
 	}
 
-	relationships := []string{"account/" + event.Account}
+	relationships := []string{event.AccountID()}
 
 	return json.Marshal(
-		commons.NewAsset(name, event.Detail.EventSource, commons.AWSAssetProvider).
-			WithLocation(event.Detail.AWSRegion).
+		commons.NewAsset(name, event.EventSource(), commons.AWSAssetProvider).
+			WithLocation(event.GetRegion()).
 			WithTags(tags).
 			WithRelationships(relationships).
 			WithRawData(data),
 	)
 }
 
-func (l *Lambda) lambdaName(event *awssqsevents.CloudTrailEvent) string {
+func (l *Lambda) lambdaName(event awssqsevents.IEvent) string {
 	name, err := event.ResourceName()
 	if err == nil {
 		return name
 	}
-
-	l.logger.WithError(err).Debug("failed to get resource name from event, trying to extract functionName from request parameters or response elements")
-
-	if event.Detail.ResponseElements != nil {
-		if name, ok := event.Detail.ResponseElements["functionName"]; ok {
-			nameStr, ok := name.(string)
-			if ok {
-				return nameStr
-			}
-		}
-	}
-
-	if event.Detail.RequestParameters != nil {
-		name := event.Detail.RequestParameters["functionName"]
-		nameStr, ok := name.(string)
-		if ok {
-			return nameStr
-		}
-	}
-
+	l.logger.WithError(err).Debug("failed to get resource name from event")
 	return ""
 }

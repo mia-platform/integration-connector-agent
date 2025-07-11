@@ -29,7 +29,6 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
 	awssqs "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs"
-	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
 	azureactivitylogeventhub "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub"
 	gcppubsub "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/github"
@@ -191,10 +190,7 @@ func runIntegration(ctx context.Context, log *logrus.Logger, pg pipeline.IPipeli
 
 		integration.appendCloseableSource(source)
 	case sources.AWSCloudTrailSQS:
-		awsConsumer, err := awssqs.New(&awssqs.ConsumerOptions{
-			Ctx: ctx,
-			Log: log,
-		}, source, pg, awssqsevents.NewCloudTrailEventBuilder())
+		awsConsumer, err := awssqs.NewCloudTrailSource(ctx, log, source, pg, oasRouter)
 		if err != nil {
 			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
 		}

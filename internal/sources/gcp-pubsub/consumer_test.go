@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/gcpclient"
 
 	"github.com/sirupsen/logrus/hooks/test"
@@ -38,7 +39,7 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 	// https://pkg.go.dev/cloud.google.com/go/pubsub@v1.49.0#Subscription.Receive
 	t.Run("client lifecycle with cancelable context", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(t.Context())
-		pg := &pipelineGroupMock{}
+		pg := &pipeline.PipelineGroupMock{}
 		e := &eventBuilderMock{}
 		client := &gcpclient.MockPubSub{}
 
@@ -63,8 +64,8 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 		dataFromPubSub := []byte("test-data-from-pubsub")
 
 		ctx, cancel := context.WithCancel(t.Context())
-		pg := &pipelineGroupMock{
-			assertAddMessage: func(data entities.PipelineEvent) {
+		pg := &pipeline.PipelineGroupMock{
+			AssertAddMessage: func(data entities.PipelineEvent) {
 				require.NotNil(t, data)
 				require.Equal(t, "some-type", data.GetType())
 			},
@@ -107,8 +108,8 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 		dataFromPubSub := []byte("test-data-from-pubsub")
 
 		ctx, cancel := context.WithCancel(t.Context())
-		pg := &pipelineGroupMock{
-			assertAddMessage: func(data entities.PipelineEvent) {
+		pg := &pipeline.PipelineGroupMock{
+			AssertAddMessage: func(data entities.PipelineEvent) {
 				require.NotNil(t, data)
 				require.Equal(t, "some-type", data.GetType())
 			},
@@ -150,8 +151,8 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 
 		ctx, cancel := context.WithCancel(t.Context())
 
-		pg := &pipelineGroupMock{
-			assertAddMessage: func(data entities.PipelineEvent) {
+		pg := &pipeline.PipelineGroupMock{
+			AssertAddMessage: func(data entities.PipelineEvent) {
 				require.NotNil(t, data)
 				require.Equal(t, "some-type", data.GetType())
 			},
