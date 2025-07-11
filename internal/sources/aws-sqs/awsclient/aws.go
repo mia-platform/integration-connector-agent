@@ -158,18 +158,17 @@ func (s *concrete) ListBuckets(ctx context.Context) ([]*Bucket, error) {
 		return nil, err
 	}
 
-	var result []*Bucket
+	result := make([]*Bucket, 0, len(buckets.Buckets))
 	for _, bucket := range buckets.Buckets {
 		b := &Bucket{
 			Name: *bucket.Name,
 		}
 
 		parsedArn, err := arn.Parse(*bucket.BucketArn)
-		if err != nil {
-			continue
+		if err == nil {
+			b.AccountID = parsedArn.AccountID
 		}
 
-		b.AccountID = parsedArn.AccountID
 		result = append(result, b)
 	}
 
@@ -181,7 +180,8 @@ func (s *concrete) ListFunctions(ctx context.Context) ([]*Function, error) {
 	if err != nil {
 		return nil, err
 	}
-	var result []*Function
+
+	result := make([]*Function, 0, len(functions.Functions))
 	for _, function := range functions.Functions {
 		f := &Function{
 			Name: *function.FunctionName,

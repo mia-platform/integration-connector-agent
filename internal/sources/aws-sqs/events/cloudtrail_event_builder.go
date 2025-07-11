@@ -80,7 +80,7 @@ func (CloudTrailEventBuilder[T]) primaryKeys(event T) (entities.PkFields, error)
 	}
 	return entities.PkFields{
 		{Key: "resourceName", Value: resourceName},
-		{Key: "eventSource", Value: event.EventSource()}, //event.Detail.EventSource},
+		{Key: "eventSource", Value: event.EventSource()},
 	}, nil
 }
 

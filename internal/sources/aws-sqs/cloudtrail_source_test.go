@@ -141,7 +141,6 @@ func TestImportWebhook(t *testing.T) {
 			require.Equal(t, http.StatusBadRequest, resp.StatusCode, "Resp: %s", string(respBody))
 		})
 	})
-
 }
 
 func getWebhookRequest(t *testing.T, body []byte) *http.Request {
