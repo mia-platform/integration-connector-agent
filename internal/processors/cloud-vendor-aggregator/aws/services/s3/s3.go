@@ -39,7 +39,7 @@ func New(logger *logrus.Logger, client s3.Client) *S3 {
 	}
 }
 
-func (s *S3) GetData(ctx context.Context, event *awssqsevents.CloudTrailEvent) ([]byte, error) {
+func (s *S3) GetData(ctx context.Context, event awssqsevents.IEvent) ([]byte, error) {
 	// it cannot fail because the event is already validated from the main processor
 	data, _ := json.Marshal(event)
 
@@ -55,12 +55,12 @@ func (s *S3) GetData(ctx context.Context, event *awssqsevents.CloudTrailEvent) (
 		tags = make(commons.Tags)
 	}
 
-	relationships := []string{"account/" + event.Account}
+	relationships := []string{event.AccountID()}
 
 	return json.Marshal(
 		commons.
-			NewAsset(bucketName, event.Detail.EventSource, commons.AWSAssetProvider).
-			WithLocation(event.Detail.AWSRegion).
+			NewAsset(bucketName, event.EventSource(), commons.AWSAssetProvider).
+			WithLocation(event.GetRegion()).
 			WithTags(tags).
 			WithRelationships(relationships).
 			WithRawData(data),

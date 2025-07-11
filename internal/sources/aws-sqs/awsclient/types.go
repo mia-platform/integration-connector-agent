@@ -29,9 +29,11 @@ type AWS interface {
 type Bucket struct {
 	Name      string
 	AccountID string
+	Region    string
 }
 
 type Function struct {
-	Name      string `json:"name"`
+	Name      string
 	AccountID string
+	Region    string
 }

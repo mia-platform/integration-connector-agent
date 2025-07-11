@@ -51,14 +51,14 @@ func New(logger *logrus.Logger, authOptions config.AuthOptions) entities.Process
 }
 
 func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
-	cloudTrailEvent := new(awssqsevents.CloudTrailEvent)
-	if err := json.Unmarshal(input.Data(), &cloudTrailEvent); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
-	}
-
 	if input.Operation() == entities.Delete {
 		p.logger.Debug("Delete operation detected, skipping event processing")
 		return input.Clone(), nil
+	}
+
+	cloudTrailEvent, err := p.parseEvent(input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse event: %w", err)
 	}
 
 	dataProcessor, err := p.EventDataProcessor(cloudTrailEvent)
@@ -78,13 +78,13 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 	return output, nil
 }
 
-func (p *Processor) EventDataProcessor(cloudTrailEvent *awssqsevents.CloudTrailEvent) (commons.DataAdapter[*awssqsevents.CloudTrailEvent], error) {
-	awsConf, err := p.config.AWSConfig(context.Background(), cloudTrailEvent.Detail.AWSRegion)
+func (p *Processor) EventDataProcessor(cloudTrailEvent awssqsevents.IEvent) (commons.DataAdapter[awssqsevents.IEvent], error) {
+	awsConf, err := p.config.AWSConfig(context.Background(), cloudTrailEvent.GetRegion())
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
 
-	eventSource := cloudTrailEvent.Detail.EventSource
+	eventSource := cloudTrailEvent.EventSource()
 	switch eventSource {
 	case s3.EventSource:
 		return s3.New(p.logger, s3client.NewClient(awsConf)), nil
@@ -92,5 +92,25 @@ func (p *Processor) EventDataProcessor(cloudTrailEvent *awssqsevents.CloudTrailE
 		return lambda.New(p.logger, lambdaclient.NewClient(awsConf)), nil
 	default:
 		return nil, fmt.Errorf("unsupported event source: %s", eventSource)
+	}
+}
+
+func (p *Processor) parseEvent(input entities.PipelineEvent) (awssqsevents.IEvent, error) {
+	eventType := input.GetType()
+	switch eventType {
+	case awssqsevents.RealtimeSyncEventType:
+		cloudTrailEvent := new(awssqsevents.CloudTrailEvent)
+		if err := json.Unmarshal(input.Data(), &cloudTrailEvent); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
+		}
+		return cloudTrailEvent, nil
+	case awssqsevents.ImportEventType:
+		importEvent := new(awssqsevents.CloudTrailImportEvent)
+		if err := json.Unmarshal(input.Data(), &importEvent); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
+		}
+		return importEvent, nil
+	default:
+		return nil, fmt.Errorf("unsupported event type: %s", eventType)
 	}
 }

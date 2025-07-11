@@ -121,22 +121,50 @@ func (e CloudTrailEvent) ResourceName() (string, error) {
 
 	resourceNameField := eventMappedData.resourceNameField
 
-	params := e.Detail.RequestParameters
-	if slices.Contains(eventMappedData.resourceNameFromResponseEvents, e.Detail.EventName) {
-		params = e.Detail.ResponseElements
+	if e.Detail.ResponseElements != nil {
+		if name, ok := e.Detail.ResponseElements[resourceNameField]; ok {
+			nameStr, ok := name.(string)
+			if ok {
+				return nameStr, nil
+			}
+		}
 	}
 
-	value, exists := params[resourceNameField]
-	if !exists {
-		return "", fmt.Errorf("resource name field %s not found in event detail", resourceNameField)
+	if e.Detail.RequestParameters != nil {
+		name := e.Detail.RequestParameters[resourceNameField]
+		nameStr, ok := name.(string)
+		if ok {
+			return nameStr, nil
+		}
 	}
 
-	strVal, ok := value.(string)
-	if !ok {
-		return "", fmt.Errorf("resource name field %s is not a string", resourceNameField)
-	}
+	return "", fmt.Errorf("resource name field %s not found in event detail", resourceNameField)
 
-	return strVal, nil
+	// var usedResponseElements bool
+	// params := e.Detail.RequestParameters
+	// if slices.Contains(eventMappedData.resourceNameFromResponseEvents, e.Detail.EventName) {
+	// 	usedResponseElements = true
+	// 	params = e.Detail.ResponseElements
+	// }
+
+	// value, exists := params[resourceNameField]
+	// if !exists {
+	// 	if usedResponseElements {
+	// 		value, exists = e.Detail.RequestParameters[resourceNameField]
+	// 		if !exists {
+	// 			return "", fmt.Errorf("resource name field %s not found neither in response elements nor in request params event detail", resourceNameField)
+	// 		}
+	// 	} else {
+	// 		return "", fmt.Errorf("resource name field %s not found in response elements", resourceNameField)
+	// 	}
+	// }
+
+	// strVal, ok := value.(string)
+	// if !ok {
+	// 	return "", fmt.Errorf("resource name field %s is not a string", resourceNameField)
+	// }
+
+	// return strVal, nil
 }
 
 func (e CloudTrailEvent) EventSource() string {
@@ -173,11 +201,21 @@ func (e CloudTrailEvent) EventType() string {
 	return RealtimeSyncEventType
 }
 
+func (e CloudTrailEvent) GetRegion() string {
+	return e.Detail.AWSRegion
+}
+
+func (e CloudTrailEvent) AccountID() string {
+	return "account/" + e.Account
+}
+
 // -----
 
 type CloudTrailImportEvent struct {
-	Name   string `json:"name"`
-	Source string `json:"source"`
+	Name    string `json:"name"`
+	Source  string `json:"source"`
+	Region  string `json:"region"`
+	Account string `json:"account"`
 }
 
 func (e CloudTrailImportEvent) ResourceName() (string, error) {
@@ -194,4 +232,12 @@ func (e CloudTrailImportEvent) Operation() (entities.Operation, error) {
 
 func (e CloudTrailImportEvent) EventType() string {
 	return ImportEventType
+}
+
+func (e CloudTrailImportEvent) GetRegion() string {
+	return e.Region
+}
+
+func (e CloudTrailImportEvent) AccountID() string {
+	return "account/" + e.Account
 }

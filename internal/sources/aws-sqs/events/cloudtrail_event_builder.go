@@ -39,6 +39,8 @@ const (
 type IEvent interface {
 	ResourceName() (string, error)
 	EventSource() string
+	GetRegion() string
+	AccountID() string
 	Operation() (entities.Operation, error)
 	EventType() string
 }
