@@ -144,7 +144,7 @@ func TestImportWebhook(t *testing.T) {
 		})
 	})
 
-	t.Run("procudes a message for each asset returned by AWS", func(t *testing.T) {
+	t.Run("produces a message for each asset returned by AWS", func(t *testing.T) {
 		pg := &pipeline.PipelineGroupMock{
 			AssertAddMessage: func(data entities.PipelineEvent) {
 				require.NotNil(t, data)
