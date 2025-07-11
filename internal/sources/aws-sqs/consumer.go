@@ -20,7 +20,7 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/internal"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/awsclient"
 
 	"github.com/sirupsen/logrus"
 )
@@ -28,7 +28,7 @@ import (
 type sqsConsumer struct {
 	pipeline pipeline.IPipelineGroup
 	log      *logrus.Logger
-	client   internal.SQS
+	client   awsclient.AWS
 }
 
 func newSQS(
@@ -36,9 +36,9 @@ func newSQS(
 	log *logrus.Logger,
 	pipeline pipeline.IPipelineGroup,
 	eventBuilder entities.EventBuilder,
-	client internal.SQS,
+	client awsclient.AWS,
 ) (*sqsConsumer, error) {
-	go func(ctx context.Context, log *logrus.Logger, client internal.SQS) {
+	go func(ctx context.Context, log *logrus.Logger, client awsclient.AWS) {
 		err := client.Listen(ctx, func(ctx context.Context, data []byte) error {
 			event, err := eventBuilder.GetPipelineEvent(ctx, data)
 			if err != nil {

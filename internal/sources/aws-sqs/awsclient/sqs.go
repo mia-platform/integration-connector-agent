@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package awsclient
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 
 type ListenerFunc func(ctx context.Context, data []byte) error
 
-type SQS interface {
+type AWS interface {
 	Listen(ctx context.Context, handler ListenerFunc) error
 	Close() error
 }
@@ -49,7 +49,7 @@ type Config struct {
 	SessionToken    string
 }
 
-func New(ctx context.Context, log *logrus.Logger, c Config) (SQS, error) {
+func New(ctx context.Context, log *logrus.Logger, c Config) (AWS, error) {
 	loadOptions := make([]func(*config.LoadOptions) error, 0)
 
 	if c.AccessKeyID != "" && c.SecretAccessKey != "" {

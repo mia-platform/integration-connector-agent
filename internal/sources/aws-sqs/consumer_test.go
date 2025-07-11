@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/awsclient"
 	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/internal"
 
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
@@ -91,8 +91,8 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		client := &internal.MockSQS{
-			ListenAssert: func(ctx context.Context, handler internal.ListenerFunc) {
+		client := &awsclient.AWSMock{
+			ListenAssert: func(ctx context.Context, handler awsclient.ListenerFunc) {
 				require.NotNil(t, ctx)
 				require.NotNil(t, handler)
 
@@ -133,8 +133,8 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			ReturnedErr: fmt.Errorf("some error from event builder"),
 		}
 
-		client := &internal.MockSQS{
-			ListenAssert: func(ctx context.Context, handler internal.ListenerFunc) {
+		client := &awsclient.AWSMock{
+			ListenAssert: func(ctx context.Context, handler awsclient.ListenerFunc) {
 				require.NotNil(t, ctx)
 				require.NotNil(t, handler)
 
@@ -183,10 +183,10 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		var handlerRef internal.ListenerFunc
+		var handlerRef awsclient.ListenerFunc
 		var handlerRefLock sync.Mutex
-		client := &internal.MockSQS{
-			ListenAssert: func(ctx context.Context, handler internal.ListenerFunc) {
+		client := &awsclient.AWSMock{
+			ListenAssert: func(ctx context.Context, handler awsclient.ListenerFunc) {
 				require.NotNil(t, ctx)
 				require.NotNil(t, handler)
 

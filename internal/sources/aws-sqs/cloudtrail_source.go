@@ -23,8 +23,8 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/awsclient"
 	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/internal"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
@@ -58,7 +58,7 @@ type CloudTrailSource struct {
 	config   *CloudTrailSourceConfig
 	pipeline pipeline.IPipelineGroup
 
-	aws    internal.SQS
+	aws    awsclient.AWS
 	sqs    *sqsConsumer
 	router *swagger.Router[fiber.Handler, fiber.Router]
 }
@@ -75,7 +75,7 @@ func NewCloudTrailSource(
 		return nil, err
 	}
 
-	client, err := internal.New(ctx, log, internal.Config{
+	client, err := awsclient.New(ctx, log, awsclient.Config{
 		QueueURL:        config.QueueURL,
 		Region:          config.Region,
 		AccessKeyID:     config.AccessKeyID,
@@ -115,7 +115,7 @@ func newCloudTrailSource(
 	}
 }
 
-func (s *CloudTrailSource) init(client internal.SQS) error {
+func (s *CloudTrailSource) init(client awsclient.AWS) error {
 	s.pipeline.Start(s.ctx)
 
 	s.aws = client

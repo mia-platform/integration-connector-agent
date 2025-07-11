@@ -24,7 +24,7 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/internal"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/awsclient"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 	"github.com/mia-platform/integration-connector-agent/internal/testutils"
 
@@ -80,7 +80,7 @@ func TestImportWebhook(t *testing.T) {
 
 		consumer := newCloudTrailSource(t.Context(), log, config, pg, router)
 		require.NotNil(t, consumer)
-		require.NoError(t, consumer.init(&internal.MockSQS{}))
+		require.NoError(t, consumer.init(&awsclient.AWSMock{}))
 
 		resp, err := app.Test(getWebhookRequest(t, nil))
 		require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestImportWebhook(t *testing.T) {
 
 			consumer := newCloudTrailSource(t.Context(), log, config, pg, router)
 			require.NotNil(t, consumer)
-			require.NoError(t, consumer.init(&internal.MockSQS{}))
+			require.NoError(t, consumer.init(&awsclient.AWSMock{}))
 
 			req := getWebhookRequest(t, nil)
 			req.Header.Set("X-Hmac-Signature", "sha256=66a0c074deaa0f489ead6537e0d32f9a344b90bbeda705b6ed45ecd3b413fb40")
@@ -127,7 +127,7 @@ func TestImportWebhook(t *testing.T) {
 
 			consumer := newCloudTrailSource(t.Context(), log, config, pg, router)
 			require.NotNil(t, consumer)
-			require.NoError(t, consumer.init(&internal.MockSQS{}))
+			require.NoError(t, consumer.init(&awsclient.AWSMock{}))
 
 			req := getWebhookRequest(t, nil)
 			req.Header.Set("X-Hmac-Signature", "sha256=0000000000000000000000000000000000000000000000000000000000000000")

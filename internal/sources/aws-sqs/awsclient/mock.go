@@ -13,14 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package awsclient
 
 import (
 	"context"
 	"sync"
 )
 
-type MockSQS struct {
+type AWSMock struct {
 	ListenError       error
 	ListenAssert      func(ctx context.Context, handler ListenerFunc)
 	listenInvoked     bool
@@ -31,7 +31,7 @@ type MockSQS struct {
 	closInvokedLock sync.Mutex
 }
 
-func (m *MockSQS) Listen(ctx context.Context, handler ListenerFunc) error {
+func (m *AWSMock) Listen(ctx context.Context, handler ListenerFunc) error {
 	m.listenInvokedLock.Lock()
 	m.listenInvoked = true
 	m.listenInvokedLock.Unlock()
@@ -43,20 +43,20 @@ func (m *MockSQS) Listen(ctx context.Context, handler ListenerFunc) error {
 	return m.ListenError
 }
 
-func (m *MockSQS) ListenInvoked() bool {
+func (m *AWSMock) ListenInvoked() bool {
 	m.listenInvokedLock.Lock()
 	defer m.listenInvokedLock.Unlock()
 	return m.listenInvoked
 }
 
-func (m *MockSQS) Close() error {
+func (m *AWSMock) Close() error {
 	m.closInvokedLock.Lock()
 	defer m.closInvokedLock.Unlock()
 	m.closeInvoked = true
 	return m.CloseError
 }
 
-func (m *MockSQS) CloseInvoked() bool {
+func (m *AWSMock) CloseInvoked() bool {
 	m.closInvokedLock.Lock()
 	defer m.closInvokedLock.Unlock()
 	return m.closeInvoked
