@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws/arn"
+	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
 type CloudTrailEventDetail struct {
@@ -136,4 +137,61 @@ func (e CloudTrailEvent) ResourceName() (string, error) {
 	}
 
 	return strVal, nil
+}
+
+func (e CloudTrailEvent) EventSource() string {
+	return e.Detail.EventSource
+}
+
+func (e CloudTrailEvent) Operation() (entities.Operation, error) {
+	eventName := e.Detail.EventName
+	switch {
+	case strings.HasPrefix(eventName, "Delete"):
+		return entities.Delete, nil
+
+	case strings.HasPrefix(eventName, "Create"):
+		return entities.Write, nil
+
+	case strings.HasPrefix(eventName, "Update"):
+		return entities.Write, nil
+
+	case strings.HasPrefix(eventName, "Publish"):
+		return entities.Write, nil
+
+	case strings.HasPrefix(eventName, "Put"):
+		return entities.Write, nil
+
+	case strings.HasPrefix(eventName, "Tag"):
+		return entities.Write, nil
+
+	default:
+		return entities.Write, fmt.Errorf("unsupported event name: %s", eventName)
+	}
+}
+
+func (e CloudTrailEvent) EventType() string {
+	return RealtimeSyncEventType
+}
+
+// -----
+
+type CloudTrailImportEvent struct {
+	Name   string `json:"name"`
+	Source string `json:"source"`
+}
+
+func (e CloudTrailImportEvent) ResourceName() (string, error) {
+	return e.Name, nil
+}
+
+func (e CloudTrailImportEvent) EventSource() string {
+	return e.Source
+}
+
+func (e CloudTrailImportEvent) Operation() (entities.Operation, error) {
+	return entities.Write, nil
+}
+
+func (e CloudTrailImportEvent) EventType() string {
+	return ImportEventType
 }

@@ -26,6 +26,16 @@ type AWSMock struct {
 	listenInvoked     bool
 	listenInvokedLock sync.Mutex
 
+	ListBucketsResult      []*Bucket
+	ListBucketsError       error
+	listBucketsInvoked     bool
+	listBucketsInvokedLock sync.Mutex
+
+	ListFunctionsResult      []*Function
+	ListFunctionsError       error
+	listFunctionsInvoked     bool
+	listFunctionsInvokedLock sync.Mutex
+
 	CloseError      error
 	closeInvoked    bool
 	closInvokedLock sync.Mutex
@@ -60,4 +70,32 @@ func (m *AWSMock) CloseInvoked() bool {
 	m.closInvokedLock.Lock()
 	defer m.closInvokedLock.Unlock()
 	return m.closeInvoked
+}
+
+func (m *AWSMock) ListBuckets(_ context.Context) ([]*Bucket, error) {
+	m.listBucketsInvokedLock.Lock()
+	defer m.listBucketsInvokedLock.Unlock()
+
+	m.listBucketsInvoked = true
+	return m.ListBucketsResult, m.ListBucketsError
+}
+
+func (m *AWSMock) ListBucketsInvoked() bool {
+	m.listBucketsInvokedLock.Lock()
+	defer m.listBucketsInvokedLock.Unlock()
+	return m.listBucketsInvoked
+}
+
+func (m *AWSMock) ListFunctions(_ context.Context) ([]*Function, error) {
+	m.listFunctionsInvokedLock.Lock()
+	defer m.listFunctionsInvokedLock.Unlock()
+
+	m.listFunctionsInvoked = true
+	return m.ListFunctionsResult, m.ListFunctionsError
+}
+
+func (m *AWSMock) ListFunctionsInvoked() bool {
+	m.listFunctionsInvokedLock.Lock()
+	defer m.listFunctionsInvokedLock.Unlock()
+	return m.listFunctionsInvoked
 }

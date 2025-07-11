@@ -39,6 +39,7 @@ func TestCloudTrailEventBuilder(t *testing.T) {
 					{Key: "resourceName", Value: "the-bucket-name"},
 					{Key: "eventSource", Value: "s3.amazonaws.com"},
 				},
+				Type:          RealtimeSyncEventType,
 				OperationType: entities.Write,
 			},
 			expectedErr: nil,
@@ -51,6 +52,7 @@ func TestCloudTrailEventBuilder(t *testing.T) {
 					{Key: "resourceName", Value: "the-bucket-name"},
 					{Key: "eventSource", Value: "s3.amazonaws.com"},
 				},
+				Type:          RealtimeSyncEventType,
 				OperationType: entities.Delete,
 			},
 			expectedErr: nil,
@@ -63,6 +65,7 @@ func TestCloudTrailEventBuilder(t *testing.T) {
 					{Key: "resourceName", Value: "the-bucket-name"},
 					{Key: "eventSource", Value: "s3.amazonaws.com"},
 				},
+				Type:          RealtimeSyncEventType,
 				OperationType: entities.Write,
 			},
 			expectedErr: nil,
@@ -75,6 +78,7 @@ func TestCloudTrailEventBuilder(t *testing.T) {
 					{Key: "resourceName", Value: "the-bucket-name"},
 					{Key: "eventSource", Value: "s3.amazonaws.com"},
 				},
+				Type:          RealtimeSyncEventType,
 				OperationType: entities.Write,
 			},
 			expectedErr: nil,
@@ -87,6 +91,7 @@ func TestCloudTrailEventBuilder(t *testing.T) {
 					{Key: "resourceName", Value: "the-function-name"},
 					{Key: "eventSource", Value: "lambda.amazonaws.com"},
 				},
+				Type:          RealtimeSyncEventType,
 				OperationType: entities.Write,
 			},
 			expectedErr: nil,
@@ -99,6 +104,7 @@ func TestCloudTrailEventBuilder(t *testing.T) {
 					{Key: "resourceName", Value: "the-function-name"},
 					{Key: "eventSource", Value: "lambda.amazonaws.com"},
 				},
+				Type:          RealtimeSyncEventType,
 				OperationType: entities.Delete,
 			},
 			expectedErr: nil,
@@ -111,6 +117,7 @@ func TestCloudTrailEventBuilder(t *testing.T) {
 					{Key: "resourceName", Value: "the-function-name"},
 					{Key: "eventSource", Value: "lambda.amazonaws.com"},
 				},
+				Type:          RealtimeSyncEventType,
 				OperationType: entities.Write,
 			},
 			expectedErr: nil,
@@ -123,6 +130,7 @@ func TestCloudTrailEventBuilder(t *testing.T) {
 					{Key: "resourceName", Value: "the-function-name"},
 					{Key: "eventSource", Value: "lambda.amazonaws.com"},
 				},
+				Type:          RealtimeSyncEventType,
 				OperationType: entities.Write,
 			},
 			expectedErr: nil,
@@ -135,6 +143,7 @@ func TestCloudTrailEventBuilder(t *testing.T) {
 					{Key: "resourceName", Value: "the-function-name"},
 					{Key: "eventSource", Value: "lambda.amazonaws.com"},
 				},
+				Type:          RealtimeSyncEventType,
 				OperationType: entities.Write,
 			},
 			expectedErr: nil,
@@ -143,7 +152,7 @@ func TestCloudTrailEventBuilder(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			builder := NewCloudTrailEventBuilder()
+			builder := NewCloudTrailEventBuilder[*CloudTrailEvent]()
 
 			data, err := os.ReadFile(tc.dataFilePath)
 			require.NoError(t, err, "Failed to read data file: %s", tc.dataFilePath)

@@ -120,7 +120,7 @@ func (s *CloudTrailSource) init(client awsclient.AWS) error {
 
 	s.aws = client
 
-	eventBuilder := awssqsevents.NewCloudTrailEventBuilder()
+	eventBuilder := awssqsevents.NewCloudTrailEventBuilder[*awssqsevents.CloudTrailEvent]()
 	sqsConsumer, err := newSQS(s.ctx, s.log, s.pipeline, eventBuilder, s.aws)
 	if err != nil {
 		return fmt.Errorf("failed to create SQS consumer: %w", err)
