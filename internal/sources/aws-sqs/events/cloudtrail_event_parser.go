@@ -180,6 +180,9 @@ func (e CloudTrailEvent) GetRegion() string {
 }
 
 func (e CloudTrailEvent) AccountID() string {
+	if e.Account == "" {
+		return ""
+	}
 	return "account/" + e.Account
 }
 
@@ -213,5 +216,8 @@ func (e CloudTrailImportEvent) GetRegion() string {
 }
 
 func (e CloudTrailImportEvent) AccountID() string {
+	if e.Account == "" {
+		return ""
+	}
 	return "account/" + e.Account
 }
