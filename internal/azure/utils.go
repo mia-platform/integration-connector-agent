@@ -13,11 +13,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commons
+package azure
 
 import (
 	"fmt"
 	"regexp"
+	"strings"
+
+	"github.com/mia-platform/integration-connector-agent/entities"
+)
+
+const (
+	StorageAccountEventSource = "microsoft.storage/storageaccounts"
+	FunctionEventSource       = "microsoft.web/sites"
+	TagsEventSource           = "microsoft.resources/tags"
 )
 
 func RelationshipFromID(id string) []string {
@@ -38,4 +47,21 @@ func RelationshipFromID(id string) []string {
 	}
 
 	return relationships
+}
+
+func EventIsForSource(event *ActivityLogEventRecord, resourceType string) bool {
+	eventSource := strings.ToLower(event.OperationName)
+	resourceID := strings.ToLower(event.ResourceID)
+
+	return eventSource == resourceType+"/write" ||
+		(eventSource == TagsEventSource+"/write" && strings.Contains(resourceID, resourceType))
+}
+
+func primaryKeys(resourceID string) entities.PkFields {
+	return entities.PkFields{
+		{
+			Key:   "resourceId",
+			Value: strings.ToLower(resourceID),
+		},
+	}
 }

@@ -22,45 +22,57 @@ import (
 	"slices"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
-	azurecommons "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/commons"
+	"github.com/mia-platform/integration-connector-agent/internal/azure"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/services/functions"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/services/storage"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/config"
-	azureactivitylogeventhubevents "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub/events"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/sirupsen/logrus"
 )
 
+var (
+	ErrUnsupportedEventSource = fmt.Errorf("unsupported event source")
+)
+
 type Processor struct {
-	logger      *logrus.Logger
-	credentials azcore.TokenCredential
+	logger *logrus.Logger
+	client azure.ClientInterface
 }
 
 func New(logger *logrus.Logger, authOptions config.AuthOptions) (*Processor, error) {
-	credentials, err := azureCredentialFromData(authOptions)
+	client, err := azure.NewClient(authOptions.AuthConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Azure credentials: %w", err)
+		return nil, err
 	}
+
 	return &Processor{
-		logger:      logger,
-		credentials: credentials,
+		logger: logger,
+		client: client,
 	}, nil
 }
 
 func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
-	activityLogEvent := new(azureactivitylogeventhubevents.ActivityLogEventRecord)
-	if err := json.Unmarshal(input.Data(), &activityLogEvent); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
-	}
-
 	output := input.Clone()
 
 	if input.Operation() == entities.Delete {
 		p.logger.Debug("Delete operation detected, skipping processing")
 		return output, nil
+	}
+
+	if input.GetType() == azure.EventTypeFromLiveLoad.String() {
+		newData, err := p.GetDataFromLiveEvent(input)
+		if err != nil {
+			p.logger.WithError(err).Error("Failed to get data from Azure service")
+			return nil, fmt.Errorf("failed to get data from Azure service: %w", err)
+		}
+		output.WithData(newData)
+		return output, nil
+	}
+
+	activityLogEvent := new(azure.ActivityLogEventRecord)
+	if err := json.Unmarshal(input.Data(), &activityLogEvent); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
 	}
 
 	successResultTypes := []string{"Success", "Succeeded"}
@@ -76,8 +88,8 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 
 	adapter, err := p.EventDataProcessor(activityLogEvent)
 	if err != nil {
-		p.logger.WithError(err).Error("Failed to process Function App event")
-		return nil, fmt.Errorf("failed to process Function App event: %w", err)
+		p.logger.WithError(err).Error("Failed to process Azure event")
+		return nil, fmt.Errorf("failed to process Azure event: %w", err)
 	}
 
 	newData, err := adapter.GetData(context.Background(), activityLogEvent)
@@ -90,38 +102,28 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 	return output, nil
 }
 
-func (p *Processor) EventDataProcessor(activityLogEvent *azureactivitylogeventhubevents.ActivityLogEventRecord) (commons.DataAdapter[*azureactivitylogeventhubevents.ActivityLogEventRecord], error) {
+func (p *Processor) EventDataProcessor(activityLogEvent *azure.ActivityLogEventRecord) (commons.DataAdapter[*azure.ActivityLogEventRecord], error) {
 	switch {
-	case azurecommons.EventIsForSource(activityLogEvent, storage.EventSource):
-		return storage.New(azurecommons.NewClient(p.credentials)), nil
-	case azurecommons.EventIsForSource(activityLogEvent, functions.EventSource):
-		return functions.New(azurecommons.NewClient(p.credentials)), nil
+	case azure.EventIsForSource(activityLogEvent, azure.StorageAccountEventSource):
+		return storage.New(p.client), nil
+	case azure.EventIsForSource(activityLogEvent, azure.FunctionEventSource):
+		return functions.New(p.client), nil
 	default:
-		return nil, fmt.Errorf("unsupported event source: %s", activityLogEvent.OperationName)
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedEventSource, activityLogEvent.OperationName)
 	}
 }
 
-func azureCredentialFromData(config config.AuthOptions) (azcore.TokenCredential, error) {
-	credentials := make([]azcore.TokenCredential, 0)
-
-	if len(config.TenantID) > 0 && len(config.ClientID) > 0 && len(config.ClientSecret) > 0 {
-		secretCredential, err := azidentity.NewClientSecretCredential(
-			config.TenantID,
-			config.ClientID.String(),
-			config.ClientSecret.String(),
-			nil, // Options
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create an Azure client secret credential: %w", err)
-		}
-		credentials = append(credentials, secretCredential)
+func (p *Processor) GetDataFromLiveEvent(event entities.PipelineEvent) ([]byte, error) {
+	liveData := new(azure.GraphLiveData)
+	if err := json.Unmarshal(event.Data(), liveData); err != nil {
+		return nil, err
 	}
 
-	defaultCredential, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create a default Azure credential: %w", err)
-	}
-	credentials = append(credentials, defaultCredential)
-
-	return azidentity.NewChainedTokenCredential(credentials, nil)
+	return json.Marshal(
+		commons.NewAsset(liveData.Name, liveData.Type, commons.AzureAssetProvider).
+			WithLocation(liveData.Location).
+			WithTags(liveData.Tags).
+			WithRelationships(azure.RelationshipFromID(liveData.ID)).
+			WithRawData(event.Data()),
+	)
 }

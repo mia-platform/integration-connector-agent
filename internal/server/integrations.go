@@ -196,7 +196,7 @@ func runIntegration(ctx context.Context, log *logrus.Logger, pg pipeline.IPipeli
 		}
 		integration.appendCloseableSource(awsConsumer)
 	case sources.AzureActivityLogEventHub:
-		if err := azureactivitylogeventhub.AddSource(ctx, source, pg, log); err != nil {
+		if err := azureactivitylogeventhub.AddSource(ctx, source, pg, log, oasRouter); err != nil {
 			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
 		}
 	case sources.Github:

@@ -13,15 +13,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commons
+package azure
 
 import (
 	"testing"
 
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRelationshipFromID(t *testing.T) {
+	t.Parallel()
+
 	testCases := map[string]struct {
 		id                    string
 		expectedRelationships []string
@@ -50,4 +53,61 @@ func TestRelationshipFromID(t *testing.T) {
 			assert.Equal(t, test.expectedRelationships, parsedRelationships)
 		})
 	}
+}
+
+func TestEventIsForResourceType(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		event        *ActivityLogEventRecord
+		resourceType string
+		expected     bool
+	}{
+		"event update tags for functions": {
+			event: &ActivityLogEventRecord{
+				OperationName: "MICROSOFT.RESOURCES/TAGS/WRITE",
+				ResourceID:    "/SUBSCRIPTIONS/123/RESOURCEGROUPS/MYRESOURCEGROUP/PROVIDERS/MICROSOFT.WEB/SITES/MYFUNCTIONAPP",
+			},
+			resourceType: FunctionEventSource,
+			expected:     true,
+		},
+		"event for functions": {
+			event: &ActivityLogEventRecord{
+				OperationName: "MICROSOFT.WEB/SITES/WRITE",
+				ResourceID:    "/SUBSCRIPTIONS/123/RESOURCEGROUPS/MYRESOURCEGROUP/PROVIDERS/MICROSOFT.WEB/SITES/MYFUNCTIONAPP",
+			},
+			resourceType: FunctionEventSource,
+			expected:     true,
+		},
+		"delete event for functions": {
+			event: &ActivityLogEventRecord{
+				OperationName: "MICROSOFT.WEB/SITES/DELETE",
+				ResourceID:    "/SUBSCRIPTIONS/123/RESOURCEGROUPS/MYRESOURCEGROUP/PROVIDERS/MICROSOFT.WEB/SITES/MYFUNCTIONAPP",
+			},
+			resourceType: FunctionEventSource,
+			expected:     false,
+		},
+	}
+
+	for testName, test := range testCases {
+		t.Run(testName, func(t *testing.T) {
+			result := EventIsForSource(test.event, test.resourceType)
+			assert.Equal(t, test.expected, result)
+		})
+	}
+}
+
+func TestPrimaryKeys(t *testing.T) {
+	t.Parallel()
+
+	resourceID := "/SUBSCRIPTIONS/00000000-0000-0000-0000-000000000000/RESOURCEGROUPS/GROUP/PROVIDERS/MICROSOFT.COMPUTE/VIRTUALMACHINESCALESETS/SCALESET"
+
+	expectedKeys := entities.PkFields{
+		{
+			Key:   "resourceId",
+			Value: "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/group/providers/microsoft.compute/virtualmachinescalesets/scaleset",
+		},
+	}
+
+	assert.Equal(t, expectedKeys, primaryKeys(resourceID))
 }

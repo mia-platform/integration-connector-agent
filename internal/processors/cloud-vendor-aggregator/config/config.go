@@ -18,6 +18,7 @@ package config
 import (
 	"errors"
 
+	"github.com/mia-platform/integration-connector-agent/internal/azure"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 )
 
@@ -37,9 +38,7 @@ type AuthOptions struct {
 	Region          string              `json:"region"`
 
 	// Azure
-	TenantID     string              `json:"tenantId"`
-	ClientID     config.SecretSource `json:"clientId"`
-	ClientSecret config.SecretSource `json:"clientSecret"`
+	azure.AuthConfig
 }
 
 type Config struct {

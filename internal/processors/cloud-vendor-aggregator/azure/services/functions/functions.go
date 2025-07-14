@@ -20,26 +20,21 @@ import (
 	"encoding/json"
 	"fmt"
 
-	azurecommons "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/commons"
+	"github.com/mia-platform/integration-connector-agent/internal/azure"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
-	azureactivitylogeventhubevents "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub/events"
-)
-
-const (
-	EventSource = "microsoft.web/sites"
 )
 
 type AzureFunction struct {
-	client azurecommons.Client
+	client azure.ClientInterface
 }
 
-func New(getter azurecommons.Client) *AzureFunction {
+func New(getter azure.ClientInterface) *AzureFunction {
 	return &AzureFunction{
 		client: getter,
 	}
 }
 
-func (a *AzureFunction) GetData(_ context.Context, event *azureactivitylogeventhubevents.ActivityLogEventRecord) ([]byte, error) {
+func (a *AzureFunction) GetData(ctx context.Context, event *azure.ActivityLogEventRecord) ([]byte, error) {
 	// it cannot fail because the event is already validated from the main processor
 	data, _ := json.Marshal(event)
 	entity, found := event.Properties["entity"]
@@ -47,7 +42,7 @@ func (a *AzureFunction) GetData(_ context.Context, event *azureactivitylogeventh
 		return nil, fmt.Errorf("entity not found in event properties")
 	}
 
-	resource, err := a.client.GetByID(entity.(string), "2024-11-01")
+	resource, err := a.client.GetByID(ctx, entity.(string), "2024-11-01")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get resource by ID: %w", err)
 	}
@@ -56,7 +51,7 @@ func (a *AzureFunction) GetData(_ context.Context, event *azureactivitylogeventh
 		commons.NewAsset(resource.Name, resource.Type, commons.AzureAssetProvider).
 			WithLocation(resource.Location).
 			WithTags(resource.Tags).
-			WithRelationships(azurecommons.RelationshipFromID(entity.(string))).
+			WithRelationships(azure.RelationshipFromID(entity.(string))).
 			WithRawData(data),
 	)
 }

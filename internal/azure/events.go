@@ -13,18 +13,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commons
+package azure
 
 import (
-	"strings"
+	"encoding/json"
 
-	azureactivitylogeventhubevents "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub/events"
+	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
-func EventIsForSource(event *azureactivitylogeventhubevents.ActivityLogEventRecord, resourceType string) bool {
-	eventSource := strings.ToLower(event.OperationName)
-	resourceID := strings.ToLower(event.ResourceID)
+//go:generate ${TOOLS_BIN}/stringer -type=EventType -trimprefix=EventType
+type EventType int
 
-	return eventSource == resourceType+"/write" ||
-		(eventSource == "microsoft.resources/tags/write" && strings.Contains(resourceID, resourceType))
+const (
+	EventTypeRecordFromEventHub EventType = iota
+	EventTypeFromLiveLoad
+)
+
+func EventFromRecord(record *ActivityLogEventRecord) *entities.Event {
+	rawRecord, err := json.Marshal(record)
+	if err != nil {
+		return nil
+	}
+
+	return &entities.Event{
+		PrimaryKeys:   primaryKeys(record.ResourceID),
+		OperationType: record.entityOperationType(),
+		Type:          EventTypeRecordFromEventHub.String(),
+		OriginalRaw:   rawRecord,
+	}
 }

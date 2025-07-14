@@ -23,8 +23,8 @@ import (
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/azure"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
-	azureactivitylogeventhubevents "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub/events"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2"
 	"github.com/stretchr/testify/assert"
@@ -200,7 +200,7 @@ func TestActivityLogConsumer(t *testing.T) {
 	t.Parallel()
 
 	rawEvent := func(stringEvent string) []byte {
-		record := new(azureactivitylogeventhubevents.ActivityLogEventRecord)
+		record := new(azure.ActivityLogEventRecord)
 		err := json.Unmarshal([]byte(stringEvent), &record)
 		require.NoError(t, err)
 
@@ -228,7 +228,7 @@ func TestActivityLogConsumer(t *testing.T) {
 							Value: "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/group/providers/microsoft.storage/storageaccounts/account",
 						},
 					},
-					Type:          "azure:storage:storageaccounts:listkeys:action:administrative",
+					Type:          azure.EventTypeRecordFromEventHub.String(),
 					OperationType: entities.Write,
 					OriginalRaw:   rawEvent(listActionEvent),
 				},
@@ -248,7 +248,7 @@ func TestActivityLogConsumer(t *testing.T) {
 							Value: "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/group/providers/microsoft.compute/virtualmachinescalesets/scaleset",
 						},
 					},
-					Type:          "azure:compute:virtualmachinescalesets:delete:action:administrative",
+					Type:          azure.EventTypeRecordFromEventHub.String(),
 					OperationType: entities.Delete,
 					OriginalRaw:   rawEvent(deleteEvent),
 				},
@@ -268,7 +268,7 @@ func TestActivityLogConsumer(t *testing.T) {
 							Value: "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/group/providers/microsoft.storage/storageaccounts/account",
 						},
 					},
-					Type:          "azure:storage:storageaccounts:listkeys:action:administrative",
+					Type:          azure.EventTypeRecordFromEventHub.String(),
 					OperationType: entities.Write,
 					OriginalRaw:   rawEvent(listActionEvent),
 				},
@@ -279,7 +279,7 @@ func TestActivityLogConsumer(t *testing.T) {
 							Value: "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/group/providers/microsoft.compute/virtualmachinescalesets/scaleset",
 						},
 					},
-					Type:          "azure:compute:virtualmachinescalesets:delete:action:administrative",
+					Type:          azure.EventTypeRecordFromEventHub.String(),
 					OperationType: entities.Delete,
 					OriginalRaw:   rawEvent(deleteEvent),
 				},

@@ -19,46 +19,94 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
+	"net/http"
 
-	"github.com/mia-platform/integration-connector-agent/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/azure"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
-	azureactivitylogeventhubevents "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub/events"
 	azureeventhub "github.com/mia-platform/integration-connector-agent/internal/sources/azure-event-hub"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2"
+	swagger "github.com/davidebianchi/gswagger"
+	"github.com/gofiber/fiber/v2"
+	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
 	"github.com/sirupsen/logrus"
 )
 
-func AddSource(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipelineGroup, logger *logrus.Logger) error {
-	eventHubConfig, err := configFromGeneric(cfg, pg)
+type Config struct {
+	azure.EventHubConfig
+
+	Authentication *webhook.HMAC `json:"authentication,omitempty"`
+	WebhookPath    string        `json:"webhookPath"`
+}
+
+func (c *Config) Validate() error {
+	if err := c.EventHubConfig.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Config) checkSignature(ctx *fiber.Ctx) error {
+	if c.Authentication == nil {
+		return nil
+	}
+
+	return c.Authentication.CheckSignature(ctx)
+}
+
+func AddSource(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipelineGroup, logger *logrus.Logger, router *swagger.Router[fiber.Handler, fiber.Router]) error {
+	config, err := configFromGeneric(cfg, pg)
 	if err != nil {
 		return err
 	}
 
-	return azureeventhub.SetupEventHub(ctx, eventHubConfig, pg, logger)
+	pg.Start(ctx)
+	go func(ctx context.Context, config azure.EventHubConfig, logger *logrus.Logger) {
+		azureeventhub.SetupEventHub(ctx, config, logger)
+	}(ctx, config.EventHubConfig, logger)
+
+	if len(config.WebhookPath) > 0 {
+		client, err := azure.NewGraphClient(config.AuthConfig)
+		if err != nil {
+			return err
+		}
+		_, err = router.AddRoute(
+			http.MethodPost,
+			config.WebhookPath,
+			webhookHandler(client, config, pg),
+			swagger.Definitions{},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func configFromGeneric(cfg config.GenericConfig, pg pipeline.IPipelineGroup) (*azureeventhub.Config, error) {
-	eventHubConfig, err := config.GetConfig[*azureeventhub.Config](cfg)
+func configFromGeneric(cfg config.GenericConfig, pg pipeline.IPipelineGroup) (*Config, error) {
+	sourceCfg, err := config.GetConfig[*Config](cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	eventHubConfig.EventConsumer = activityLogConsumer(pg)
-	return eventHubConfig, nil
+	sourceCfg.EventConsumer = activityLogConsumer(pg)
+	return sourceCfg, nil
 }
 
-func activityLogConsumer(pg pipeline.IPipelineGroup) azureeventhub.EventConsumer {
+func activityLogConsumer(pg pipeline.IPipelineGroup) azure.EventConsumer {
 	return func(eventData *azeventhubs.ReceivedEventData) error {
-		activityLogEventData := new(azureactivitylogeventhubevents.ActivityLogEventData)
+		activityLogEventData := new(azure.ActivityLogEventData)
 		if err := json.Unmarshal(eventData.Body, activityLogEventData); err != nil {
 			return fmt.Errorf("failed to read activity log event data: %w", err)
 		}
 
 		for _, record := range activityLogEventData.Records {
-			if event := pipelineEventFromRecord(record); event != nil {
+			if event := azure.EventFromRecord(record); event != nil {
 				pg.AddMessage(event)
 			}
 		}
@@ -67,38 +115,25 @@ func activityLogConsumer(pg pipeline.IPipelineGroup) azureeventhub.EventConsumer
 	}
 }
 
-func pipelineEventFromRecord(record *azureactivitylogeventhubevents.ActivityLogEventRecord) *entities.Event {
-	rawRecord, err := json.Marshal(record)
-	if err != nil {
-		return nil
+func webhookHandler(client azure.GraphClientInterface, config *Config, pg pipeline.IPipelineGroup) func(c *fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		log := glogrus.FromContext(c.UserContext())
+
+		if err := config.checkSignature(c); err != nil {
+			log.WithError(err).Error("error validating webhook request")
+			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
+		}
+
+		entities, err := client.Resources(c.UserContext())
+		if err != nil {
+			log.WithError(err).Error("failed to fetch Azure resources")
+			return c.Status(http.StatusInternalServerError).JSON(utils.ValidationError(err.Error()))
+		}
+
+		for _, entity := range entities {
+			pg.AddMessage(entity)
+		}
+
+		return c.SendStatus(http.StatusOK)
 	}
-
-	return &entities.Event{
-		PrimaryKeys: entities.PkFields{
-			{
-				Key:   "resourceId",
-				Value: strings.ToLower(record.ResourceID),
-			},
-		},
-		OperationType: eventOperationTypeFromRecord(record),
-		Type:          eventTypeFromRecord(record),
-		OriginalRaw:   rawRecord,
-	}
-}
-
-func eventOperationTypeFromRecord(record *azureactivitylogeventhubevents.ActivityLogEventRecord) entities.Operation {
-	if strings.HasSuffix(strings.ToLower(record.OperationName), "delete") ||
-		strings.HasSuffix(strings.ToLower(record.OperationName), "delete/action") {
-		return entities.Delete
-	}
-
-	return entities.Write
-}
-
-func eventTypeFromRecord(record *azureactivitylogeventhubevents.ActivityLogEventRecord) string {
-	eventType := fmt.Sprintf("%s:%s", strings.ToLower(record.OperationName), strings.ToLower(record.Category))
-	eventType = strings.ReplaceAll(eventType, "microsoft", "azure")
-	eventType = strings.ReplaceAll(eventType, ".", ":")
-	eventType = strings.ReplaceAll(eventType, "/", ":")
-	return eventType
 }
