@@ -31,6 +31,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var (
+	ErrUnsupportedEventSource = fmt.Errorf("unsupported event source")
+)
+
 type Processor struct {
 	logger *logrus.Logger
 	client azure.ClientInterface
@@ -84,8 +88,8 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 
 	adapter, err := p.EventDataProcessor(activityLogEvent)
 	if err != nil {
-		p.logger.WithError(err).Error("Failed to process Function App event")
-		return nil, fmt.Errorf("failed to process Function App event: %w", err)
+		p.logger.WithError(err).Error("Failed to process Azure event")
+		return nil, fmt.Errorf("failed to process Azure event: %w", err)
 	}
 
 	newData, err := adapter.GetData(context.Background(), activityLogEvent)
@@ -105,7 +109,7 @@ func (p *Processor) EventDataProcessor(activityLogEvent *azure.ActivityLogEventR
 	case azure.EventIsForSource(activityLogEvent, azure.FunctionEventSource):
 		return functions.New(p.client), nil
 	default:
-		return nil, fmt.Errorf("unsupported event source: %s", activityLogEvent.OperationName)
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedEventSource, activityLogEvent.OperationName)
 	}
 }
 
