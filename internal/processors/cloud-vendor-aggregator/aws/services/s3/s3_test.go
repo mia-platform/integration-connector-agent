@@ -16,12 +16,12 @@
 package s3
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
+	aws "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/awsclient"
 	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
 
 	"github.com/sirupsen/logrus/hooks/test"
@@ -34,7 +34,7 @@ func TestGetData(t *testing.T) {
 		event         *awssqsevents.CloudTrailEvent
 		expectedError error
 		expectedAsset *commons.Asset
-		mockS3Client  *mockS3Client
+		mockS3Client  *aws.AWSMock
 	}{
 		{
 			name: "error if event is missing the bucketName in request parameters",
@@ -60,8 +60,8 @@ func TestGetData(t *testing.T) {
 					},
 				},
 			},
-			mockS3Client: &mockS3Client{
-				tags: commons.Tags{
+			mockS3Client: &aws.AWSMock{
+				GetBucketTagsResult: commons.Tags{
 					"key1": "value1",
 					"key2": "value2",
 				},
@@ -91,8 +91,8 @@ func TestGetData(t *testing.T) {
 					},
 				},
 			},
-			mockS3Client: &mockS3Client{
-				tagsErr: errors.New("failed to get tags"),
+			mockS3Client: &aws.AWSMock{
+				GetBucketTagsError: errors.New("failed to get tags"),
 			},
 			expectedAsset: &commons.Asset{
 				Name:          "test-bucket",
@@ -111,7 +111,7 @@ func TestGetData(t *testing.T) {
 
 			s3client := tc.mockS3Client
 			if s3client == nil {
-				s3client = &mockS3Client{}
+				s3client = &aws.AWSMock{}
 			}
 
 			s3 := New(l, s3client)
@@ -133,13 +133,4 @@ func TestGetData(t *testing.T) {
 			}
 		})
 	}
-}
-
-type mockS3Client struct {
-	tags    commons.Tags
-	tagsErr error
-}
-
-func (m *mockS3Client) GetTags(_ context.Context, _ string) (commons.Tags, error) {
-	return m.tags, m.tagsErr
 }

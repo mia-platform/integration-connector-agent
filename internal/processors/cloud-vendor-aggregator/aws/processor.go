@@ -21,12 +21,11 @@ import (
 	"fmt"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
-	lambdaclient "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/aws/clients/lambda"
-	s3client "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/aws/clients/s3"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/aws/services/lambda"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/aws/services/s3"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/config"
+	aws "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/awsclient"
 	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
 
 	"github.com/sirupsen/logrus"
@@ -36,6 +35,13 @@ type Processor struct {
 	logger *logrus.Logger
 
 	config processorConfig
+}
+
+type processorConfig struct {
+	AccessKeyID     string
+	SecretAccessKey string
+	SessionToken    string
+	Region          string
 }
 
 func New(logger *logrus.Logger, authOptions config.AuthOptions) entities.Processor {
@@ -79,17 +85,22 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 }
 
 func (p *Processor) EventDataProcessor(cloudTrailEvent awssqsevents.IEvent) (commons.DataAdapter[awssqsevents.IEvent], error) {
-	awsConf, err := p.config.AWSConfig(context.Background(), cloudTrailEvent.GetRegion())
+	client, err := aws.New(context.Background(), p.logger, aws.Config{
+		AccessKeyID:     p.config.AccessKeyID,
+		SecretAccessKey: p.config.SecretAccessKey,
+		SessionToken:    p.config.SessionToken,
+		Region:          p.config.Region,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+		return nil, fmt.Errorf("failed to create AWS client: %w", err)
 	}
 
 	eventSource := cloudTrailEvent.EventSource()
 	switch eventSource {
-	case s3.EventSource:
-		return s3.New(p.logger, s3client.NewClient(awsConf)), nil
-	case lambda.EventSource:
-		return lambda.New(p.logger, lambdaclient.NewClient(awsConf)), nil
+	case aws.S3EventSource:
+		return s3.New(p.logger, client), nil
+	case aws.LambdaEventSource:
+		return lambda.New(p.logger, client), nil
 	default:
 		return nil, fmt.Errorf("unsupported event source: %s", eventSource)
 	}

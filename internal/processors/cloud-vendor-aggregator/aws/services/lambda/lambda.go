@@ -19,8 +19,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/aws/clients/lambda"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/awsclient"
 	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
 
 	"github.com/sirupsen/logrus"
@@ -28,10 +28,10 @@ import (
 
 type Lambda struct {
 	logger *logrus.Logger
-	client lambda.Client
+	client awsclient.AWS
 }
 
-func New(logger *logrus.Logger, client lambda.Client) *Lambda {
+func New(logger *logrus.Logger, client awsclient.AWS) *Lambda {
 	return &Lambda{
 		logger: logger,
 		client: client,

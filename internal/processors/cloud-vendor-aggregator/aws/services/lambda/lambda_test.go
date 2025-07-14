@@ -16,12 +16,11 @@
 package lambda
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
-	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/aws/clients/lambda"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/awsclient"
 	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
 
 	"github.com/sirupsen/logrus/hooks/test"
@@ -34,7 +33,7 @@ func TestGetData(t *testing.T) {
 		event            *awssqsevents.CloudTrailEvent
 		expectedError    error
 		expectedAsset    *commons.Asset
-		mockLambdaClient *mockLambdaClient
+		mockLambdaClient *awsclient.AWSMock
 	}{
 		{
 			name: "error if event is missing the functionName in requestParameters and responseElements",
@@ -159,10 +158,10 @@ func TestGetData(t *testing.T) {
 					},
 				},
 			},
-			mockLambdaClient: &mockLambdaClient{
-				function: &lambda.Function{
-					FunctionName: "test-function",
-					FunctionArn:  "arn:aws:lambda:us-west-2:123456789012:function:test-function",
+			mockLambdaClient: &awsclient.AWSMock{
+				GetFunctionResult: &awsclient.Function{
+					Name: "test-function",
+					ARN:  "arn:aws:lambda:us-west-2:123456789012:function:test-function",
 					Tags: commons.Tags{
 						"key1": "value1",
 						"key2": "value2",
@@ -189,7 +188,7 @@ func TestGetData(t *testing.T) {
 
 			client := tc.mockLambdaClient
 			if client == nil {
-				client = &mockLambdaClient{}
+				client = &awsclient.AWSMock{}
 			}
 
 			lambda := New(l, client)
@@ -211,13 +210,4 @@ func TestGetData(t *testing.T) {
 			}
 		})
 	}
-}
-
-type mockLambdaClient struct {
-	function    *lambda.Function
-	functionErr error
-}
-
-func (m *mockLambdaClient) GetFunction(_ context.Context, _ string) (*lambda.Function, error) {
-	return m.function, m.functionErr
 }

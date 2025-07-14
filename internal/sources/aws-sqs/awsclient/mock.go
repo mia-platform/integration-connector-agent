@@ -18,6 +18,8 @@ package awsclient
 import (
 	"context"
 	"sync"
+
+	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 )
 
 type AWSMock struct {
@@ -26,10 +28,16 @@ type AWSMock struct {
 	listenInvoked     bool
 	listenInvokedLock sync.Mutex
 
+	GetBucketTagsResult commons.Tags
+	GetBucketTagsError  error
+
 	ListBucketsResult      []*Bucket
 	ListBucketsError       error
 	listBucketsInvoked     bool
 	listBucketsInvokedLock sync.Mutex
+
+	GetFunctionResult *Function
+	GetFunctionError  error
 
 	ListFunctionsResult      []*Function
 	ListFunctionsError       error
@@ -98,4 +106,12 @@ func (m *AWSMock) ListFunctionsInvoked() bool {
 	m.listFunctionsInvokedLock.Lock()
 	defer m.listFunctionsInvokedLock.Unlock()
 	return m.listFunctionsInvoked
+}
+
+func (m *AWSMock) GetBucketTags(ctx context.Context, bucketName string) (commons.Tags, error) {
+	return m.GetBucketTagsResult, m.GetBucketTagsError
+}
+
+func (m *AWSMock) GetFunction(ctx context.Context, functionName string) (*Function, error) {
+	return m.GetFunctionResult, m.GetFunctionError
 }
