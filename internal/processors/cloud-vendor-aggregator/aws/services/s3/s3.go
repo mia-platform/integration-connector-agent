@@ -20,8 +20,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/aws/clients/s3"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
+	aws "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/awsclient"
 	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
 
 	"github.com/sirupsen/logrus"
@@ -29,10 +29,10 @@ import (
 
 type S3 struct {
 	logger *logrus.Logger
-	client s3.Client
+	client aws.AWS
 }
 
-func New(logger *logrus.Logger, client s3.Client) *S3 {
+func New(logger *logrus.Logger, client aws.AWS) *S3 {
 	return &S3{
 		logger: logger,
 		client: client,
@@ -49,7 +49,7 @@ func (s *S3) GetData(ctx context.Context, event awssqsevents.IEvent) ([]byte, er
 		return nil, fmt.Errorf("%w: %s", commons.ErrInvalidEvent, err.Error())
 	}
 
-	tags, err := s.client.GetTags(ctx, bucketName)
+	tags, err := s.client.GetBucketTags(ctx, bucketName)
 	if err != nil {
 		s.logger.WithError(err).Warn("failed to get S3 bucket tags")
 		tags = make(commons.Tags)

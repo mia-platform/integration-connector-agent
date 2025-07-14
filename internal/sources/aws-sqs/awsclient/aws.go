@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -210,6 +212,37 @@ func (s *concrete) ListFunctions(ctx context.Context) ([]*Function, error) {
 		}
 
 		result = append(result, f)
+	}
+	return result, nil
+}
+
+func (c *concrete) GetBucketTags(ctx context.Context, bucketName string) (commons.Tags, error) {
+	tags, err := c.s3.GetBucketTagging(ctx, &s3.GetBucketTaggingInput{
+		Bucket: &bucketName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	tagMap := make(commons.Tags, len(tags.TagSet))
+	for _, tag := range tags.TagSet {
+		tagMap[*tag.Key] = *tag.Value
+	}
+	return tagMap, nil
+}
+
+func (c *concrete) GetFunction(ctx context.Context, functionName string) (*Function, error) {
+	function, err := c.l.GetFunction(ctx, &lambda.GetFunctionInput{
+		FunctionName: &functionName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	result := &Function{
+		Name: *function.Configuration.FunctionName,
+		ARN:  *function.Configuration.FunctionArn,
+		Tags: function.Tags,
 	}
 	return result, nil
 }
