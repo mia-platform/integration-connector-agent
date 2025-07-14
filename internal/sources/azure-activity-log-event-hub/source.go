@@ -124,7 +124,11 @@ func webhookHandler(client azure.GraphClientInterface, config *Config, pg pipeli
 			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
 		}
 
-		entities, err := client.Resources(c.UserContext())
+		supportedTypes := []string{
+			azure.StorageAccountEventSource,
+			azure.FunctionEventSource,
+		}
+		entities, err := client.Resources(c.UserContext(), supportedTypes)
 		if err != nil {
 			log.WithError(err).Error("failed to fetch Azure resources")
 			return c.Status(http.StatusInternalServerError).JSON(utils.ValidationError(err.Error()))

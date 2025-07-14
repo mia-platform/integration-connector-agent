@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resourcegraph/armresourcegraph"
@@ -34,7 +35,7 @@ type GraphLiveData struct {
 }
 
 type GraphClientInterface interface {
-	Resources(ctx context.Context) ([]*entities.Event, error)
+	Resources(ctx context.Context, typesToFilter []string) ([]*entities.Event, error)
 }
 
 type GraphClient struct {
@@ -59,8 +60,16 @@ func NewGraphClient(config AuthConfig) (GraphClientInterface, error) {
 	}, nil
 }
 
-func (c *GraphClient) Resources(ctx context.Context) ([]*entities.Event, error) {
-	listResourceQuery := "Resources | project id, name, type, location, tags"
+func typeQueryFilter(typesToFilter []string) string {
+	if len(typesToFilter) == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("| ((type in~ ('%s')) or (isempty(type)))", strings.Join(typesToFilter, "','"))
+}
+
+func (c *GraphClient) Resources(ctx context.Context, typesToFilter []string) ([]*entities.Event, error) {
+	listResourceQuery := fmt.Sprintf("Resources %s | project id, name, type, location, tags", typeQueryFilter(typesToFilter))
 	queryRequest := armresourcegraph.QueryRequest{
 		Query: &listResourceQuery,
 	}

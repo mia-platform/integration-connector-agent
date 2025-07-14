@@ -146,7 +146,7 @@ func TestGraphClient(t *testing.T) {
 				client: testGraphClient(t, test.responder, test.errorResponder),
 			}
 
-			response, err := client.Resources(t.Context())
+			response, err := client.Resources(t.Context(), nil)
 			if test.expectedError != nil {
 				assert.Equal(t, test.expectedError.Error(), err.Error())
 				return
@@ -185,4 +185,36 @@ func testGraphClient(t *testing.T, responderFunc func(*string) fakeazcore.Respon
 
 	require.NoError(t, err)
 	return testGraphClient
+}
+
+func TestTypeQueryFilter(t *testing.T) {
+	t.Parallel()
+	testCases := map[string]struct {
+		types          []string
+		expectedString string
+	}{
+		"empty types": {
+			types:          []string{},
+			expectedString: "",
+		},
+		"nil types": {
+			types:          nil,
+			expectedString: "",
+		},
+		"single type": {
+			types:          []string{"Microsoft.Compute/virtualMachines"},
+			expectedString: "| ((type in~ ('Microsoft.Compute/virtualMachines')) or (isempty(type)))",
+		},
+		"multiple types": {
+			types:          []string{"Microsoft.Compute/virtualMachines", "Microsoft.Storage/storageAccounts"},
+			expectedString: "| ((type in~ ('Microsoft.Compute/virtualMachines','Microsoft.Storage/storageAccounts')) or (isempty(type)))",
+		},
+	}
+
+	for testName, test := range testCases {
+		t.Run(testName, func(t *testing.T) {
+			result := typeQueryFilter(test.types)
+			assert.Equal(t, test.expectedString, result)
+		})
+	}
 }
