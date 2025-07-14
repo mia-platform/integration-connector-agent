@@ -89,7 +89,7 @@ func (p *Processor) EventDataProcessor(cloudTrailEvent awssqsevents.IEvent) (com
 		AccessKeyID:     p.config.AccessKeyID,
 		SecretAccessKey: p.config.SecretAccessKey,
 		SessionToken:    p.config.SessionToken,
-		Region:          p.config.Region,
+		Region:          cloudTrailEvent.GetRegion(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AWS client: %w", err)
