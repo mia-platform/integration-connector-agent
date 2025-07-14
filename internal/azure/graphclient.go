@@ -65,7 +65,7 @@ func typeQueryFilter(typesToFilter []string) string {
 		return ""
 	}
 
-	return fmt.Sprintf("| ((type in~ ('%s')) or (isempty(type)))", strings.Join(typesToFilter, "','"))
+	return fmt.Sprintf("| where ((type in~ ('%s')) or (isempty(type)))", strings.Join(typesToFilter, "','"))
 }
 
 func (c *GraphClient) Resources(ctx context.Context, typesToFilter []string) ([]*entities.Event, error) {

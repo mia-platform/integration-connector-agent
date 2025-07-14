@@ -203,11 +203,11 @@ func TestTypeQueryFilter(t *testing.T) {
 		},
 		"single type": {
 			types:          []string{"Microsoft.Compute/virtualMachines"},
-			expectedString: "| ((type in~ ('Microsoft.Compute/virtualMachines')) or (isempty(type)))",
+			expectedString: "| where ((type in~ ('Microsoft.Compute/virtualMachines')) or (isempty(type)))",
 		},
 		"multiple types": {
 			types:          []string{"Microsoft.Compute/virtualMachines", "Microsoft.Storage/storageAccounts"},
-			expectedString: "| ((type in~ ('Microsoft.Compute/virtualMachines','Microsoft.Storage/storageAccounts')) or (isempty(type)))",
+			expectedString: "| where ((type in~ ('Microsoft.Compute/virtualMachines','Microsoft.Storage/storageAccounts')) or (isempty(type)))",
 		},
 	}
 
