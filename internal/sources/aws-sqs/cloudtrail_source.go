@@ -168,8 +168,10 @@ func (s *CloudTrailSource) webhookHandler(c *fiber.Ctx) error {
 	}
 	for _, bucket := range buckets {
 		importEvent := awssqsevents.CloudTrailImportEvent{
-			Name:   bucket.Name,
-			Source: awssqsevents.CloudTrailEventStorageType,
+			Name:    bucket.Name,
+			Source:  awssqsevents.CloudTrailEventStorageType,
+			Region:  bucket.Region,
+			Account: bucket.AccountID,
 		}
 		data, err := json.Marshal(importEvent)
 		if err != nil {
@@ -192,8 +194,10 @@ func (s *CloudTrailSource) webhookHandler(c *fiber.Ctx) error {
 	}
 	for _, function := range functions {
 		importEvent := awssqsevents.CloudTrailImportEvent{
-			Name:   function.Name,
-			Source: awssqsevents.CloudTrailEventFunctionType,
+			Name:    function.Name,
+			Source:  awssqsevents.CloudTrailEventFunctionType,
+			Region:  function.Region,
+			Account: function.AccountID,
 		}
 		data, err := json.Marshal(importEvent)
 		if err != nil {
