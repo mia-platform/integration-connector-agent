@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -153,7 +154,12 @@ func (s *concrete) Close() error {
 }
 
 func (s *concrete) ListBuckets(ctx context.Context) ([]*Bucket, error) {
-	buckets, err := s.s3.ListBuckets(ctx, &s3.ListBucketsInput{})
+	// BucketRegion is only returned when at least a valid parameter is set in the request.
+	// Apparently, passing an empty prefix is considered a valid request parameter...
+	// https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/s3@v1.83.0/types#Bucket
+	buckets, err := s.s3.ListBuckets(ctx, &s3.ListBucketsInput{
+		Prefix: aws.String(""),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -168,9 +174,13 @@ func (s *concrete) ListBuckets(ctx context.Context) ([]*Bucket, error) {
 			b.Region = *bucket.BucketRegion
 		}
 
-		parsedArn, err := arn.Parse(*bucket.BucketArn)
-		if err == nil {
-			b.AccountID = parsedArn.AccountID
+		// BucketArn is only returned for directory buckets.
+		// https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/s3@v1.83.0/types#Bucket
+		if bucket.BucketArn != nil {
+			parsedArn, err := arn.Parse(*bucket.BucketArn)
+			if err == nil {
+				b.AccountID = parsedArn.AccountID
+			}
 		}
 
 		result = append(result, b)
