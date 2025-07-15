@@ -24,11 +24,11 @@ import (
 type IPipeline interface {
 	AddMessage(data entities.PipelineEvent)
 	Start(ctx context.Context) error
-	Close() error
+	Close(ctx context.Context) error
 }
 
 type IPipelineGroup interface {
 	AddMessage(data entities.PipelineEvent)
 	Start(ctx context.Context)
-	Close() error
+	Close(ctx context.Context) error
 }

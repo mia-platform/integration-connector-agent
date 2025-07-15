@@ -53,9 +53,9 @@ func (i *Integration) appendCloseableSource(source sources.CloseableSource) {
 	i.sourcesToClose = append(i.sourcesToClose, source)
 }
 
-func (i Integration) Close() error {
+func (i Integration) Close(ctx context.Context) error {
 	if i.PipelineGroup != nil {
-		return i.PipelineGroup.Close()
+		return i.PipelineGroup.Close(ctx)
 	}
 	for _, source := range i.sourcesToClose {
 		if err := source.Close(); err != nil {
