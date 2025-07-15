@@ -34,10 +34,14 @@ Currently, the supported **Sources** are:
 - Mia-Platform Console
 - Jira
 - GitHub
+- GCP Asset Inventory from Pub/Sub
+- AWS CloudTrail from SQS
+- Azure Activity Log from EventHub
 
 The supported **Sinks** are:
 
 - MongoDB
+- CRUD Service
 
 More sources and sinks are planned for future releases.
 
