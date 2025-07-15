@@ -78,7 +78,7 @@ func NewApp(ctx context.Context, env config.EnvironmentVariables, log *logrus.Lo
 		<-ch
 
 		for _, integration := range integrations {
-			integration.Close()
+			integration.Close(ctx)
 		}
 	}(integrations)
 	return app, nil
