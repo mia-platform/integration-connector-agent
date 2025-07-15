@@ -17,84 +17,150 @@ package webhook
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
+
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
-
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 func TestEvent(t *testing.T) {
 	logger, _ := test.NewNullLogger()
 
 	testCases := map[string]struct {
-		rawData string
-		events  *Events
+		requestInfo RequestInfo
+		events      *Events
 
 		expectError           string
-		expectedID            string
+		expectedPk            entities.PkFields
 		expectedType          string
 		expectedOperationType entities.Operation
 	}{
-		"without id": {
-			rawData: `{"webhookEvent": "my-event"}`,
+		"without id in the event": {
+			requestInfo: RequestInfo{
+				data: []byte(`{"webhookEvent": "my-event"}`),
+			},
 			events: &Events{
 				Supported: map[string]Event{
 					"my-event": {
-						FieldID:   "issue.id",
-						Operation: entities.Write,
+						GetFieldID: GetPrimaryKeyByPath("issue.id"),
+						Operation:  entities.Write,
 					},
 				},
-				EventTypeFieldPath: "webhookEvent",
+				GetEventType: GetEventTypeByPath("webhookEvent"),
 			},
-			expectError: "missing id field in event: issue.id",
+			expectError: "missing id field in event: my-event",
 		},
 		"supported write event": {
-			rawData: `{"issue":{"id":"my-id"},"webhookEvent": "my-event"}`,
+			requestInfo: RequestInfo{
+				data: []byte(`{"issue":{"id":"my-id"},"webhookEvent": "my-event"}`),
+			},
 			events: &Events{
 				Supported: map[string]Event{
 					"my-event": {
-						FieldID:   "issue.id",
-						Operation: entities.Write,
+						GetFieldID: GetPrimaryKeyByPath("issue.id"),
+						Operation:  entities.Write,
 					},
 				},
-				EventTypeFieldPath: "webhookEvent",
+				GetEventType: GetEventTypeByPath("webhookEvent"),
 			},
-			expectedID:            "my-id",
+			expectedPk:            entities.PkFields{{Key: "issue.id", Value: "my-id"}},
 			expectedType:          "my-event",
 			expectedOperationType: entities.Write,
 		},
 		"supported delete event": {
-			rawData: `{"issue":{"id":"my-id"},"webhookEvent": "my-event"}`,
+			requestInfo: RequestInfo{
+				data: []byte(`{"issue":{"id":"my-id"},"webhookEvent": "my-event"}`),
+			},
 			events: &Events{
 				Supported: map[string]Event{
 					"my-event": {
-						FieldID:   "issue.id",
-						Operation: entities.Delete,
+						GetFieldID: GetPrimaryKeyByPath("issue.id"),
+						Operation:  entities.Delete,
 					},
 				},
-				EventTypeFieldPath: "webhookEvent",
+				GetEventType: GetEventTypeByPath("webhookEvent"),
 			},
 			expectedOperationType: entities.Delete,
 			expectedType:          "my-event",
-			expectedID:            "my-id",
+			expectedPk:            entities.PkFields{{Key: "issue.id", Value: "my-id"}},
 		},
 		"unsupported_event": {
-			rawData: `{"issue": {"id": "my-id", "key": "TEST-1"}, "webhookEvent": "unsupported"}`,
+			requestInfo: RequestInfo{
+				data: []byte(`{"issue": {"id": "my-id", "key": "TEST-1"}, "webhookEvent": "unsupported"}`),
+			},
 			events: &Events{
-				EventTypeFieldPath: "webhookEvent",
+				GetEventType: GetEventTypeByPath("webhookEvent"),
 			},
 
 			expectError:  fmt.Sprintf("%s: %s", ErrUnsupportedWebhookEvent, "unsupported"),
 			expectedType: "unsupported",
 		},
+		"with custom GetFieldID": {
+			requestInfo: RequestInfo{
+				data: []byte(`{"issue":{"tag":"my-id","projectId":"prj-1","parentId":"my-parent-id"},"webhookEvent": "my-event"}`),
+			},
+			events: &Events{
+				Supported: map[string]Event{
+					"my-event": {
+						GetFieldID: func(parsedData gjson.Result) entities.PkFields {
+							return entities.PkFields{
+								{Key: "parent", Value: parsedData.Get("issue.parentId").String()},
+								{Key: "project", Value: parsedData.Get("issue.projectId").String()},
+							}
+						},
+					},
+				},
+				GetEventType: GetEventTypeByPath("webhookEvent"),
+			},
+
+			expectedPk:            entities.PkFields{{Key: "parent", Value: "my-parent-id"}, {Key: "project", Value: "prj-1"}},
+			expectedType:          "my-event",
+			expectedOperationType: entities.Write,
+		},
+		"without GetFieldID": {
+			requestInfo: RequestInfo{
+				data: []byte(`{"issue":{"tag":"my-id","projectId":"prj-1","parentId":"my-parent-id"},"webhookEvent": "my-event"}`),
+			},
+			events: &Events{
+				Supported: map[string]Event{
+					"my-event": {},
+				},
+				GetEventType: GetEventTypeByPath("webhookEvent"),
+			},
+
+			expectError: fmt.Sprintf("%s: my-event missing GetFieldID function", ErrUnsupportedWebhookEvent),
+		},
+		"with event id from header": {
+			requestInfo: RequestInfo{
+				data:    []byte(`{"issue":{"id":"my-id"}}`),
+				headers: http.Header{"Event-Type": []string{"my-event"}},
+			},
+			events: &Events{
+				Supported: map[string]Event{
+					"my-event": {
+						GetFieldID: GetPrimaryKeyByPath("issue.id"),
+						Operation:  entities.Write,
+					},
+				},
+				GetEventType: func(data EventTypeParam) string {
+					return data.Headers.Get("Event-Type")
+				},
+			},
+
+			expectedPk:            entities.PkFields{{Key: "issue.id", Value: "my-id"}},
+			expectedType:          "my-event",
+			expectedOperationType: entities.Write,
+		},
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			event, err := tc.events.getPipelineEvent(logrus.NewEntry(logger), []byte(tc.rawData))
+			event, err := tc.events.getPipelineEvent(logrus.NewEntry(logger), tc.requestInfo)
 			if tc.expectError != "" {
 				require.Error(t, err)
 				require.EqualError(t, err, tc.expectError)
@@ -102,13 +168,39 @@ func TestEvent(t *testing.T) {
 				require.NoError(t, err)
 
 				require.Equal(t, &entities.Event{
-					ID:            tc.expectedID,
+					PrimaryKeys:   tc.expectedPk,
 					OperationType: tc.expectedOperationType,
 					Type:          tc.expectedType,
 
-					OriginalRaw: []byte(tc.rawData),
+					OriginalRaw: tc.requestInfo.data,
 				}, event)
 			}
 		})
 	}
+}
+
+func TestGetPrimaryKeyByPath(t *testing.T) {
+	t.Run("ok", func(t *testing.T) {
+		getFieldID := GetPrimaryKeyByPath("issue.id")
+		parsed := gjson.ParseBytes([]byte(`{"issue": {"id": "my-id"}}`))
+
+		require.Equal(t, entities.PkFields{{Key: "issue.id", Value: "my-id"}}, getFieldID(parsed))
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		getFieldID := GetPrimaryKeyByPath("issue.id")
+		parsed := gjson.ParseBytes([]byte(`{}`))
+
+		require.Nil(t, getFieldID(parsed))
+	})
+}
+
+func TestGetEventTypeByPath(t *testing.T) {
+	t.Run("ok", func(t *testing.T) {
+		getEventType := GetEventTypeByPath("event.type")
+		parsed := gjson.ParseBytes([]byte(`{"event": {"type": "my-type"}}`))
+		require.Equal(t, "my-type", getEventType(EventTypeParam{
+			Data: parsed,
+		}))
+	})
 }

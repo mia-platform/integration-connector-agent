@@ -40,6 +40,7 @@ func TestJiraIntegration(t *testing.T) {
 	t.Run("save data on mongo", func(t *testing.T) {
 		collJiraIssues := testutils.MongoCollection(t, mongoURL, "jira-issues", db)
 		collJira := testutils.MongoCollection(t, mongoURL, "jira", db)
+		timestamp := time.Now().UnixMilli()
 
 		events := []struct {
 			name    string
@@ -53,7 +54,7 @@ func TestJiraIntegration(t *testing.T) {
 				reqBody: map[string]any{
 					"webhookEvent": "jira:issue_created",
 					"id":           123,
-					"timestamp":    time.Now().UnixMilli(),
+					"timestamp":    timestamp,
 					"issue": map[string]any{
 						"id":  "12345",
 						"key": "TEST-123",
@@ -82,7 +83,7 @@ func TestJiraIntegration(t *testing.T) {
 						"_eventId":     "12345",
 						"webhookEvent": "jira:issue_created",
 						"id":           float64(123),
-						"timestamp":    float64(time.Now().UnixMilli()),
+						"timestamp":    float64(timestamp),
 						"issue": map[string]any{
 							"id":  "12345",
 							"key": "TEST-123",
@@ -103,7 +104,7 @@ func TestJiraIntegration(t *testing.T) {
 				reqBody: map[string]any{
 					"webhookEvent": "jira:issue_updated",
 					"id":           124,
-					"timestamp":    time.Now().UnixMilli(),
+					"timestamp":    timestamp,
 					"issue": map[string]any{
 						"id":  "12345",
 						"key": "TEST-123",
@@ -132,7 +133,7 @@ func TestJiraIntegration(t *testing.T) {
 						"_eventId":     "12345",
 						"webhookEvent": "jira:issue_updated",
 						"id":           float64(124),
-						"timestamp":    float64(time.Now().UnixMilli()),
+						"timestamp":    float64(timestamp),
 						"issue": map[string]any{
 							"id":  "12345",
 							"key": "TEST-123",
@@ -153,7 +154,7 @@ func TestJiraIntegration(t *testing.T) {
 				reqBody: map[string]any{
 					"webhookEvent": "jira:issue_created",
 					"id":           125,
-					"timestamp":    time.Now().UnixMilli(),
+					"timestamp":    timestamp,
 					"issue": map[string]any{
 						"id":  "12346",
 						"key": "TEST-456",
@@ -189,7 +190,7 @@ func TestJiraIntegration(t *testing.T) {
 						"_eventId":     "12345",
 						"webhookEvent": "jira:issue_updated",
 						"id":           float64(124),
-						"timestamp":    float64(time.Now().UnixMilli()),
+						"timestamp":    float64(timestamp),
 						"issue": map[string]any{
 							"id":  "12345",
 							"key": "TEST-123",
@@ -207,7 +208,7 @@ func TestJiraIntegration(t *testing.T) {
 						"_eventId":     "12346",
 						"webhookEvent": "jira:issue_created",
 						"id":           float64(125),
-						"timestamp":    float64(time.Now().UnixMilli()),
+						"timestamp":    float64(timestamp),
 						"issue": map[string]any{
 							"id":  "12346",
 							"key": "TEST-456",
@@ -228,7 +229,7 @@ func TestJiraIntegration(t *testing.T) {
 				reqBody: map[string]any{
 					"webhookEvent": "jira:issue_deleted",
 					"id":           125,
-					"timestamp":    time.Now().UnixMilli(),
+					"timestamp":    timestamp,
 					"issue": map[string]any{
 						"id":  "12346",
 						"key": "TEST-123",
@@ -252,7 +253,7 @@ func TestJiraIntegration(t *testing.T) {
 						"_eventId":     "12345",
 						"webhookEvent": "jira:issue_updated",
 						"id":           float64(124),
-						"timestamp":    float64(time.Now().UnixMilli()),
+						"timestamp":    float64(timestamp),
 						"issue": map[string]any{
 							"id":  "12345",
 							"key": "TEST-123",
@@ -302,7 +303,7 @@ func TestJiraIntegration(t *testing.T) {
 						"_eventId":     "12345",
 						"webhookEvent": "jira:issue_updated",
 						"id":           float64(124),
-						"timestamp":    float64(time.Now().UnixMilli()),
+						"timestamp":    float64(timestamp),
 						"issue": map[string]any{
 							"id":  "12345",
 							"key": "TEST-123",

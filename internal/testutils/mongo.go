@@ -45,18 +45,19 @@ func GenerateMongoURL(tb testing.TB) (string, string) {
 func MongoCollection(t *testing.T, mongoURL, collection, db string) *mongo.Collection {
 	t.Helper()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURL))
 	require.NoError(t, err)
 
-	ctxPing, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	ctxPing, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 	require.NoError(t, client.Ping(ctxPing, nil))
 
 	coll := client.Database(db).Collection(collection)
 
 	t.Cleanup(func() {
-		err := coll.Drop(context.Background())
+		ctx := context.Background()
+		err := coll.Drop(ctx)
 		require.NoError(t, err)
 		err = client.Database(db).Drop(ctx)
 		require.NoError(t, err)

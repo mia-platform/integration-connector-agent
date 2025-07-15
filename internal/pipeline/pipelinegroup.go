@@ -17,8 +17,12 @@ package pipeline
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,7 +32,7 @@ type Group struct {
 	errors    []error
 }
 
-func NewGroup(logger *logrus.Logger, pipelines ...IPipeline) *Group {
+func NewGroup(logger *logrus.Logger, pipelines ...IPipeline) IPipelineGroup {
 	return &Group{
 		pipelines: pipelines,
 		logger:    logger,
@@ -41,6 +45,10 @@ func (pg *Group) Start(ctx context.Context) {
 		go func(p IPipeline) {
 			err := p.Start(ctx)
 			if err != nil {
+				if errors.Is(err, context.Canceled) {
+					pg.logger.WithError(err).Info("pipeline context cancelled")
+					return
+				}
 				pg.logger.WithError(err).Error("error starting pipeline")
 				// TODO: manage error
 				panic(err)
@@ -53,4 +61,29 @@ func (pg *Group) AddMessage(event entities.PipelineEvent) {
 	for _, p := range pg.pipelines {
 		p.AddMessage(event.Clone())
 	}
+}
+
+func (pg *Group) Close() error {
+	for _, p := range pg.pipelines {
+		if err := p.Close(); err != nil {
+			pg.errors = append(pg.errors, err)
+		}
+	}
+
+	if len(pg.errors) > 0 {
+		return fmt.Errorf("failed closing processors: %s", joinErrors(pg.errors))
+	}
+
+	return nil
+}
+
+func joinErrors(errors []error) string {
+	var sb strings.Builder
+	for i, err := range errors {
+		if i > 0 {
+			sb.WriteString(", ")
+		}
+		sb.WriteString(err.Error())
+	}
+	return sb.String()
 }

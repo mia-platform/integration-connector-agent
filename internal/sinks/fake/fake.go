@@ -19,7 +19,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
 type Config struct {
@@ -86,6 +86,13 @@ func (f *Writer) Calls() Calls {
 	defer f.mtx.Unlock()
 
 	return f.stub
+}
+
+func (f *Writer) ResetCalls() {
+	f.mtx.Lock()
+	defer f.mtx.Unlock()
+
+	f.stub = Calls{}
 }
 
 func (f *Writer) AddMock(mock Mock) {

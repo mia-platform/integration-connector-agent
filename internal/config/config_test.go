@@ -16,6 +16,7 @@
 package config
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -72,11 +73,69 @@ func TestLoadServiceConfiguration(t *testing.T) {
 			},
 			expectedSinkConfig:      getExpectedSinkConfig(t),
 			expectedProcessorConfig: getExpectedProcessorConfig(t),
-			expectedSourceConfig:    getExpectedSourceConfig(t),
+			expectedSourceConfig:    getExpectedSourceConfig(t, "jira"),
 		},
 		"invalid config if integrations is empty": {
 			path:          "./testdata/empty-integrations.json",
 			expectedError: "configuration not valid: json schema validation errors:",
+		},
+		"console config is parsed correctly": {
+			path: "./testdata/console-config.json",
+			expectedContent: &Configuration{
+				Integrations: []Integration{
+					{
+						Source: GenericConfig{
+							Type: "console",
+						},
+						Pipelines: []Pipeline{
+							{
+								Processors: Processors{
+									{
+										Type: "mapper",
+									},
+								},
+								Sinks: Sinks{
+									{
+										Type: "mongo",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedSinkConfig:      getExpectedSinkConfig(t),
+			expectedProcessorConfig: getExpectedProcessorConfig(t),
+			expectedSourceConfig:    getExpectedSourceConfig(t, "console"),
+		},
+		"custom processor config is parsed correctly": {
+			path: "./testdata/custom-processor-config.json",
+			expectedContent: &Configuration{
+				Integrations: []Integration{
+					{
+						Source: GenericConfig{
+							Type: "jira",
+						},
+						Pipelines: []Pipeline{
+							{
+								Processors: Processors{
+									{
+										Type: "rpc-plugin",
+									},
+								},
+								Sinks: Sinks{
+									{
+										Type: "mongo",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedSinkConfig:      getExpectedSinkConfig(t),
+			expectedProcessorConfig: getExpectedCustomProcessorConfig(t),
+			expectedSourceConfig:    getExpectedSourceConfig(t, "jira"),
 		},
 	}
 
@@ -178,16 +237,28 @@ func getExpectedProcessorConfig(t *testing.T) string {
 }`
 }
 
-func getExpectedSourceConfig(t *testing.T) string {
+func getExpectedCustomProcessorConfig(t *testing.T) string {
 	t.Helper()
 
 	return `{
-	"type": "jira",
+	"type": "rpc-plugin",
+	"modulePath": "testdata/customprocessor",
+	"initOptions": {
+		"some": "value"
+	}
+}`
+}
+
+func getExpectedSourceConfig(t *testing.T, sourceType string) string {
+	t.Helper()
+
+	return fmt.Sprintf(`{
+	"type": "%s",
 	"webhookPath": "/custom-webhook-path",
 	"authentication": {
 		"secret": {
 			"fromFile": "testdata/secret"
 		}
 	}
-}`
+}`, sourceType)
 }

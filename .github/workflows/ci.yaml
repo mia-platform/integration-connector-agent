@@ -12,10 +12,10 @@ on:
     - "**/*.md"
     - docs/**
     - examples/**
-  workflow_dispatch:
 
 env:
-  GORELEASER_VERSION: v2.4.1
+  GORELEASER_VERSION: v2.11.0
+  GOLANGCI_LINT_VERSION: v2.2.1
 jobs:
   lint:
     name: Lint Code
@@ -26,24 +26,14 @@ jobs:
       with:
         show-progress: false
     - name: Setup Golang
-      uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # v5.1.0
+      uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       with:
         go-version-file: go.mod
         cache: false
-    - name: Set golangci-lint Cache Key
-      id: create-sha
-      run: |
-        echo "GOLANGCILINT_SHA=$(cat ./tools/GOLANGCI_LINT_VERSION | sha256sum - | awk '{ print $1 }')" >> $GITHUB_ENV
-    - name: Setup golangci-lint Cache
-      uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@4afd733a84b1f43292c63897423277bb7f4313a9 # v8.0.0
       with:
-        path: |
-          ./tools/bin
-        key: ${{ runner.os }}-go-${{ env.GOLANGCILINT_SHA }}
-        restore-keys: |
-          ${{ runner.os }}-go-${{ env.GOLANGCILINT_SHA }}
-    - name: Run Lint CI
-      run: make ci-lint GOLANGCI_LINT_MODE="github-actions"
+        version: ${{ env.GOLANGCI_LINT_VERSION }}
 
   test:
     name: Testing on ${{ matrix.os }}
@@ -52,15 +42,13 @@ jobs:
         os:
         - ubuntu-latest
     runs-on: ${{ matrix.os }}
-    env:
-      GOEXPERIMENT: nocoverageredesign
     steps:
     - name: Checkout Repository
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         show-progress: false
     - name: Setup Golang
-      uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # v5.1.0
+      uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       with:
         go-version-file: go.mod
     - name: Run Test Coverage
@@ -79,11 +67,11 @@ jobs:
       with:
         show-progress: false
     - name: Setup Golang
-      uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # v5.1.0
+      uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       with:
         go-version-file: go.mod
     - name: Setup Goreleaser
-      uses: goreleaser/goreleaser-action@286f3b13b1b49da4ac219696163fb8c1c93e1200 # v6.0.0
+      uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
       with:
         version: ${{ env.GORELEASER_VERSION }}
         install-only: true
@@ -103,11 +91,11 @@ jobs:
         show-progress: false
         fetch-depth: 0
     - name: Setup Golang
-      uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # v5.1.0
+      uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       with:
         go-version-file: go.mod
     - name: Setup Goreleaser
-      uses: goreleaser/goreleaser-action@286f3b13b1b49da4ac219696163fb8c1c93e1200 # v6.0.0
+      uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
       with:
         version: ${{ env.GORELEASER_VERSION }}
         install-only: true
@@ -118,15 +106,20 @@ jobs:
     - name: Run Goreleaser
       run: make ci-release SNAPSHOT_RELEASE=${SNAPSHOT_RELEASE}
       env:
-        GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Upload Binaries Artifacts
-      uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: artifacts
         path: bin/
 
   publish-docker:
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+      packages: write
+      id-token: write
     needs:
     - publish-release
     steps:
@@ -135,7 +128,7 @@ jobs:
       with:
         show-progress: false
     - name: Download Binaries
-      uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         name: artifacts
         path: bin/
@@ -143,20 +136,100 @@ jobs:
       run: |
         find ./bin/{darwin,linux} -type f -exec chmod +x {} \;
     - name: Docker Login to GitHub Repository
-      uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Docker Login to DockerHub
-      uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
       with:
         username: ${{ secrets.BOT_DOCKER_USERNAME }}
         password: ${{ secrets.BOT_DOCKER_TOKEN }}
-    - name: Setup QEMU
-      run: make docker-setup-multiarch
+    - name: Docker Login to Mia registry
+      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+      with:
+        registry: nexus.mia-platform.eu
+        username: ${{ secrets.NEXUS_USER }}
+        password: ${{ secrets.NEXUS_TOKEN }}
+    - name: Install Cosign
+      uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3.9.1
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+      with:
+        platforms: amd64,arm64
+    - name: Configure docker metadata
+      id: meta
+      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+      env:
+        DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+      with:
+        images: |
+          ghcr.io/mia-platform/integration-connector-agent
+          docker.io/miaplatform/integration-connector-agent
+          nexus.mia-platform.eu/plugins/integration-connector-agent
+        tags: |
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=semver,pattern={{version}}
+        labels: |
+          org.opencontainers.image.authors=Mia Platform Core Team<core@mia-platform.eu>
+          org.opencontainers.image.vendor=Mia s.r.l.
+        annotations: |
+          org.opencontainers.image.authors=Mia Platform Core Team<core@mia-platform.eu>
+          org.opencontainers.image.vendor=Mia s.r.l.
     - name: Setup Buildx Context
+      uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
       id: buildx
-      uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3.7.1
-    - name: Build Latest Image
-      run: make ci-docker BUILDX_CONTEXT=${{ steps.buildx.outputs.name }}
+      with:
+        platforms: linux/amd64,linux/arm64
+    - name: Build and push
+      id: docker-build
+      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        annotations: ${{ steps.meta.outputs.annotations }}
+        platforms: ${{ steps.buildx.outputs.platforms }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    - name: Scan image
+      uses: sysdiglabs/scan-action@0065d3b93bd4115371b55720251adb1d228fe188 # v5.1.1
+      with:
+        image-tag: nexus.mia-platform.eu/plugins/integration-connector-agent:${{ steps.meta.outputs.version }}
+        sysdig-secure-url: "https://eu1.app.sysdig.com"
+        sysdig-secure-token: ${{ secrets.SYSDIG_SECURE_TOKEN }}
+        registry-user: ${{ secrets.NEXUS_USER }}
+        registry-password: ${{ secrets.NEXUS_TOKEN }}
+        stop-on-processing-error: true
+    - name: Generate SBOM
+      uses: anchore/sbom-action@9246b90769f852b3a8921f330c59e0b3f439d6e9 # v0.20.1
+      if: github.ref_type == 'tag'
+      with:
+        artifact-name: integration-connector-agent-sbom.spdx.json
+        output-file: ./integration-connector-agent-sbom.spdx.json
+        image: nexus.mia-platform.eu/plugins/integration-connector-agent:${{ steps.meta.outputs.version }}
+        upload-release-assets: true
+    - name: GCP Auth
+      uses: google-github-actions/auth@ba79af03959ebeac9769e648f473a284504d9193 # v2.1.10
+      if: github.ref_type == 'tag'
+      with:
+        project_id: ${{ secrets.MIA_PLATFORM_KMS_GCP_PROJECT }}
+        workload_identity_provider: ${{ secrets.MIA_PLATFORM_WIF }}
+        create_credentials_file: true
+    - name: Sign image with a key
+      if: github.ref_type == 'tag'
+      run: |
+        for tag in ${TAGS}; do
+          image="${tag}@${DIGEST}"
+          cosign sign --recursive --yes --key "${COSIGN_PRIVATE_KEY}" "${image}"
+          cosign attest --yes --key "${COSIGN_PRIVATE_KEY}" --predicate "integration-connector-agent-sbom.spdx.json" --type="spdxjson" "${image}"
+        done
+      env:
+        TAGS: |
+          ghcr.io/mia-platform/integration-connector-agent:${{ steps.meta.outputs.version }}
+          docker.io/miaplatform/integration-connector-agent:${{ steps.meta.outputs.version }}
+          nexus.mia-platform.eu/plugins/integration-connector-agent:${{ steps.meta.outputs.version }}
+        DIGEST: ${{ steps.docker-build.outputs.digest }}
+        COSIGN_PRIVATE_KEY: ${{ secrets.MIA_PLATFORM_KEY_KMS }}

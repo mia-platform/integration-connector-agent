@@ -18,12 +18,11 @@ package pipeline
 import (
 	"context"
 	"errors"
-	"reflect"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
-	"github.com/mia-platform/integration-connector-agent/internal/processors/filter"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"
+	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	"github.com/sirupsen/logrus"
 )
@@ -45,7 +44,7 @@ func (p Pipeline) AddMessage(data entities.PipelineEvent) {
 }
 
 func (p Pipeline) Start(ctx context.Context) error {
-	if isNil(p.sinks) {
+	if utils.IsNil(p.sinks) {
 		return ErrWriterNotDefined
 	}
 
@@ -56,6 +55,10 @@ func (p Pipeline) Start(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (p Pipeline) Close() error {
+	return p.processors.Close()
 }
 
 func (p Pipeline) runPipeline(ctx context.Context) error {
@@ -70,7 +73,7 @@ loop:
 
 			processedMessage, err := p.processors.Process(ctx, message)
 			if err != nil {
-				if errors.Is(err, filter.ErrEventToFilter) {
+				if errors.Is(err, entities.ErrDiscardEvent) {
 					// the message has been filtered out
 					p.logger.WithError(err).WithField("message", message.Data()).Trace("event filtered for pipeline")
 					continue
@@ -82,7 +85,7 @@ loop:
 			if err := p.sinks.WriteData(ctx, processedMessage); err != nil {
 				// TODO: manage failure in writing message. DLQ?
 				p.logger.WithError(err).WithFields(logrus.Fields{
-					"id":               processedMessage.GetID(),
+					"id":               processedMessage.GetPrimaryKeys().Map(),
 					"data":             string(processedMessage.Data()),
 					"messageOperation": processedMessage.Operation(),
 				}).Error("error writing data")
@@ -111,8 +114,4 @@ func New(logger *logrus.Logger, p *processors.Processors, sinks sinks.Sink[entit
 	}
 
 	return pipeline, nil
-}
-
-func isNil(i any) bool {
-	return i == nil || (reflect.ValueOf(i).Kind() == reflect.Ptr && reflect.ValueOf(i).IsNil())
 }

@@ -16,12 +16,11 @@
 package pipeline
 
 import (
-	"context"
 	"testing"
 	"time"
 
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	fakesink "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 
@@ -32,7 +31,7 @@ import (
 func TestPipelineGroup(t *testing.T) {
 	logger, _ := test.NewNullLogger()
 
-	proc1, err := processors.New(config.Processors{
+	proc1, err := processors.New(logger, config.Processors{
 		{
 			Type: processors.Mapper,
 			Raw:  []byte(`{"type":"mapper","outputEvent":{"field":"some"}}`),
@@ -40,7 +39,7 @@ func TestPipelineGroup(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	proc2, err := processors.New(config.Processors{
+	proc2, err := processors.New(logger, config.Processors{
 		{
 			Type: processors.Mapper,
 			Raw:  []byte(`{"type":"mapper","outputEvent":{"field":"other"}}`),
@@ -57,13 +56,12 @@ func TestPipelineGroup(t *testing.T) {
 		p2, err := New(logger, proc2, sink2)
 		require.NoError(t, err)
 
-		ctx := context.Background()
 		pg := NewGroup(logger, p1, p2)
 
-		pg.Start(ctx)
+		pg.Start(t.Context())
 
 		event := &entities.Event{
-			ID:          "123",
+			PrimaryKeys: entities.PkFields{{Key: "id", Value: "123"}},
 			OriginalRaw: []byte(`{"id":"123"}`),
 		}
 		pg.AddMessage(event)

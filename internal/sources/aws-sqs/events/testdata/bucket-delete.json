@@ -1,0 +1,71 @@
+{
+    "version": "0",
+    "id": "79dcceb5-132d-c1b0-0102-0cc68dfeb044",
+    "detail-type": "AWS API Call via CloudTrail",
+    "source": "aws.s3",
+    "account": "accountid",
+    "time": "2025-06-25T14:57:08Z",
+    "region": "eu-north-1",
+    "resources": [],
+    "detail": {
+        "eventVersion": "1.11",
+        "userIdentity": {
+            "type": "AssumedRole",
+            "principalId": "principalid:user@example.com",
+            "arn": "arn:aws:sts::accountid:assumed-role/TheAssumedRole/user@example.com",
+            "accountId": "accountid",
+            "accessKeyId": "ASIA5FTZFBZ7JI7FTYZR",
+            "sessionContext": {
+                "sessionIssuer": {
+                    "type": "Role",
+                    "principalId": "principalid",
+                    "arn": "arn:aws:iam::accountid:role/aws-reserved/sso.amazonaws.com/eu-west-1/TheAssumedRole",
+                    "accountId": "accountid",
+                    "userName": "TheAssumedRole"
+                },
+                "attributes": {
+                    "creationDate": "2025-06-25T13:30:04Z",
+                    "mfaAuthenticated": "false"
+                }
+            }
+        },
+        "eventTime": "2025-06-25T14:57:08Z",
+        "eventSource": "s3.amazonaws.com",
+        "eventName": "DeleteBucket",
+        "awsRegion": "eu-north-1",
+        "sourceIPAddress": "2.40.119.250",
+        "userAgent": "[Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:139.0) Gecko/20100101 Firefox/139.0]",
+        "requestParameters": {
+            "bucketName": "the-bucket-name",
+            "Host": "the-bucket-name.s3.eu-north-1.amazonaws.com"
+        },
+        "responseElements": null,
+        "additionalEventData": {
+            "SignatureVersion": "SigV4",
+            "CipherSuite": "TLS_AES_128_GCM_SHA256",
+            "bytesTransferredIn": 0,
+            "AuthenticationMethod": "AuthHeader",
+            "x-amz-id-2": "************************************************************",
+            "bytesTransferredOut": 0
+        },
+        "requestID": "R34DZ4HJ405F44PJ",
+        "eventID": "c021f96e-5884-4878-8c74-2646474c8fa3",
+        "readOnly": false,
+        "resources": [
+            {
+                "accountId": "accountid",
+                "type": "AWS::S3::Bucket",
+                "ARN": "arn:aws:s3:::the-bucket-name"
+            }
+        ],
+        "eventType": "AwsApiCall",
+        "managementEvent": true,
+        "recipientAccountId": "accountid",
+        "eventCategory": "Management",
+        "tlsDetails": {
+            "tlsVersion": "TLSv1.3",
+            "cipherSuite": "TLS_AES_128_GCM_SHA256",
+            "clientProvidedHostHeader": "the-bucket-name.s3.eu-north-1.amazonaws.com"
+        }
+    }
+}

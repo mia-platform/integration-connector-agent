@@ -19,7 +19,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
 var (
@@ -27,7 +27,7 @@ var (
 )
 
 type DataWithIdentifier interface {
-	GetID() string
+	GetPrimaryKeys() entities.PkFields
 	Operation() entities.Operation
 }
 
@@ -41,7 +41,8 @@ type Sink[Data DataWithIdentifier] interface {
 }
 
 const (
-	Mongo = "mongo"
+	Mongo       = "mongo"
+	CRUDService = "crud-service"
 
 	// Fake is a fake writer used for testing purposes
 	Fake = "fake"

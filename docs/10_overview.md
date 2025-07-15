@@ -1,7 +1,7 @@
 # Integration Connector Agent
 
 The Integration Connector Agent connects to external sources and keeps changes
-synchronized between the source and one or more sinks. It also allows for data
+synchronized between the source and one or more sinks. It also enables for data
 processing before sending it to the sinks.
 
 ## Key Features
@@ -12,60 +12,69 @@ processing before sending it to the sinks.
 
 ## Key Benefits
 
-The Integration Connector Agent provides the flexibility to retrieve data from any source and deliver it to any sink. This data can then be utilized for various purposes, including:
-* Data Accessibility: Aggregate data from multiple sources by configuring the agent, simplifying data retrieval.
-* Analytics: Centralized data storage enables advanced analytics and the creation of comprehensive scorecards.
-* External Integration: Simplify the development of custom applications by building efficient data pipelines with the agent.
+The Integration Connector Agent provides the flexibility to retrieve data from any source and deliver it to any sink.
+This data can then be utilized for various purposes, including:
 
-When used alongside Mia-Platform Console, the agent enhances the Console’s extensibility features, enabling users to integrate additional information into their Internal Developer Platform. Examples include:
-* Comprehensive scorecards
-* Software catalog metadata augmentation
-* Custom data visualizations
+- **Data Accessibility**: Aggregate data from multiple sources by configuring the agent, simplifying data retrieval.
+- **Analytics**: Centralized data storage enables advanced analytics and the creation of comprehensive scorecards.
+- **External Integration**: Simplify the development of custom applications by building efficient data pipelines with the agent.
+
+When used alongside Mia-Platform Console, the agent enhances the Console's extensibility features,
+enabling users to integrate additional information into their Internal Developer Platform.
+Examples include:
+
+- Comprehensive scorecards
+- Software catalog metadata augmentation
+- Custom data visualizations
 
 ## Supported Sinks and Sources
 
-At the moment the supported **Sources** are the following:
-* Jira
+Currently, the supported **Sources** are:
 
-The supported Sinks are the following:
-* MongoDB
+- Mia-Platform Console
+- Jira
+- GitHub
+
+The supported **Sinks** are:
+
+- MongoDB
 
 More sources and sinks are planned for future releases.
 
 ## Architecture
 
-As an integration developer, using this tool is ideal for synchronizing data between different platforms or systems, ensuring
+As an integration developer, this tool is ideal for synchronizing data between different platforms or systems, ensuring
 real-time updates across all configured sinks.
 
-The following image shows the architecture of the Integration Connector Agent.
+The following image illustrates the architecture of the Integration Connector Agent.
 
 ![architecture](./img/architecture.excalidraw.svg)
 
-### Data processing
+### Data Processing
 
-For each source, it is possible to configure different pipelines, each pipeline can have one or more
-processors and must have one or more sinks.
+For each source, you can configure different pipelines. Each pipeline can have one or more
+processors and must have at least one sink.
 
 ![data-processing](./img/data-processing.excalidraw.svg)
 
 ### Use Cases
 
-You can find some use cases with the related configuration file here below.
+Below are some use cases with their related configuration files.
 
 #### Integration with Jira as Source and MongoDB as Sink
 
-The following configuration file shows how to integrate Jira with the MongoDB sink, performing a mapper processing.
+The following configuration demonstrates how to integrate Jira with a MongoDB sink, using mapper processing.
 
-The pipeline workflow:
+Pipeline workflow:
 
-1. the Jira source is configured with an authentication secret taken from the environment variable `JIRA_SECRET`;
-1. The input Jira issue event will be mapped to the output event:
-   - `key` will be the issue.key field of the Jira event;
-   - `summary` will be the issue.fields.summary field of the Jira event;
-   - `createdAt` will be the issue.fields.created field of the Jira event;
-   - `description` will be the issue.fields.description field of the Jira event;
+1. The Jira source is configured with an authentication secret taken from the environment variable `JIRA_SECRET`
+1. The input Jira issue event is mapped to the output event:
+   - `key` maps to the issue.key field of the Jira event
+   - `summary` maps to the issue.fields.summary field of the Jira event
+   - `createdAt` maps to the issue.fields.created field of the Jira event
+   - `description` maps to the issue.fields.description field of the Jira event
 1. The MongoDB sink is configured with the URL taken from the environment variable `MONGO_URL`
-to save data into the collection `jira-issues`.
+   to save data into the collection `jira-issues`
 
 <details>
 <summary>Jira + MongoDB Sink Configuration</summary>

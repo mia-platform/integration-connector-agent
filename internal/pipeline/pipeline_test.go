@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	fakesink "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 
@@ -50,21 +50,21 @@ func TestPipeline(t *testing.T) {
 		}{
 			"default operation": {
 				event: &entities.Event{
-					ID:            id,
+					PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 					OperationType: entities.Write,
 				},
 				expectedOperation: entities.Write,
 			},
 			"write operation": {
 				event: &entities.Event{
-					ID:            id,
+					PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 					OperationType: entities.Write,
 				},
 				expectedOperation: entities.Write,
 			},
 			"delete operation": {
 				event: &entities.Event{
-					ID:            id,
+					PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 					OperationType: entities.Delete,
 				},
 				expectedOperation: entities.Delete,
@@ -79,7 +79,7 @@ func TestPipeline(t *testing.T) {
 
 				require.Eventually(t, func() bool {
 					data := &entities.Event{
-						ID:            id,
+						PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 						OperationType: tc.expectedOperation,
 						OriginalRaw:   []byte(`{}`),
 					}
@@ -95,7 +95,6 @@ func TestPipeline(t *testing.T) {
 	})
 
 	t.Run("on channel closed, the pipeline stops", func(t *testing.T) {
-		ctx := context.Background()
 		w := fakesink.New(model)
 		p, err := New(log, proc, w)
 		require.NoError(t, err)
@@ -108,12 +107,12 @@ func TestPipeline(t *testing.T) {
 			close(eventChannel)
 		}(t)
 
-		err = p.Start(ctx)
+		err = p.Start(t.Context())
 		require.NoError(t, err)
 	})
 
 	t.Run("on context done, close channel", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		w := fakesink.New(model)
 		p, err := New(log, proc, w)
 		require.NoError(t, err)
@@ -144,14 +143,14 @@ func TestPipeline(t *testing.T) {
 
 		id := "fake event"
 		p.AddMessage(&entities.Event{
-			ID:            id,
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 			OperationType: entities.Write,
 			OriginalRaw:   []byte(`{}`),
 		})
 
 		require.Eventually(t, func() bool {
 			event := &entities.Event{
-				ID:            id,
+				PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 				OperationType: entities.Write,
 				OriginalRaw:   []byte(`{}`),
 			}
@@ -180,7 +179,7 @@ func TestPipeline(t *testing.T) {
 
 		id := "fake event"
 		p.AddMessage(&entities.Event{
-			ID:            id,
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 			OperationType: entities.Delete,
 		})
 
@@ -188,7 +187,7 @@ func TestPipeline(t *testing.T) {
 			require.Equal(t, fakesink.Call{
 				Operation: entities.Delete,
 				Data: &entities.Event{
-					ID:            id,
+					PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
 					OperationType: entities.Delete,
 				},
 			}, w.Calls().LastCall())
@@ -200,7 +199,7 @@ func TestPipeline(t *testing.T) {
 	t.Run("filter event when filter returns false", func(t *testing.T) {
 		log, hook := test.NewNullLogger()
 		w := fakesink.New(model)
-		proc, err := processors.New(config.Processors{
+		proc, err := processors.New(log, config.Processors{
 			{
 				Type: processors.Filter,
 				Raw:  []byte(`{"type":"filter","celExpression":"false"}`),
@@ -213,7 +212,7 @@ func TestPipeline(t *testing.T) {
 		runPipeline(t, p)
 
 		p.AddMessage(&entities.Event{
-			ID:            "fake event",
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "fake event"}},
 			Type:          "event-type",
 			OperationType: entities.Write,
 
@@ -248,12 +247,12 @@ func getPipeline(t *testing.T, p IPipeline) *Pipeline {
 func runPipeline(t *testing.T, p IPipeline) {
 	t.Helper()
 
-	ctx := context.Background()
-
 	go func(t *testing.T) {
 		t.Helper()
 
-		err := p.Start(ctx)
-		require.NoError(t, err)
+		err := p.Start(t.Context())
+		if err != nil && !errors.Is(err, context.Canceled) {
+			t.Errorf("error starting pipeline: %v", err)
+		}
 	}(t)
 }

@@ -16,7 +16,7 @@
 package jira
 
 import (
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 )
 
@@ -50,65 +50,65 @@ const (
 var DefaultSupportedEvents = webhook.Events{
 	Supported: map[string]webhook.Event{
 		issueCreated: {
-			Operation: entities.Write,
-			FieldID:   issueEventIDPath,
+			Operation:  entities.Write,
+			GetFieldID: webhook.GetPrimaryKeyByPath(issueEventIDPath),
 		},
 		issueUpdated: {
-			Operation: entities.Write,
-			FieldID:   issueEventIDPath,
+			Operation:  entities.Write,
+			GetFieldID: webhook.GetPrimaryKeyByPath(issueEventIDPath),
 		},
 		issueDeleted: {
-			Operation: entities.Delete,
-			FieldID:   issueEventIDPath,
+			Operation:  entities.Delete,
+			GetFieldID: webhook.GetPrimaryKeyByPath(issueEventIDPath),
 		},
 		issueLinkCreated: {
-			Operation: entities.Write,
-			FieldID:   issueLinkEventIDPath,
+			Operation:  entities.Write,
+			GetFieldID: webhook.GetPrimaryKeyByPath(issueLinkEventIDPath),
 		},
 		issueLinkDeleted: {
-			Operation: entities.Delete,
-			FieldID:   issueLinkEventIDPath,
+			Operation:  entities.Delete,
+			GetFieldID: webhook.GetPrimaryKeyByPath(issueLinkEventIDPath),
 		},
 		projectCreated: {
-			Operation: entities.Write,
-			FieldID:   projectEventIDPath,
+			Operation:  entities.Write,
+			GetFieldID: webhook.GetPrimaryKeyByPath(projectEventIDPath),
 		},
 		projectUpdated: {
-			Operation: entities.Write,
-			FieldID:   projectEventIDPath,
+			Operation:  entities.Write,
+			GetFieldID: webhook.GetPrimaryKeyByPath(projectEventIDPath),
 		},
 		projectDeleted: {
-			Operation: entities.Delete,
-			FieldID:   projectEventIDPath,
+			Operation:  entities.Delete,
+			GetFieldID: webhook.GetPrimaryKeyByPath(projectEventIDPath),
 		},
 		projectSoftDeleted: {
-			Operation: entities.Delete,
-			FieldID:   projectEventIDPath,
+			Operation:  entities.Delete,
+			GetFieldID: webhook.GetPrimaryKeyByPath(projectEventIDPath),
 		},
 		projectRestoredDeleted: {
-			Operation: entities.Write,
-			FieldID:   projectEventIDPath,
+			Operation:  entities.Write,
+			GetFieldID: webhook.GetPrimaryKeyByPath(projectEventIDPath),
 		},
 		versionReleased: {
-			Operation: entities.Write,
-			FieldID:   versionEventIDPath,
+			Operation:  entities.Write,
+			GetFieldID: webhook.GetPrimaryKeyByPath(versionEventIDPath),
 		},
 		versionUnreleased: {
-			Operation: entities.Write,
-			FieldID:   versionEventIDPath,
+			Operation:  entities.Write,
+			GetFieldID: webhook.GetPrimaryKeyByPath(versionEventIDPath),
 		},
 		versionCreated: {
-			Operation: entities.Write,
-			FieldID:   versionEventIDPath,
+			Operation:  entities.Write,
+			GetFieldID: webhook.GetPrimaryKeyByPath(versionEventIDPath),
 		},
 		versionUpdated: {
-			Operation: entities.Write,
-			FieldID:   versionEventIDPath,
+			Operation:  entities.Write,
+			GetFieldID: webhook.GetPrimaryKeyByPath(versionEventIDPath),
 		},
 		versionDeleted: {
-			Operation: entities.Delete,
-			FieldID:   versionEventIDPath,
+			Operation:  entities.Delete,
+			GetFieldID: webhook.GetPrimaryKeyByPath(versionEventIDPath),
 		},
 	},
-	EventTypeFieldPath: webhookEventPath,
+	GetEventType: webhook.GetEventTypeByPath(webhookEventPath),
 }

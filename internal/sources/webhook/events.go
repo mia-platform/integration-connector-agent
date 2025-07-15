@@ -17,10 +17,11 @@ package webhook
 
 import (
 	"fmt"
+	"net/http"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
+
 	"github.com/sirupsen/logrus"
-
 	"github.com/tidwall/gjson"
 )
 
@@ -28,19 +29,55 @@ var (
 	ErrMissingFieldID = fmt.Errorf("missing id field in event")
 )
 
+type EventTypeParam struct {
+	Data    gjson.Result
+	Headers http.Header
+}
+
 type Events struct {
-	Supported          map[string]Event
-	EventTypeFieldPath string
+	Supported    map[string]Event
+	GetEventType func(data EventTypeParam) string
+	PayloadKey   ContentTypeConfig
 }
 
 type Event struct {
-	Operation entities.Operation
-	FieldID   string
+	Operation  entities.Operation
+	GetFieldID func(parsedData gjson.Result) entities.PkFields
 }
 
-func (e *Events) getPipelineEvent(logger *logrus.Entry, rawData []byte) (entities.PipelineEvent, error) {
+func GetPrimaryKeyByPath(path string) func(parsedData gjson.Result) entities.PkFields {
+	return func(parsedData gjson.Result) entities.PkFields {
+		value := parsedData.Get(path).String()
+		if value == "" {
+			return nil
+		}
+
+		return entities.PkFields{{Key: path, Value: value}}
+	}
+}
+
+func GetEventTypeByPath(path string) func(data EventTypeParam) string {
+	return func(data EventTypeParam) string {
+		if data.Data.Exists() {
+			return data.Data.Get(path).String()
+		}
+		return ""
+	}
+}
+
+type RequestInfo struct {
+	data    []byte
+	headers http.Header
+}
+
+func (e *Events) getPipelineEvent(logger *logrus.Entry, requestInfo RequestInfo) (entities.PipelineEvent, error) {
+	rawData := requestInfo.data
+
 	parsed := gjson.ParseBytes(rawData)
-	webhookEvent := parsed.Get(e.EventTypeFieldPath).String()
+	webhookEvent := e.GetEventType(EventTypeParam{
+		Data:    parsed,
+		Headers: requestInfo.headers,
+	})
 
 	event, ok := e.Supported[webhookEvent]
 	if !ok {
@@ -51,17 +88,25 @@ func (e *Events) getPipelineEvent(logger *logrus.Entry, rawData []byte) (entitie
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedWebhookEvent, webhookEvent)
 	}
 
-	id := parsed.Get(event.FieldID).String()
-	if id == "" {
+	if event.GetFieldID == nil {
+		logger.WithFields(logrus.Fields{
+			"webhookEvent": webhookEvent,
+			"event":        string(rawData),
+		}).Trace("missing GetFieldID function")
+		return nil, fmt.Errorf("%w: %s missing GetFieldID function", ErrUnsupportedWebhookEvent, webhookEvent)
+	}
+
+	pk := event.GetFieldID(parsed)
+	if pk.IsEmpty() {
 		logger.WithFields(logrus.Fields{
 			"webhookEvent": webhookEvent,
 			"event":        string(rawData),
 		}).Trace("unsupported webhook event")
-		return nil, fmt.Errorf("%w: %s", ErrMissingFieldID, event.FieldID)
+		return nil, fmt.Errorf("%w: %s", ErrMissingFieldID, webhookEvent)
 	}
 
 	return &entities.Event{
-		ID:            id,
+		PrimaryKeys:   pk,
 		OperationType: event.Operation,
 		Type:          webhookEvent,
 

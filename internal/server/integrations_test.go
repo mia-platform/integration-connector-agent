@@ -13,10 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build integration
+// +build integration
+
 package server
 
 import (
-	"context"
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
@@ -32,7 +34,7 @@ import (
 )
 
 func TestSetupWriters(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testCases := map[string]struct {
 		writers config.Sinks
@@ -53,6 +55,23 @@ func TestSetupWriters(t *testing.T) {
 				getFakeWriter(t),
 			},
 		},
+		"crud service writer": {
+			writers: config.Sinks{
+				config.GenericConfig{
+					Type: sinks.CRUDService,
+					Raw:  []byte(`{"url":"https://some-url.com"}`),
+				},
+			},
+		},
+		"crud service writer fail for invalid configuration": {
+			writers: config.Sinks{
+				config.GenericConfig{
+					Type: sinks.CRUDService,
+					Raw:  []byte(`{"url":""}`),
+				},
+			},
+			expectError: "error setting up writer: configuration not valid: URL not set in CRUD service sink configuration",
+		},
 	}
 
 	for name, tc := range testCases {
@@ -72,8 +91,11 @@ func TestSetupWriters(t *testing.T) {
 func TestSetupIntegrations(t *testing.T) {
 	testCases := map[string]struct {
 		cfg config.Configuration
+		// Use jsonCfg to test the real test cases, because the GenericConfig to work correctly needs to be unmarshaled
+		jsonCfg string
 
-		expectError string
+		expectError          string
+		expectedIntegrations int
 	}{
 		"more than 1 writers not supported": {
 			cfg: config.Configuration{
@@ -94,6 +116,21 @@ func TestSetupIntegrations(t *testing.T) {
 				},
 			},
 			expectError: "only 1 writer is supported, now there are 2",
+		},
+		"multiple integration sources": {
+			cfg: config.Configuration{
+				Integrations: []config.Integration{
+					{
+						Source:    config.GenericConfig{Type: sources.Jira, Raw: []byte(`{}`)},
+						Pipelines: []config.Pipeline{{Sinks: config.Sinks{getFakeWriter(t)}}},
+					},
+					{
+						Source:    config.GenericConfig{Type: sources.Jira, Raw: []byte(`{}`)},
+						Pipelines: []config.Pipeline{{Sinks: config.Sinks{getFakeWriter(t)}}},
+					},
+				},
+			},
+			expectedIntegrations: 2,
 		},
 		"unsupported writer type": {
 			cfg: config.Configuration{
@@ -149,21 +186,29 @@ func TestSetupIntegrations(t *testing.T) {
 					},
 				},
 			},
-			expectError: "unsupported integration type",
+			expectError: "unsupported integration type: unsupported",
+		},
+		"jira integration type": {
+			jsonCfg: `{"integrations":[{"source":{"type":"jira"},"pipelines":[{"sinks":[{"type":"fake","raw":{}}]}]}]}`,
+		},
+		"console integration type": {
+			jsonCfg: `{"integrations":[{"source":{"type":"console"},"pipelines":[{"sinks":[{"type":"fake","raw":{}}]}]}]}`,
 		},
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			ctx := context.Background()
+			ctx := t.Context()
 			log, _ := test.NewNullLogger()
 			router := getRouter(t)
 
-			err := setupPipelines(ctx, log, &tc.cfg, router)
+			integrations, err := setupIntegrations(ctx, log, &tc.cfg, router)
 			if tc.expectError != "" {
 				require.EqualError(t, err, tc.expectError)
 			} else {
 				require.NoError(t, err)
+				require.NotNil(t, integrations)
+				require.Equal(t, tc.expectedIntegrations, len(integrations))
 			}
 		})
 	}

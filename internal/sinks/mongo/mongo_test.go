@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -87,7 +87,7 @@ func TestNewWriter(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+			ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
 			defer cancel()
 
 			writer, err := newMongoDBWriter[entities.PipelineEvent](ctx, test.configuration, test.validateFunc)
@@ -123,13 +123,13 @@ func TestUpsert(t *testing.T) {
 			data:      getEvent(t),
 			responses: mtest.CreateSuccessResponse(bson.E{Key: "nModified", Value: 1}),
 		},
-		"error if event without id": {
+		"error if event without primary keys": {
 			data:        &entities.Event{},
-			expectedErr: "id is empty",
+			expectedErr: "missing primary key",
 		},
 		"error if data is not a JSON": {
 			data: &entities.Event{
-				ID:          "12345",
+				PrimaryKeys: entities.PkFields{{Key: "test", Value: "12345"}},
 				OriginalRaw: []byte(`{`),
 			},
 			responses:   mtest.CreateSuccessResponse(bson.E{}),
@@ -159,7 +159,7 @@ func TestUpsert(t *testing.T) {
 
 			mt.AddMockResponses(test.responses)
 
-			ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+			ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
 			defer cancel()
 
 			err := writer.Upsert(ctx, test.data)
@@ -185,7 +185,7 @@ func TestDelete(t *testing.T) {
 		},
 		"error if event without id": {
 			data:        &entities.Event{},
-			expectedErr: "id is empty",
+			expectedErr: "missing primary key",
 		},
 		"error without change": {
 			data:        getEvent(t),
@@ -211,7 +211,7 @@ func TestDelete(t *testing.T) {
 
 			mt.AddMockResponses(test.responses)
 
-			ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+			ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
 			defer cancel()
 
 			err := writer.Delete(ctx, test.data)
@@ -237,7 +237,7 @@ func TestInsert(t *testing.T) {
 		},
 		"error if data is not a JSON": {
 			data: &entities.Event{
-				ID:          "12345",
+				PrimaryKeys: entities.PkFields{{Key: "test", Value: "12345"}},
 				OriginalRaw: []byte(`{`),
 			},
 			responses:   mtest.CreateSuccessResponse(bson.E{}),
@@ -262,7 +262,7 @@ func TestInsert(t *testing.T) {
 
 			mt.AddMockResponses(test.responses)
 
-			ctx, cancel := context.WithTimeout(context.TODO(), 500*time.Millisecond)
+			ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
 			defer cancel()
 
 			err := writer.Insert(ctx, test.data)
@@ -279,7 +279,7 @@ func getEvent(t *testing.T) entities.PipelineEvent {
 	t.Helper()
 
 	event := &entities.Event{
-		ID: "12345",
+		PrimaryKeys: entities.PkFields{{Key: "test", Value: "12345"}},
 
 		OriginalRaw: []byte(`{"event": "test"}`),
 	}

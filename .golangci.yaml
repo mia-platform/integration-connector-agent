@@ -1,98 +1,117 @@
+version: "2"
 run:
-  timeout: 10m
   build-tags:
-  - conformance
-  - integration
-
+    - conformance
+    - integration
 linters:
-  disable-all: true
+  default: none
   enable:
-  - asasalint
-  - asciicheck
-  - bidichk
-  - bodyclose
-  - copyloopvar
-  - decorder
-  - dogsled
-  - durationcheck
-  - errcheck
-  - errname
-  - fatcontext
-  - goconst
-  - gocritic
-  - gocyclo
-  - gofmt
-  - goheader
-  - goimports
-  - mnd
-  - gosec
-  - gosimple
-  - gosmopolitan
-  - govet
-  - ineffassign
-  - misspell
-  - nolintlint
-  - prealloc
-  - predeclared
-  - revive
-  - staticcheck
-  - tagliatelle
-  - tenv
-  - thelper
-  - unconvert
-  - unparam
-  - unused
-  - usestdlibvars
-  - whitespace
-  - zerologlint
-linters-settings:
-  gocyclo:
-    min-complexity: 15
-  gofmt:
-    simplify: true
-  goconst:
-    ignore-tests: true
-  tagliatelle:
-    case:
-      use-field-name: true
-      rules:
-        yaml: camel
-  tenv:
-    all: true
-  unparam:
-    check-exported: false
-  mnd:
-    checks:
-    - case
-    - condition
-    - return
-  goheader:
-    values:
-      const:
-        MY COMPANY: Mia srl
-    template: |-
-      Copyright {{ MY COMPANY }}
-      SPDX-License-Identifier: Apache-2.0
-
-      Licensed under the Apache License, Version 2.0 (the "License");
-      you may not use this file except in compliance with the License.
-      You may obtain a copy of the License at
-
-          http://www.apache.org/licenses/LICENSE-2.0
-
-      Unless required by applicable law or agreed to in writing, software
-      distributed under the License is distributed on an "AS IS" BASIS,
-      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-      See the License for the specific language governing permissions and
-      limitations under the License.
-
-issues:
-  exclude-rules:
-  - path: zz_generated
-    linters:
-    - goimports
-  - path: _test\.go
-    linters:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - copyloopvar
+    - decorder
+    - dogsled
+    - durationcheck
     - errcheck
+    - errname
+    - fatcontext
+    - goconst
+    - gocritic
+    - gocyclo
+    - goheader
     - gosec
+    - gosmopolitan
+    - govet
+    - ineffassign
+    - misspell
+    - mnd
+    - nolintlint
+    - prealloc
+    - predeclared
+    - revive
+    - staticcheck
     - tagliatelle
+    - thelper
+    - unconvert
+    - unused
+    - usestdlibvars
+    - usetesting
+    - whitespace
+    - zerologlint
+  settings:
+    gocyclo:
+      min-complexity: 15
+    goheader:
+      values:
+        const:
+          MY COMPANY: Mia srl
+      template: |-
+        Copyright {{ MY COMPANY }}
+        SPDX-License-Identifier: Apache-2.0
+
+        Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License.
+        You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+        Unless required by applicable law or agreed to in writing, software
+        distributed under the License is distributed on an "AS IS" BASIS,
+        WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        See the License for the specific language governing permissions and
+        limitations under the License.
+    mnd:
+      checks:
+        - case
+        - condition
+        - return
+    revive:
+      rules:
+        - name: var-naming
+          arguments:
+            - [] # allow list
+            - [] # block list
+            - - skip-package-name-checks: true # options
+    tagliatelle:
+      case:
+        rules:
+          yaml: camel
+        use-field-name: true
+    usetesting:
+      context-background: false
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - errcheck
+          - gosec
+          - tagliatelle
+        path: _test\.go
+      - linters:
+          - goconst
+        path: (.+)_test\.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - zz_generated

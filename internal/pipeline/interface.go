@@ -18,10 +18,17 @@ package pipeline
 import (
 	"context"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
 type IPipeline interface {
 	AddMessage(data entities.PipelineEvent)
 	Start(ctx context.Context) error
+	Close() error
+}
+
+type IPipelineGroup interface {
+	AddMessage(data entities.PipelineEvent)
+	Start(ctx context.Context)
+	Close() error
 }

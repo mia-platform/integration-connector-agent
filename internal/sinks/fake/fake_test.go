@@ -16,11 +16,10 @@
 package fakewriter
 
 import (
-	"context"
 	"errors"
 	"testing"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 
 	"github.com/stretchr/testify/require"
@@ -37,10 +36,10 @@ func TestImplementWriter(t *testing.T) {
 		f := New(config)
 
 		event := &entities.Event{
-			ID:            "id",
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
 			OperationType: entities.Write,
 		}
-		err := f.WriteData(context.Background(), event)
+		err := f.WriteData(t.Context(), event)
 		require.NoError(t, err)
 
 		require.Len(t, f.Calls(), 1)
@@ -54,10 +53,10 @@ func TestImplementWriter(t *testing.T) {
 		f := New(config)
 
 		event := &entities.Event{
-			ID:            "id",
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
 			OperationType: entities.Delete,
 		}
-		err := f.WriteData(context.Background(), event)
+		err := f.WriteData(t.Context(), event)
 		require.NoError(t, err)
 
 		require.Len(t, f.Calls(), 1)
@@ -67,17 +66,32 @@ func TestImplementWriter(t *testing.T) {
 		}, f.Calls().LastCall())
 	})
 
+	t.Run("ResetCalls clean calls", func(t *testing.T) {
+		f := New(config)
+
+		event := &entities.Event{
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
+			OperationType: entities.Write,
+		}
+		err := f.WriteData(t.Context(), event)
+		require.NoError(t, err)
+
+		require.Len(t, f.Calls(), 1)
+		f.ResetCalls()
+		require.Len(t, f.Calls(), 0)
+	})
+
 	t.Run("mock error write", func(t *testing.T) {
 		f := New(config)
 
 		event := &entities.Event{
-			ID:            "id",
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
 			OperationType: entities.Write,
 		}
 		f.AddMock(Mock{
 			Error: errors.New("mock error"),
 		})
-		err := f.WriteData(context.Background(), event)
+		err := f.WriteData(t.Context(), event)
 		require.EqualError(t, err, "mock error")
 
 		require.Len(t, f.Calls(), 1)
@@ -91,13 +105,13 @@ func TestImplementWriter(t *testing.T) {
 		f := New(config)
 
 		event := &entities.Event{
-			ID:            "id",
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
 			OperationType: entities.Delete,
 		}
 		f.AddMock(Mock{
 			Error: errors.New("mock error"),
 		})
-		err := f.WriteData(context.Background(), event)
+		err := f.WriteData(t.Context(), event)
 		require.EqualError(t, err, "mock error")
 
 		require.Len(t, f.Calls(), 1)

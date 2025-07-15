@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -31,6 +31,8 @@ import (
 )
 
 var (
+	mongoTimeout = 5 * time.Second
+
 	ErrMongoInitialization = errors.New("failed to start mongo writer")
 )
 
@@ -49,7 +51,7 @@ type Writer[T entities.PipelineEvent] struct {
 // NewMongoDBWriter will construct a new MongoDB writer and validate the connection parameters via a ping request.
 func NewMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Config) (sinks.Sink[T], error) {
 	return newMongoDBWriter[T](ctx, config, func(ctx context.Context, c *mongo.Client) error {
-		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, mongoTimeout)
 		defer cancel()
 		return c.Ping(ctx, nil)
 	})
@@ -124,24 +126,24 @@ func (w *Writer[T]) Insert(ctx context.Context, data T) error {
 }
 
 // Write implement the Writer interface. The MongoDBWriter will do an upsert of data using its id as primary key
-func (w *Writer[T]) Upsert(ctx context.Context, data T) error {
+func (w *Writer[T]) Upsert(ctx context.Context, event T) error {
 	ctxWithCancel, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	opts := options.Replace()
 	opts.SetUpsert(true)
 
-	queryFilter, err := w.idFilter(data)
+	queryFilter, err := w.idFilter(event)
 	if err != nil {
 		return err
 	}
 
-	parsedData, err := data.JSON()
+	parsedData, err := event.JSON()
 	if err != nil {
 		return err
 	}
 
-	parsedData[w.upsertIDField] = data.GetID()
+	w.addPrimaryKeyToData(parsedData, event)
 
 	dataToSave, err := bson.Marshal(parsedData)
 	if err != nil {
@@ -172,10 +174,9 @@ func (w *Writer[T]) Delete(ctx context.Context, data T) error {
 		return err
 	}
 
-	opts := options.Delete()
 	result, err := w.client.Database(w.database).
 		Collection(w.collection).
-		DeleteOne(ctxWithCancel, queryFilter, opts)
+		DeleteOne(ctxWithCancel, queryFilter)
 	if err != nil {
 		return err
 	}
@@ -205,9 +206,31 @@ func mongoClientOptionsFromConfig(config *Config) (*options.ClientOptions, strin
 }
 
 func (w Writer[T]) idFilter(event T) (bson.D, error) {
-	id := event.GetID()
-	if id == "" {
-		return bson.D{}, fmt.Errorf("id is empty")
+	pk := event.GetPrimaryKeys()
+
+	if len(pk) == 0 {
+		return bson.D{}, fmt.Errorf("missing primary key")
 	}
-	return bson.D{{Key: w.upsertIDField, Value: id}}, nil
+
+	if len(pk) == 1 {
+		return bson.D{{Key: w.upsertIDField, Value: pk[0].Value}}, nil
+	}
+
+	filter := bson.D{}
+	for _, field := range pk {
+		filter = append(filter, bson.E{Key: fmt.Sprintf("%s.%s", w.upsertIDField, field.Key), Value: field.Value})
+	}
+
+	return filter, nil
+}
+
+func (w Writer[T]) addPrimaryKeyToData(data map[string]any, event T) map[string]any {
+	pk := event.GetPrimaryKeys()
+	if len(pk) == 1 {
+		data[w.upsertIDField] = pk[0].Value
+		return data
+	}
+
+	data[w.upsertIDField] = pk.Map()
+	return data
 }

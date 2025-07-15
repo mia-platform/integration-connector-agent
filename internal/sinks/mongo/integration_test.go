@@ -19,20 +19,19 @@
 package mongo
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/testutils"
 
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func TestMongo(t *testing.T) {
-	ctx := context.Background()
+func TestMongoUpsert(t *testing.T) {
+	ctx := t.Context()
 
 	mongoURL, db := testutils.GenerateMongoURL(t)
 	collection := testutils.RandomString(t, 6)
@@ -47,8 +46,10 @@ func TestMongo(t *testing.T) {
 	coll := testutils.MongoCollection(t, mongoURL, collection, db)
 	defer coll.Drop(ctx)
 
+	primaryKey := entities.PkFields{{Key: "test", Value: "123"}}
+
 	t.Run("create", func(t *testing.T) {
-		e := getTestEvent(t, "123", map[string]any{"foo": "bar", "key": "123"}, entities.Write)
+		e := getTestEvent(t, primaryKey, map[string]any{"foo": "bar", "key": "123"}, entities.Write)
 		err = w.WriteData(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{
@@ -57,7 +58,7 @@ func TestMongo(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
-		e := getTestEvent(t, "123", map[string]any{"foo": "taz", "key": "123", "another": "field"}, entities.Write)
+		e := getTestEvent(t, primaryKey, map[string]any{"foo": "taz", "key": "123", "another": "field"}, entities.Write)
 		err = w.WriteData(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{
@@ -66,7 +67,54 @@ func TestMongo(t *testing.T) {
 	})
 
 	t.Run("delete", func(t *testing.T) {
-		e := getTestEvent(t, "123", nil, entities.Delete)
+		e := getTestEvent(t, primaryKey, nil, entities.Delete)
+		err = w.WriteData(ctx, e)
+		require.NoError(t, err)
+		findAllDocuments(t, coll, []map[string]any{})
+	})
+}
+
+func TestMongoUpsertWithMultiplePrimaryKeys(t *testing.T) {
+	ctx := t.Context()
+
+	mongoURL, db := testutils.GenerateMongoURL(t)
+	collection := testutils.RandomString(t, 6)
+
+	w, err := NewMongoDBWriter[*entities.Event](ctx, &Config{
+		URL:        config.SecretSource(mongoURL),
+		Database:   db,
+		Collection: collection,
+	})
+	require.NoError(t, err)
+
+	coll := testutils.MongoCollection(t, mongoURL, collection, db)
+	defer coll.Drop(ctx)
+
+	primaryKeys := entities.PkFields{
+		{Key: "id1", Value: "123"},
+		{Key: "id2", Value: "456"},
+	}
+
+	t.Run("create", func(t *testing.T) {
+		e := getTestEvent(t, primaryKeys, map[string]any{"foo": "bar", "key": "123"}, entities.Write)
+		err = w.WriteData(ctx, e)
+		require.NoError(t, err)
+		findAllDocuments(t, coll, []map[string]any{
+			{"_eventId": map[string]any{"id1": "123", "id2": "456"}, "foo": "bar", "key": "123"},
+		})
+	})
+
+	t.Run("update", func(t *testing.T) {
+		e := getTestEvent(t, primaryKeys, map[string]any{"foo": "taz", "key": "123", "another": "field"}, entities.Write)
+		err = w.WriteData(ctx, e)
+		require.NoError(t, err)
+		findAllDocuments(t, coll, []map[string]any{
+			{"_eventId": map[string]any{"id1": "123", "id2": "456"}, "foo": "taz", "key": "123", "another": "field"},
+		})
+	})
+
+	t.Run("delete", func(t *testing.T) {
+		e := getTestEvent(t, primaryKeys, nil, entities.Delete)
 		err = w.WriteData(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{})
@@ -74,7 +122,7 @@ func TestMongo(t *testing.T) {
 }
 
 func TestMongoOnlyInsert(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	mongoURL, db := testutils.GenerateMongoURL(t)
 	collection := testutils.RandomString(t, 6)
@@ -90,8 +138,10 @@ func TestMongoOnlyInsert(t *testing.T) {
 	coll := testutils.MongoCollection(t, mongoURL, collection, db)
 	defer coll.Drop(ctx)
 
+	primaryKey := entities.PkFields{{Key: "key", Value: "234"}}
+
 	t.Run("insert new data - 1", func(t *testing.T) {
-		e := getTestEvent(t, "234", map[string]any{"foo": "bar", "key": "234", "type": "created"}, entities.Write)
+		e := getTestEvent(t, primaryKey, map[string]any{"foo": "bar", "key": "234", "type": "created"}, entities.Write)
 		err = w.WriteData(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{
@@ -100,7 +150,7 @@ func TestMongoOnlyInsert(t *testing.T) {
 	})
 
 	t.Run("insert new data with existing id already saved", func(t *testing.T) {
-		e := getTestEvent(t, "234", map[string]any{"foo": "taz", "key": "234", "another": "field", "type": "updated"}, entities.Write)
+		e := getTestEvent(t, primaryKey, map[string]any{"foo": "taz", "key": "234", "another": "field", "type": "updated"}, entities.Write)
 		err = w.WriteData(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{
@@ -110,7 +160,7 @@ func TestMongoOnlyInsert(t *testing.T) {
 	})
 
 	t.Run("insert new deletion data", func(t *testing.T) {
-		e := getTestEvent(t, "234", map[string]any{"foo": "taz", "key": "234", "another": "field", "type": "deleted"}, entities.Delete)
+		e := getTestEvent(t, primaryKey, map[string]any{"foo": "taz", "key": "234", "another": "field", "type": "deleted"}, entities.Delete)
 		err = w.WriteData(ctx, e)
 		require.NoError(t, err)
 		findAllDocuments(t, coll, []map[string]any{
@@ -121,11 +171,11 @@ func TestMongoOnlyInsert(t *testing.T) {
 	})
 }
 
-func getTestEvent(t *testing.T, id string, data map[string]any, operation entities.Operation) *entities.Event {
+func getTestEvent(t *testing.T, pks entities.PkFields, data map[string]any, operation entities.Operation) *entities.Event {
 	t.Helper()
 
 	e := &entities.Event{
-		ID:            id,
+		PrimaryKeys:   pks,
 		OperationType: operation,
 	}
 
@@ -139,12 +189,12 @@ func getTestEvent(t *testing.T, id string, data map[string]any, operation entiti
 
 func findAllDocuments(t *testing.T, coll *mongo.Collection, expectedResults []map[string]any) {
 	t.Helper()
+	ctx := t.Context()
 
-	n, err := coll.CountDocuments(context.Background(), map[string]any{})
+	n, err := coll.CountDocuments(ctx, map[string]any{})
 	require.NoError(t, err)
 	require.Equal(t, int64(len(expectedResults)), n)
 
-	ctx := context.Background()
 	docs, err := coll.Find(ctx, map[string]any{})
 	require.NoError(t, err)
 	results := []map[string]any{}

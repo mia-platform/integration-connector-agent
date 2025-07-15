@@ -18,14 +18,10 @@ package filter
 import (
 	"fmt"
 
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
-)
-
-var (
-	ErrEventToFilter = fmt.Errorf("event is to filter")
 )
 
 type Filter struct {
@@ -47,7 +43,7 @@ func (m Filter) Process(input entities.PipelineEvent) (entities.PipelineEvent, e
 		return nil, fmt.Errorf("program evaluation failed: %s", err.Error())
 	}
 	if out.Equal(types.False) == types.True {
-		return nil, ErrEventToFilter
+		return nil, entities.ErrDiscardEvent
 	}
 	return input, nil
 }

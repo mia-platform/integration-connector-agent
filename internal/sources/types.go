@@ -16,6 +16,15 @@
 package sources
 
 const (
-	Jira = "jira"
-	VM   = "vm"
+	Jira                     = "jira"
+	Console                  = "console"
+	Github                   = "github"
+	GCPInventoryPubSub       = "gcp-inventory-pubsub"
+	AzureActivityLogEventHub = "azure-activity-log-event-hub"
+	AWSCloudTrailSQS         = "aws-cloudtrail-sqs"
+	VM                       = "vm"
 )
+
+type CloseableSource interface {
+	Close() error
+}
