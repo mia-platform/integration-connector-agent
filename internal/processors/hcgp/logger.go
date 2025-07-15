@@ -134,6 +134,23 @@ func adaptLevelToLogurs(l hclog.Level) logrus.Level {
 	}
 }
 
+func adaptLogursToLevel(l logrus.Level) hclog.Level {
+	switch l {
+	case logrus.ErrorLevel:
+		return hclog.Error
+	case logrus.WarnLevel:
+		return hclog.Warn
+	case logrus.InfoLevel:
+		return hclog.Info
+	case logrus.DebugLevel:
+		return hclog.Debug
+	case logrus.TraceLevel:
+		fallthrough
+	default:
+		return hclog.Trace
+	}
+}
+
 func (l *logAdapter) Log(level hclog.Level, msg string, args ...interface{}) {
 	logArgs := []interface{}{"msg", msg}
 	logArgs = append(logArgs, args...)
@@ -155,6 +172,10 @@ func (l *logAdapter) ResetNamed(_ string) hclog.Logger {
 
 func (l *logAdapter) SetLevel(level hclog.Level) {
 	l.log.SetLevel(adaptLevelToLogurs(level))
+}
+
+func (l *logAdapter) GetLevel() hclog.Level {
+	return adaptLogursToLevel(l.log.GetLevel())
 }
 
 func (l *logAdapter) StandardLogger(_ *hclog.StandardLoggerOptions) *log.Logger {
