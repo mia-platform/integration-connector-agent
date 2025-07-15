@@ -17,6 +17,7 @@ package kafka
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
@@ -30,6 +31,13 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
+	if c.ProducerConfig == nil {
+		return fmt.Errorf("producerConfig is required")
+	}
+
+	if len(c.Topic) == 0 {
+		return fmt.Errorf("topic is required")
+	}
 	return nil
 }
 
@@ -75,12 +83,28 @@ func New[T entities.PipelineEvent](cfg *Config) (sinks.Sink[T], error) {
 }
 
 func (k *Sink[T]) WriteData(_ context.Context, data T) error {
+	keys, err := json.Marshal(data.GetPrimaryKeys())
+	if err != nil {
+		return fmt.Errorf("failed to serialize primary keys: %w", err)
+	}
+
 	return k.producer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{
 			Topic:     &k.topic,
 			Partition: kafka.PartitionAny,
 		},
 		Value: data.Data(),
+		Headers: []kafka.Header{
+			{
+				Key:   "operation_type",
+				Value: []byte(data.Operation().String()),
+			},
+			{
+				Key:   "event_type",
+				Value: []byte(data.GetType()),
+			},
+		},
+		Key: keys,
 	}, nil)
 }
 
