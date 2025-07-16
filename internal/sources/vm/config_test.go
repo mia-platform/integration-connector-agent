@@ -20,9 +20,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+
 	"github.com/stretchr/testify/require"
 )
 

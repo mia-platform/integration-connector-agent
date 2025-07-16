@@ -16,7 +16,7 @@
 package vm
 
 import (
-	"github.com/mia-platform/integration-connector-agent/internal/entities"
+	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 )
 
