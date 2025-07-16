@@ -154,6 +154,8 @@ func setupSinks(ctx context.Context, writers config.Sinks) ([]sinks.Sink[entitie
 				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
 			}
 			w = append(w, crudServiceWriter)
+		case sinks.ConsoleCatalog:
+
 		case sinks.Fake:
 			config, err := config.GetConfig[*fakewriter.Config](configuredWriter)
 			if err != nil {
