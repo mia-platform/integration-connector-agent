@@ -23,7 +23,7 @@ require (
 	github.com/getkin/kin-openapi v0.132.0
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/google/cel-go v0.22.1
-	github.com/hashicorp/go-hclog v0.14.1
+	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-plugin v1.6.3
 	github.com/mia-platform/glogger/v4 v4.2.0
 	github.com/mia-platform/go-crud-service-client v0.14.0
@@ -77,7 +77,7 @@ require (
 	github.com/davidebianchi/go-jsonclient v1.5.0 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.2.1 // indirect
-	github.com/fatih/color v1.7.0 // indirect
+	github.com/fatih/color v1.13.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect

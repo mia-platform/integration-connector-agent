@@ -169,6 +169,27 @@ func (l *logAdapter) With(_ ...interface{}) hclog.Logger {
 	return l
 }
 
+func (l *logAdapter) GetLevel() hclog.Level {
+	switch l.log.Level {
+	case logrus.TraceLevel:
+		return hclog.Trace
+	case logrus.DebugLevel:
+		return hclog.Debug
+	case logrus.InfoLevel:
+		return hclog.Info
+	case logrus.WarnLevel:
+		return hclog.Warn
+	case logrus.ErrorLevel:
+		return hclog.Error
+	case logrus.FatalLevel:
+		return hclog.Error // Fatal is treated as Error in hclog
+	case logrus.PanicLevel:
+		return hclog.Error // Panic is treated as Error in hclog
+	default:
+		return hclog.NoLevel
+	}
+}
+
 func adaptFields(args ...interface{}) map[string]interface{} {
 	fields := make(map[string]interface{})
 	for i := 0; i < len(args); i += 2 {
