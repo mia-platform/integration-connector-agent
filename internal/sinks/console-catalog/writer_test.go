@@ -73,6 +73,33 @@ func TestWriteData(t *testing.T) {
 		err := writer.WriteData(context.Background(), evt)
 		require.NoError(t, err)
 	})
+
+	t.Run("should invoke delete with correct parameters", func(t *testing.T) {
+		mockClient := &mockConsoleClient{
+			DeleteAssert: func(ctx context.Context, tenantID string, itemID string) {
+				require.Equal(t, "tenant-id", tenantID)
+				require.Equal(t, "the-name-the-asset-id", itemID)
+			},
+		}
+
+		writer := &Writer[entities.PipelineEvent]{
+			client: mockClient,
+			config: &Config{
+				URL:            "http://example.com",
+				TenantID:       "tenant-id",
+				ItemType:       "item-type",
+				ClientID:       "client-id",
+				ClientSecret:   "secret",
+				ItemIDTemplate: "{{name}}-{{assetId}}",
+			},
+		}
+
+		err := writer.WriteData(context.Background(), &entities.Event{
+			OperationType: entities.Delete,
+			OriginalRaw:   []byte(`{"name": "The Name", "assetId": "the-asset-id"}`),
+		})
+		require.NoError(t, err)
+	})
 }
 
 type mockConsoleClient struct {

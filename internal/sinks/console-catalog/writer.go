@@ -41,7 +41,11 @@ func NewWriter[T entities.PipelineEvent](config *Config) (sinks.Sink[T], error) 
 
 func (w *Writer[T]) WriteData(ctx context.Context, event T) error {
 	if event.Operation() == entities.Delete {
-		return fmt.Errorf("console-catalog sink does not support delete operations")
+		itemID, err := w.getItemID(event)
+		if err != nil {
+			return fmt.Errorf("error processing item ID template: %w", err)
+		}
+		return w.client.Delete(ctx, w.config.TenantID, itemID)
 	}
 
 	item, err := w.createCatalogItem(event)
@@ -61,7 +65,7 @@ func (w *Writer[T]) createCatalogItem(event T) (*consoleclient.MarketplaceResour
 		return nil, err
 	}
 
-	itemID, err := templetize(w.config.ItemIDTemplate, event.Data())
+	itemID, err := w.getItemID(event)
 	if err != nil {
 		return nil, fmt.Errorf("error processing item ID template: %w", err)
 	}
@@ -78,4 +82,12 @@ func (w *Writer[T]) createCatalogItem(event T) (*consoleclient.MarketplaceResour
 		Type:      w.config.ItemType,
 		Resources: res,
 	}, nil
+}
+
+func (w *Writer[T]) getItemID(event T) (string, error) {
+	itemID, err := templetize(w.config.ItemIDTemplate, event.Data())
+	if err != nil {
+		return "", fmt.Errorf("error processing item ID template: %w", err)
+	}
+	return slugify(itemID), nil
 }
