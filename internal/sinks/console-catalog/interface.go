@@ -37,7 +37,7 @@ type IClient[T Resource] interface {
 }
 
 type MarketplaceResource[T Resource] struct {
-	ID          string `json:"_id,omitempty"`
+	ID          string `json:"_id,omitempty"` //nolint:tagliatelle
 	ItemID      string `json:"itemId"`
 	Name        string `json:"name"`
 	Type        string `json:"type"`
@@ -55,10 +55,5 @@ type MarketplaceValidationError struct {
 }
 
 func (e *MarketplaceValidationError) Error() string {
-	errors := make([]string, 0, len(e.Errors))
-	for _, err := range e.Errors {
-		errors = append(errors, err)
-	}
-
-	return fmt.Sprintf("invalid marketplace item, validation errors: %s", strings.Join(errors, ", "))
+	return fmt.Sprintf("invalid marketplace item, validation errors: %s", strings.Join(e.Errors, ", "))
 }
