@@ -333,5 +333,70 @@ func TestCatalogApply(t *testing.T) {
 }
 
 func TestCatalogDelete(t *testing.T) {
+	const marketplaceBaseURL = "127.0.0.1:45874"
+	const tenantID = "tenant123"
+	const itemID = "item123"
 
+	deletePath := fmt.Sprintf("/api/marketplace/tenants/%s/resources/%s/versions/NA", tenantID, itemID)
+
+	client := New[testResource](fmt.Sprintf("http://%s/", marketplaceBaseURL), &mockedTokenManager{})
+
+	t.Run("returns error if the execution of request fails", func(t *testing.T) {
+		err := client.Delete(t.Context(), tenantID, itemID)
+		require.True(t, errors.Is(err, ErrMarketplaceRequestExecution))
+	})
+
+	t.Run("returns error if the response is not 200", func(t *testing.T) {
+		m := runMocha(t, marketplaceBaseURL)
+		m = registerAPI(t, m,
+			MockExpectation{
+				path:     deletePath,
+				verb:     http.MethodDelete,
+				tenantID: tenantID,
+			},
+			MockResponse{
+				statusCode: http.StatusInternalServerError,
+			},
+		)
+
+		err := client.Delete(t.Context(), tenantID, itemID)
+		require.Equal(t, "failed to delete resource, status code: 500", err.Error())
+		m.AssertCalled(t)
+	})
+
+	t.Run("does not return error if the response is 200", func(t *testing.T) {
+		m := runMocha(t, marketplaceBaseURL)
+		m = registerAPI(t, m,
+			MockExpectation{
+				path:     deletePath,
+				verb:     http.MethodDelete,
+				tenantID: tenantID,
+			},
+			MockResponse{
+				statusCode: http.StatusOK,
+			},
+		)
+
+		err := client.Delete(t.Context(), tenantID, itemID)
+		require.NoError(t, err)
+		m.AssertCalled(t)
+	})
+
+	t.Run("does not return error if the response is 204", func(t *testing.T) {
+		m := runMocha(t, marketplaceBaseURL)
+		m = registerAPI(t, m,
+			MockExpectation{
+				path:     deletePath,
+				verb:     http.MethodDelete,
+				tenantID: tenantID,
+			},
+			MockResponse{
+				statusCode: http.StatusNoContent,
+			},
+		)
+
+		err := client.Delete(t.Context(), tenantID, itemID)
+		require.NoError(t, err)
+		m.AssertCalled(t)
+	})
 }
