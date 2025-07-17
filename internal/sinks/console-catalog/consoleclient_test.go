@@ -314,7 +314,6 @@ func TestMarketplaceApply(t *testing.T) {
 
 type MockExpectation struct {
 	tenantID   string
-	itemID     string
 	headers    map[string]string
 	bodyString string
 }
