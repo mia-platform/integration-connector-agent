@@ -38,7 +38,7 @@ Currently, the supported **Sources** are:
 The supported **Sinks** are:
 
 - MongoDB
-- Mia-Platform Console Catalog
+- [Mia-Platform Console Catalog](./sinks/15_console-catalog.md)
 
 More sources and sinks are planned for future releases.
 
