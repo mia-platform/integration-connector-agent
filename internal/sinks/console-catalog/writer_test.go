@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks/console-catalog/consoleclient"
 
 	"github.com/stretchr/testify/require"
 )
@@ -44,7 +45,7 @@ func TestWriteData(t *testing.T) {
 	t.Run("should invoke apply with correct item", func(t *testing.T) {
 		mockClient := &mockConsoleClient{
 			ApplyResult: "item-id",
-			ApplyAssert: func(ctx context.Context, item *MarketplaceResource[any]) {
+			ApplyAssert: func(ctx context.Context, item *consoleclient.MarketplaceResource[any]) {
 				require.Equal(t, "tenant-id", item.TenantID)
 				require.Equal(t, "item-type", item.Type)
 
@@ -77,10 +78,10 @@ func TestWriteData(t *testing.T) {
 type mockConsoleClient struct {
 	ApplyResult string
 	ApplyError  error
-	ApplyAssert func(ctx context.Context, item *MarketplaceResource[any])
+	ApplyAssert func(ctx context.Context, item *consoleclient.MarketplaceResource[any])
 }
 
-func (m *mockConsoleClient) Apply(ctx context.Context, item *MarketplaceResource[any]) (string, error) {
+func (m *mockConsoleClient) Apply(ctx context.Context, item *consoleclient.MarketplaceResource[any]) (string, error) {
 	if m.ApplyAssert != nil {
 		m.ApplyAssert(ctx, item)
 	}

@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package consolecatalog
+package consoleclient
 
 import (
 	"context"
@@ -31,7 +31,7 @@ var (
 
 type Resource any
 
-type IClient[T Resource] interface {
+type CatalogClient[T Resource] interface {
 	Apply(ctx context.Context, item *MarketplaceResource[T]) (string, error)
 	// Delete(ctx context.Context, tenantID string, itemID string) error
 }

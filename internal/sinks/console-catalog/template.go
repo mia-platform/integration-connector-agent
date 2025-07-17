@@ -30,7 +30,7 @@ func templetize(template string, raw []byte) (string, error) {
 
 	var result = template
 	for _, match := range matches {
-		if len(match) < 2 {
+		if len(match) < 2 { //nolint:mnd // match[0] is the full match, match[1] is the captured group no need for a constant for such a simple check
 			return "", fmt.Errorf("invalid template: %s", template)
 		}
 

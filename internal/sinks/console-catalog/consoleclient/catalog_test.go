@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package consolecatalog
+package consoleclient
 
 import (
 	"encoding/base64"
@@ -35,7 +35,7 @@ func TestMarketplaceApply(t *testing.T) {
 	const marketplaceBaseURL = "127.0.0.1:45874"
 	const tenantID = "tenant123"
 
-	client := newConsoleClient[testResource](fmt.Sprintf("http://%s/", marketplaceBaseURL), &mockedTokenManager{})
+	client := New[testResource](fmt.Sprintf("http://%s/", marketplaceBaseURL), &mockedTokenManager{})
 	item := MarketplaceResource[testResource]{
 		ItemID:   "myItem",
 		TenantID: tenantID,
@@ -188,8 +188,8 @@ func TestMarketplaceApply(t *testing.T) {
 
 	t.Run("correctly sets authorization header", func(t *testing.T) {
 		url := fmt.Sprintf("http://%s/", marketplaceBaseURL)
-		tknmngr := newClientCredentialsTokenManager(url, "myClientId", "myClientSecret")
-		client := newConsoleClient[testResource](url, tknmngr)
+		tknmngr := NewClientCredentialsTokenManager(url, "myClientId", "myClientSecret")
+		client := New[testResource](url, tknmngr)
 
 		mockedItemID := "createdItemId"
 		mockedResponse := &marketplacePostExtensionResponse{
@@ -242,9 +242,9 @@ func TestMarketplaceApply(t *testing.T) {
 
 	t.Run("correctly reuses non expired authorization header", func(t *testing.T) {
 		url := fmt.Sprintf("http://%s/", marketplaceBaseURL)
-		tknmngr := newClientCredentialsTokenManager(url, "myClientId", "myClientSecret")
+		tknmngr := NewClientCredentialsTokenManager(url, "myClientId", "myClientSecret")
 
-		client := newConsoleClient[testResource](url, tknmngr)
+		client := New[testResource](url, tknmngr)
 
 		mockedItemID := "createdItemId"
 		mockedResponse := &marketplacePostExtensionResponse{

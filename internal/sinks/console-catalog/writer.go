@@ -22,16 +22,17 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks/console-catalog/consoleclient"
 )
 
 type Writer[T entities.PipelineEvent] struct {
 	config *Config
-	client IClient[any]
+	client consoleclient.CatalogClient[any]
 }
 
 func NewWriter[T entities.PipelineEvent](config *Config) (sinks.Sink[T], error) {
-	tokenManager := newClientCredentialsTokenManager(config.URL, config.ClientID, config.ClientSecret.String())
-	client := newConsoleClient[any](config.URL, tokenManager)
+	tokenManager := consoleclient.NewClientCredentialsTokenManager(config.URL, config.ClientID, config.ClientSecret.String())
+	client := consoleclient.New[any](config.URL, tokenManager)
 	return &Writer[T]{
 		client: client,
 		config: config,
@@ -54,7 +55,7 @@ func (w *Writer[T]) WriteData(ctx context.Context, event T) error {
 	return nil
 }
 
-func (w *Writer[T]) createCatalogItem(event T) (*MarketplaceResource[any], error) {
+func (w *Writer[T]) createCatalogItem(event T) (*consoleclient.MarketplaceResource[any], error) {
 	res := make(map[string]any)
 	if err := json.Unmarshal(event.Data(), &res); err != nil {
 		return nil, err
@@ -70,7 +71,7 @@ func (w *Writer[T]) createCatalogItem(event T) (*MarketplaceResource[any], error
 		return nil, fmt.Errorf("error processing item name template: %w", err)
 	}
 
-	return &MarketplaceResource[any]{
+	return &consoleclient.MarketplaceResource[any]{
 		TenantID:  w.config.TenantID,
 		Name:      itemName,
 		ItemID:    slugify(itemID),

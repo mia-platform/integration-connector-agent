@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package consolecatalog
+package consoleclient
 
 import (
 	"context"
@@ -44,7 +44,7 @@ type ClientSecretBasic struct {
 	lock      sync.Mutex
 }
 
-func newClientCredentialsTokenManager(baseURL, clientID, clientSecret string) *ClientSecretBasic {
+func NewClientCredentialsTokenManager(baseURL, clientID, clientSecret string) *ClientSecretBasic {
 	return &ClientSecretBasic{
 		BaseURL:      baseURL,
 		ClientID:     clientID,

@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package consolecatalog
+package consoleclient
 
 import (
 	"bytes"
@@ -29,57 +29,8 @@ type consoleClient[T Resource] struct {
 	tm  TokenManager
 }
 
-func newConsoleClient[T Resource](url string, tm TokenManager) IClient[T] {
+func New[T Resource](url string, tm TokenManager) CatalogClient[T] {
 	return &consoleClient[T]{url: url, tm: tm}
-}
-
-type marketplacePostExtensionBody[Resource any] struct {
-	Resources []MarketplaceResource[Resource] `json:"resources"`
-}
-type responseItem struct {
-	ItemID           string            `json:"itemId"`
-	ValidationErrors []ValidationError `json:"validationErrors"`
-}
-
-type marketplacePostExtensionResponse struct {
-	Done  bool           `json:"done"`
-	Items []responseItem `json:"items"`
-}
-
-func (c *consoleClient[T]) Apply(ctx context.Context, item *MarketplaceResource[T]) (string, error) {
-	marketplacePostExtension := marketplacePostExtensionBody[T]{
-		Resources: []MarketplaceResource[T]{
-			*item,
-		},
-	}
-
-	targetURL := fmt.Sprintf("%sapi/marketplace/tenants/%s/resources", c.url, item.TenantID)
-	resp, err := c.fireRequest(ctx, http.MethodPost, targetURL, marketplacePostExtension)
-	if err != nil {
-		return "", fmt.Errorf("error applying resource: %w", err)
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to apply resource, status code: %d", resp.StatusCode)
-	}
-
-	var responseBody marketplacePostExtensionResponse
-	if err := json.NewDecoder(resp.Body).Decode(&responseBody); err != nil {
-		return "", fmt.Errorf("%w: %s", ErrMarketplaceResponseParse, err)
-	}
-
-	if !responseBody.Done {
-		errors := make([]string, 0)
-		for _, validationErr := range responseBody.Items[0].ValidationErrors {
-			errors = append(errors, validationErr.Message)
-		}
-
-		return "", &MarketplaceValidationError{Errors: errors}
-	}
-
-	return responseBody.Items[0].ItemID, nil
 }
 
 func (c *consoleClient[T]) fireRequest(_ context.Context, verb, targetURL string, requestBody any) (*http.Response, error) {
