@@ -52,7 +52,7 @@ func TestCatalogApply(t *testing.T) {
 
 	t.Run("returns error if the response is not 200", func(t *testing.T) {
 		m := runMocha(t, marketplaceBaseURL)
-		m = registerPostItemMock(t, m,
+		m = registerAPI(t, m,
 			MockExpectation{
 				path:     applyPath,
 				verb:     http.MethodPost,
@@ -74,7 +74,7 @@ func TestCatalogApply(t *testing.T) {
 
 	t.Run("returns error if the response body is unknown", func(t *testing.T) {
 		m := runMocha(t, marketplaceBaseURL)
-		m = registerPostItemMock(t, m,
+		m = registerAPI(t, m,
 			MockExpectation{
 				path:     applyPath,
 				verb:     http.MethodPost,
@@ -109,7 +109,7 @@ func TestCatalogApply(t *testing.T) {
 		}
 
 		m := runMocha(t, marketplaceBaseURL)
-		m = registerPostItemMock(t, m,
+		m = registerAPI(t, m,
 			MockExpectation{
 				path:     applyPath,
 				verb:     http.MethodPost,
@@ -139,7 +139,7 @@ func TestCatalogApply(t *testing.T) {
 		}
 
 		m := runMocha(t, marketplaceBaseURL)
-		m = registerPostItemMock(t, m,
+		m = registerAPI(t, m,
 			MockExpectation{
 				path:     applyPath,
 				verb:     http.MethodPost,
@@ -176,7 +176,7 @@ func TestCatalogApply(t *testing.T) {
 		expectedMarketplaceRequestBodyString := fmt.Sprintf("{\"resources\":[{\"description\":\"\",\"itemId\":\"myItem\",\"name\":\"myItemName\",\"resources\":{\"k1\":\"v1\"},\"tenantId\":\"%s\",\"type\":\"resType\"}]}", tenantID)
 
 		m := runMocha(t, marketplaceBaseURL)
-		m = registerPostItemMock(t, m,
+		m = registerAPI(t, m,
 			MockExpectation{
 				path:       applyPath,
 				verb:       http.MethodPost,
@@ -217,8 +217,10 @@ func TestCatalogApply(t *testing.T) {
 		}
 
 		m := runMocha(t, marketplaceBaseURL)
-		m = registerPostItemMock(t, m,
+		m = registerAPI(t, m,
 			MockExpectation{
+				path:     applyPath,
+				verb:     http.MethodPost,
 				tenantID: tenantID,
 				headers: map[string]string{
 					"Authorization": "Bearer the-new-token",
@@ -298,8 +300,10 @@ func TestCatalogApply(t *testing.T) {
 			},
 		)
 
-		m = registerPostItemMock(t, m,
+		m = registerAPI(t, m,
 			MockExpectation{
+				path:     applyPath,
+				verb:     http.MethodPost,
 				tenantID: tenantID,
 				headers: map[string]string{
 					"Authorization": "Bearer the-new-token",

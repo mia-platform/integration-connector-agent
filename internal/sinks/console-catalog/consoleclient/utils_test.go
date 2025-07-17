@@ -103,17 +103,6 @@ func registerAPI(t *testing.T, m *mocha.Mocha, request MockExpectation, response
 	return m
 }
 
-func registerPostItemMock(t *testing.T, m *mocha.Mocha, request MockExpectation, responses ...MockResponse) *mocha.Mocha {
-	t.Helper()
-	return registerAPI(t, m, MockExpectation{
-		path:       fmt.Sprintf("/api/marketplace/tenants/%s/resources", request.tenantID),
-		verb:       http.MethodPost,
-		headers:    request.headers,
-		bodyString: request.bodyString,
-		tenantID:   request.tenantID,
-	}, responses...)
-}
-
 type mockedTokenManager struct{}
 
 func (t *mockedTokenManager) SetAuthHeader(req *http.Request) error {
