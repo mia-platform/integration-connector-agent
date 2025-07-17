@@ -48,24 +48,26 @@ func TestWriteData(t *testing.T) {
 				require.Equal(t, "tenant-id", item.TenantID)
 				require.Equal(t, "item-type", item.Type)
 
-				// TODO: assert itemId and name based on configuration
-				// TODO: assert item resources based on event data
+				require.Equal(t, "test-name-12345", item.ItemID)
+				require.Equal(t, "Test Name", item.Name)
 			},
 		}
 
 		writer := &Writer[entities.PipelineEvent]{
 			client: mockClient,
 			config: &Config{
-				URL:          "http://example.com",
-				TenantID:     "tenant-id",
-				ItemType:     "item-type",
-				ClientID:     "client-id",
-				ClientSecret: "secret",
+				URL:              "http://example.com",
+				TenantID:         "tenant-id",
+				ItemType:         "item-type",
+				ClientID:         "client-id",
+				ClientSecret:     "secret",
+				ItemIDTemplate:   "{{name}}-{{assetId}}",
+				ItemNameTemplate: "{{name}}",
 			},
 		}
 
 		evt := &entities.Event{
-			OriginalRaw: []byte(`{"key": "value"}`),
+			OriginalRaw: []byte(`{"name": "Test Name","assetId": "12345"}`),
 		}
 		err := writer.WriteData(context.Background(), evt)
 		require.NoError(t, err)

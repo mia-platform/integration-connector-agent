@@ -60,10 +60,20 @@ func (w *Writer[T]) createCatalogItem(event T) (*MarketplaceResource[any], error
 		return nil, err
 	}
 
+	itemID, err := templetize(w.config.ItemIDTemplate, event.Data())
+	if err != nil {
+		return nil, fmt.Errorf("error processing item ID template: %w", err)
+	}
+
+	itemName, err := templetize(w.config.ItemNameTemplate, event.Data())
+	if err != nil {
+		return nil, fmt.Errorf("error processing item name template: %w", err)
+	}
+
 	return &MarketplaceResource[any]{
 		TenantID:  w.config.TenantID,
-		Name:      "TODO",
-		ItemID:    "TODO IID",
+		Name:      itemName,
+		ItemID:    slugify(itemID),
 		Type:      w.config.ItemType,
 		Resources: res,
 	}, nil

@@ -24,16 +24,19 @@ import (
 )
 
 var (
-	ErrURLNotSet  = errors.New("URL not set in CRUD service sink configuration")
-	ErrInvalidURL = errors.New("invalid URL in CRUD service sink configuration")
+	ErrURLNotSet    = errors.New("URL not set in CRUD service sink configuration")
+	ErrInvalidURL   = errors.New("invalid URL in CRUD service sink configuration")
+	ErrMissingField = errors.New("missing required field in CRUD service sink configuration")
 )
 
 type Config struct {
-	URL          string              `json:"url"`
-	ItemType     string              `json:"itemType"`
-	TenantID     string              `json:"tenantId"`
-	ClientID     string              `json:"clientId"`
-	ClientSecret config.SecretSource `json:"clientSecret"`
+	URL              string              `json:"url"`
+	ItemType         string              `json:"itemType"`
+	TenantID         string              `json:"tenantId"`
+	ClientID         string              `json:"clientId"`
+	ClientSecret     config.SecretSource `json:"clientSecret"`
+	ItemIDTemplate   string              `json:"itemIdTemplate"`
+	ItemNameTemplate string              `json:"itemNameTemplate"`
 }
 
 func (c *Config) Validate() error {
@@ -43,6 +46,30 @@ func (c *Config) Validate() error {
 
 	if _, err := url.Parse(c.URL); err != nil {
 		return fmt.Errorf("%w: %s", ErrInvalidURL, err)
+	}
+
+	if c.TenantID == "" {
+		return fmt.Errorf("%w: tenantId", ErrMissingField)
+	}
+
+	if c.ItemType == "" {
+		return fmt.Errorf("%w: itemType", ErrMissingField)
+	}
+
+	if c.ClientID == "" {
+		return fmt.Errorf("%w: clientId", ErrMissingField)
+	}
+
+	if c.ClientSecret.String() == "" {
+		return fmt.Errorf("%w: clientSecret", ErrMissingField)
+	}
+
+	if c.ItemIDTemplate == "" {
+		return fmt.Errorf("%w: itemIdTemplate", ErrMissingField)
+	}
+
+	if c.ItemNameTemplate == "" {
+		return fmt.Errorf("%w: itemNameTemplate", ErrMissingField)
 	}
 
 	return nil
