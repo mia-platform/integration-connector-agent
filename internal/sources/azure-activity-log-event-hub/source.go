@@ -138,6 +138,7 @@ func webhookHandler(client azure.GraphClientInterface, config *Config, pg pipeli
 			pg.AddMessage(entity)
 		}
 
-		return c.SendStatus(http.StatusOK)
+		c.Status(http.StatusNoContent)
+		return nil
 	}
 }

@@ -69,7 +69,7 @@ func TestImportWebhook(t *testing.T) {
 		resp, err := app.Test(getWebhookRequest(t, nil))
 		require.NoError(t, err)
 		defer resp.Body.Close()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 	})
 
 	t.Run("does not expose import webhook on missing path from configuration", func(t *testing.T) {
@@ -111,7 +111,7 @@ func TestImportWebhook(t *testing.T) {
 			respBody, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
-			require.Equal(t, http.StatusOK, resp.StatusCode, "Resp: %s", string(respBody))
+			require.Equal(t, http.StatusNoContent, resp.StatusCode, "Resp: %s", string(respBody))
 		})
 
 		t.Run("signature is NOT ok", func(t *testing.T) {
@@ -169,7 +169,7 @@ func TestImportWebhook(t *testing.T) {
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 		require.True(t, client.ListBucketsInvoked())
 		require.True(t, client.ListFunctionsInvoked())

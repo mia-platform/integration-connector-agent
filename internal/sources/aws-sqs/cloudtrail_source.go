@@ -214,5 +214,6 @@ func (s *CloudTrailSource) webhookHandler(c *fiber.Ctx) error {
 		s.pipeline.AddMessage(event)
 	}
 
+	c.Status(http.StatusNoContent)
 	return nil
 }

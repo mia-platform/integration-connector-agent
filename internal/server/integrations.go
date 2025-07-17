@@ -24,6 +24,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"
+	consolecatalog "github.com/mia-platform/integration-connector-agent/internal/sinks/console-catalog"
 	crudservice "github.com/mia-platform/integration-connector-agent/internal/sinks/crud-service"
 	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks/mongo"
@@ -154,6 +155,16 @@ func setupSinks(ctx context.Context, writers config.Sinks) ([]sinks.Sink[entitie
 				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
 			}
 			w = append(w, crudServiceWriter)
+		case sinks.ConsoleCatalog:
+			config, err := config.GetConfig[*consolecatalog.Config](configuredWriter)
+			if err != nil {
+				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+			}
+			consoleCatalogWriter, err := consolecatalog.NewWriter[entities.PipelineEvent](config)
+			if err != nil {
+				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+			}
+			w = append(w, consoleCatalogWriter)
 		case sinks.Fake:
 			config, err := config.GetConfig[*fakewriter.Config](configuredWriter)
 			if err != nil {
