@@ -31,8 +31,10 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
+	github.com/vitorsalgado/mocha/v3 v3.0.2
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.mongodb.org/mongo-driver v1.17.2
+	golang.org/x/oauth2 v0.28.0
 	google.golang.org/api v0.227.0
 )
 
@@ -111,6 +113,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
@@ -136,7 +139,6 @@ require (
 	golang.org/x/crypto v0.39.0 // indirect
 	golang.org/x/exp v0.0.0-20230515195305-f3d0a9c9a5cc // indirect
 	golang.org/x/net v0.41.0 // indirect
-	golang.org/x/oauth2 v0.28.0 // indirect
 	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
