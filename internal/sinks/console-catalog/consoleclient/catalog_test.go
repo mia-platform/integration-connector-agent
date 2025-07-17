@@ -51,7 +51,6 @@ func TestCatalogApply(t *testing.T) {
 	})
 
 	t.Run("returns error if the response is not 200", func(t *testing.T) {
-
 		m := runMocha(t, marketplaceBaseURL)
 		m = registerPostItemMock(t, m,
 			MockExpectation{
