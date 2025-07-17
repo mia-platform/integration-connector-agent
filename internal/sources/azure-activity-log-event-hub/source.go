@@ -70,6 +70,7 @@ func AddSource(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipel
 	}(ctx, config.EventHubConfig, logger)
 
 	if len(config.WebhookPath) > 0 {
+		logger.WithField("webhookPath", config.WebhookPath).Info("Registering import webhook")
 		client, err := azure.NewGraphClient(config.AuthConfig)
 		if err != nil {
 			return err

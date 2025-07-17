@@ -127,7 +127,7 @@ func (c *EventHubConfig) Validate() error {
 	}
 
 	if !strings.HasSuffix(c.CheckpointStorageAccountName, ".blob.core.windows.net") {
-		c.CheckpointStorageAccountName += ".blob.core.windows.net"
+		c.CheckpointStorageAccountName = fmt.Sprintf("https://%s.blob.core.windows.net", c.CheckpointStorageAccountName)
 	}
 
 	return nil

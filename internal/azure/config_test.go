@@ -57,7 +57,7 @@ func TestConfig(t *testing.T) {
 				},
 				EventHubNamespace:              "test-namespace.servicebus.windows.net",
 				EventHubName:                   "test-event-hub",
-				CheckpointStorageAccountName:   "test-account.blob.core.windows.net",
+				CheckpointStorageAccountName:   "https://test-account.blob.core.windows.net",
 				CheckpointStorageContainerName: "test-container",
 			},
 		},
