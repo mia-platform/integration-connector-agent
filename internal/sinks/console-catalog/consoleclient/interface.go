@@ -33,7 +33,7 @@ type Resource any
 
 type CatalogClient[T Resource] interface {
 	Apply(ctx context.Context, item *MarketplaceResource[T]) (string, error)
-	// Delete(ctx context.Context, tenantID string, itemID string) error
+	Delete(ctx context.Context, tenantID string, itemID string) error
 }
 
 type MarketplaceResource[T Resource] struct {

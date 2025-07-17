@@ -79,6 +79,9 @@ type mockConsoleClient struct {
 	ApplyResult string
 	ApplyError  error
 	ApplyAssert func(ctx context.Context, item *consoleclient.MarketplaceResource[any])
+
+	DeleteAssert func(ctx context.Context, tenantID string, itemID string)
+	DeleteError  error
 }
 
 func (m *mockConsoleClient) Apply(ctx context.Context, item *consoleclient.MarketplaceResource[any]) (string, error) {
@@ -86,4 +89,12 @@ func (m *mockConsoleClient) Apply(ctx context.Context, item *consoleclient.Marke
 		m.ApplyAssert(ctx, item)
 	}
 	return m.ApplyResult, m.ApplyError
+}
+
+func (m *mockConsoleClient) Delete(ctx context.Context, tenantID string, itemID string) error {
+	if m.DeleteAssert != nil {
+		m.DeleteAssert(ctx, tenantID, itemID)
+	}
+
+	return m.DeleteError
 }

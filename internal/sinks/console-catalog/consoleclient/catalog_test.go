@@ -17,23 +17,21 @@ package consoleclient
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/vitorsalgado/mocha/v3"
-	"github.com/vitorsalgado/mocha/v3/expect"
-	"github.com/vitorsalgado/mocha/v3/reply"
 )
 
 type testResource map[string]any
 
-func TestMarketplaceApply(t *testing.T) {
+func TestCatalogApply(t *testing.T) {
 	const marketplaceBaseURL = "127.0.0.1:45874"
 	const tenantID = "tenant123"
+
+	applyPath := fmt.Sprintf("/api/marketplace/tenants/%s/resources", tenantID)
 
 	client := New[testResource](fmt.Sprintf("http://%s/", marketplaceBaseURL), &mockedTokenManager{})
 	item := MarketplaceResource[testResource]{
@@ -53,19 +51,21 @@ func TestMarketplaceApply(t *testing.T) {
 	})
 
 	t.Run("returns error if the response is not 200", func(t *testing.T) {
-		expectedRequest := MockExpectation{
-			tenantID: tenantID,
-			headers: map[string]string{
-				"content-type": "application/json",
-			},
-		}
-
-		mockedResponse := MockResponse{
-			statusCode: http.StatusInternalServerError,
-		}
 
 		m := runMocha(t, marketplaceBaseURL)
-		m = registerPostItemMock(t, m, expectedRequest, mockedResponse)
+		m = registerPostItemMock(t, m,
+			MockExpectation{
+				path:     applyPath,
+				verb:     http.MethodPost,
+				tenantID: tenantID,
+				headers: map[string]string{
+					"content-type": "application/json",
+				},
+			},
+			MockResponse{
+				statusCode: http.StatusInternalServerError,
+			},
+		)
 
 		itemID, err := client.Apply(t.Context(), &item)
 		require.Equal(t, "", itemID)
@@ -74,15 +74,18 @@ func TestMarketplaceApply(t *testing.T) {
 	})
 
 	t.Run("returns error if the response body is unknown", func(t *testing.T) {
-		expectedRequest := MockExpectation{tenantID: tenantID}
-
-		mockedResponse := MockResponse{
-			statusCode: http.StatusOK,
-			body:       []byte("unknown body"),
-		}
-
 		m := runMocha(t, marketplaceBaseURL)
-		m = registerPostItemMock(t, m, expectedRequest, mockedResponse)
+		m = registerPostItemMock(t, m,
+			MockExpectation{
+				path:     applyPath,
+				verb:     http.MethodPost,
+				tenantID: tenantID,
+			},
+			MockResponse{
+				statusCode: http.StatusOK,
+				body:       []byte("unknown body"),
+			},
+		)
 
 		itemID, err := client.Apply(t.Context(), &item)
 		require.Equal(t, "", itemID)
@@ -106,15 +109,18 @@ func TestMarketplaceApply(t *testing.T) {
 			},
 		}
 
-		expectedRequest := MockExpectation{tenantID: tenantID}
-
-		mochaMockedResponse := MockResponse{
-			statusCode: http.StatusOK,
-			body:       mockedResponse,
-		}
-
 		m := runMocha(t, marketplaceBaseURL)
-		m = registerPostItemMock(t, m, expectedRequest, mochaMockedResponse)
+		m = registerPostItemMock(t, m,
+			MockExpectation{
+				path:     applyPath,
+				verb:     http.MethodPost,
+				tenantID: tenantID,
+			},
+			MockResponse{
+				statusCode: http.StatusOK,
+				body:       mockedResponse,
+			},
+		)
 
 		itemID, err := client.Apply(t.Context(), &item)
 		require.Equal(t, "", itemID)
@@ -133,15 +139,17 @@ func TestMarketplaceApply(t *testing.T) {
 			Items: []responseItem{{ItemID: mockedItemID}},
 		}
 
-		expectedRequest := MockExpectation{tenantID: tenantID}
-
-		mochaMockedResponse := MockResponse{
-			statusCode: http.StatusOK,
-			body:       mockedResponse,
-		}
-
 		m := runMocha(t, marketplaceBaseURL)
-		m = registerPostItemMock(t, m, expectedRequest, mochaMockedResponse)
+		m = registerPostItemMock(t, m,
+			MockExpectation{
+				path:     applyPath,
+				verb:     http.MethodPost,
+				tenantID: tenantID,
+			}, MockResponse{
+				statusCode: http.StatusOK,
+				body:       mockedResponse,
+			},
+		)
 
 		itemID, err := client.Apply(t.Context(), &item)
 		require.Nil(t, err)
@@ -167,18 +175,20 @@ func TestMarketplaceApply(t *testing.T) {
 		}
 
 		expectedMarketplaceRequestBodyString := fmt.Sprintf("{\"resources\":[{\"description\":\"\",\"itemId\":\"myItem\",\"name\":\"myItemName\",\"resources\":{\"k1\":\"v1\"},\"tenantId\":\"%s\",\"type\":\"resType\"}]}", tenantID)
-		expectedRequest := MockExpectation{
-			tenantID:   tenantID,
-			bodyString: expectedMarketplaceRequestBodyString,
-		}
-
-		mochaMockedResponse := MockResponse{
-			statusCode: http.StatusOK,
-			body:       mockedResponse,
-		}
 
 		m := runMocha(t, marketplaceBaseURL)
-		m = registerPostItemMock(t, m, expectedRequest, mochaMockedResponse)
+		m = registerPostItemMock(t, m,
+			MockExpectation{
+				path:       applyPath,
+				verb:       http.MethodPost,
+				tenantID:   tenantID,
+				bodyString: expectedMarketplaceRequestBodyString,
+			},
+			MockResponse{
+				statusCode: http.StatusOK,
+				body:       mockedResponse,
+			},
+		)
 
 		itemID, err := client.Apply(t.Context(), &item)
 		require.Nil(t, err)
@@ -206,33 +216,38 @@ func TestMarketplaceApply(t *testing.T) {
 				"k1": "v1",
 			},
 		}
-		expectedRequest := MockExpectation{
-			tenantID: tenantID,
-			headers: map[string]string{
-				"Authorization": "Bearer the-new-token",
-			},
-		}
-
-		mochaMockedResponse := MockResponse{
-			statusCode: http.StatusOK,
-			body:       mockedResponse,
-		}
 
 		m := runMocha(t, marketplaceBaseURL)
-		m = registerPostItemMock(t, m, expectedRequest, mochaMockedResponse)
-		m = registerOauthTokenMock(t, m, MockExpectation{
-			headers: map[string]string{
-				"Authorization": fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("myClientId:myClientSecret"))),
-				"Content-Type":  "application/x-www-form-urlencoded",
+		m = registerPostItemMock(t, m,
+			MockExpectation{
+				tenantID: tenantID,
+				headers: map[string]string{
+					"Authorization": "Bearer the-new-token",
+				},
 			},
-		}, MockResponse{
-			statusCode: http.StatusOK,
-			body: map[string]any{
-				"access_token": "the-new-token",
-				"token_type":   "Bearer",
-				"expires_in":   3600,
+			MockResponse{
+				statusCode: http.StatusOK,
+				body:       mockedResponse,
 			},
-		})
+		)
+		m = registerAPI(t, m,
+			MockExpectation{
+				path: "/api/m2m/oauth/token",
+				verb: http.MethodPost,
+				headers: map[string]string{
+					"Authorization": fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("myClientId:myClientSecret"))),
+					"Content-Type":  "application/x-www-form-urlencoded",
+				},
+			},
+			MockResponse{
+				statusCode: http.StatusOK,
+				body: map[string]any{
+					"access_token": "the-new-token",
+					"token_type":   "Bearer",
+					"expires_in":   3600,
+				},
+			},
+		)
 
 		itemID, err := client.Apply(t.Context(), &item)
 		require.Nil(t, err)
@@ -264,8 +279,10 @@ func TestMarketplaceApply(t *testing.T) {
 		expectedMarketplaceRequestBodyString1 := fmt.Sprintf("{\"resources\":[{\"description\":\"\",\"itemId\":\"myItem\",\"name\":\"myItemName\",\"resources\":{\"k1\":\"v1\"},\"tenantId\":\"%s\",\"type\":\"resType\"}]}", tenantID)
 
 		m := runMocha(t, marketplaceBaseURL)
-		m = registerOauthTokenMock(t, m,
+		m = registerAPI(t, m,
 			MockExpectation{
+				path: "/api/m2m/oauth/token",
+				verb: http.MethodPost,
 				headers: map[string]string{
 					"Authorization": fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("myClientId:myClientSecret"))),
 					"Content-Type":  "application/x-www-form-urlencoded",
@@ -312,100 +329,6 @@ func TestMarketplaceApply(t *testing.T) {
 	})
 }
 
-type MockExpectation struct {
-	tenantID   string
-	headers    map[string]string
-	bodyString string
-}
+func TestCatalogDelete(t *testing.T) {
 
-type MockResponse struct {
-	statusCode int
-	body       any
-	times      int
-}
-
-func runMocha(t *testing.T, mockAddr string) *mocha.Mocha {
-	t.Helper()
-
-	options := mocha.Configure().Addr(mockAddr)
-	if testing.Verbose() {
-		options = options.LogVerbosity(mocha.LogVerbose)
-	}
-
-	m := mocha.New(t, options.Build())
-	m.CloseOnCleanup(t)
-	m.Start()
-
-	return m
-}
-
-func registerOauthTokenMock(t *testing.T, m *mocha.Mocha, request MockExpectation, response MockResponse) *mocha.Mocha {
-	t.Helper()
-
-	responseStatus := response.statusCode
-	if responseStatus == 0 {
-		responseStatus = http.StatusOK
-	}
-
-	mock := mocha.Post(expect.URLPath("/api/m2m/oauth/token")).Repeat(response.times)
-
-	if request.headers != nil {
-		for key, value := range request.headers {
-			mock = mock.Header(key, expect.ToEqual(value))
-		}
-	}
-
-	if request.bodyString != "" {
-		mock = mock.Body(expect.ToEqual(request.bodyString))
-	}
-
-	mock = mock.Reply(reply.Status(responseStatus).Header("content-type", "application/json").BodyJSON(response.body))
-
-	m.AddMocks(mock)
-
-	return m
-}
-
-func registerPostItemMock(t *testing.T, m *mocha.Mocha, request MockExpectation, responses ...MockResponse) *mocha.Mocha {
-	t.Helper()
-
-	mock := mocha.Post(expect.URLPath(fmt.Sprintf("/api/marketplace/tenants/%s/resources", request.tenantID)))
-
-	if request.headers != nil {
-		for key, value := range request.headers {
-			mock = mock.Header(key, expect.ToEqual(value))
-		}
-	}
-
-	replySequence := reply.Seq()
-	for _, response := range responses {
-		responseStatus := response.statusCode
-		if responseStatus == 0 {
-			responseStatus = http.StatusOK
-		}
-
-		if request.bodyString != "" {
-			mock = mock.Body(expect.Func(func(v any, _ expect.Args) (bool, error) {
-				bodyRaw, err := json.Marshal(v)
-				if err != nil {
-					return false, fmt.Errorf("unexpected error to read request body on mocha")
-				}
-				require.Equal(t, request.bodyString, string(bodyRaw))
-				return true, nil
-			}))
-		}
-
-		replySequence.Add(reply.Status(responseStatus).Header("content-type", "application/json").BodyJSON(response.body))
-	}
-	mock = mock.Reply(replySequence)
-
-	m.AddMocks(mock)
-
-	return m
-}
-
-type mockedTokenManager struct{}
-
-func (t *mockedTokenManager) SetAuthHeader(req *http.Request) error {
-	return nil
 }

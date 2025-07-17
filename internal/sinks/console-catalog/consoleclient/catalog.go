@@ -70,3 +70,19 @@ func (c *consoleClient[T]) Apply(ctx context.Context, item *MarketplaceResource[
 
 	return responseBody.Items[0].ItemID, nil
 }
+
+func (c *consoleClient[T]) Delete(ctx context.Context, tenantID string, itemID string) error {
+	targetURL := fmt.Sprintf("%sapi/marketplace/tenants/%s/resources/%s/versions/NA", c.url, tenantID, itemID)
+	resp, err := c.fireRequest(ctx, http.MethodDelete, targetURL, nil)
+	if err != nil {
+		return fmt.Errorf("error deleting resource: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("failed to delete resource, status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
