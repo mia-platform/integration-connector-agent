@@ -62,9 +62,9 @@ func registerAPI(t *testing.T, m *mocha.Mocha, request MockExpectation, response
 	pathMatcher := expect.URLPath(request.path)
 	var mock *mocha.MockBuilder
 	switch request.verb {
-	case "POST":
+	case http.MethodPost:
 		mock = mocha.Post(pathMatcher)
-	case "DELETE":
+	case http.MethodDelete:
 		mock = mocha.Delete(pathMatcher)
 	default:
 		t.Fatalf("unsupported HTTP verb: %s", request.verb)
