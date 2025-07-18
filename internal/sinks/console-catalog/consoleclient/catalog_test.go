@@ -100,7 +100,7 @@ func TestCatalogApply(t *testing.T) {
 			Items: []responseItem{
 				{
 					ItemID: item.ItemID,
-					ValidationErrors: []ValidationError{
+					Errors: []ValidationError{
 						mockedValidationError1,
 						mockedValidationError2,
 					},

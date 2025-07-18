@@ -26,8 +26,8 @@ type marketplacePostExtensionBody[Resource any] struct {
 	Resources []MarketplaceResource[Resource] `json:"resources"`
 }
 type responseItem struct {
-	ItemID           string            `json:"itemId"`
-	ValidationErrors []ValidationError `json:"validationErrors"`
+	ItemID string            `json:"itemId"`
+	Errors []ValidationError `json:"errors"`
 }
 
 type marketplacePostExtensionResponse struct {
@@ -61,7 +61,7 @@ func (c *consoleClient[T]) Apply(ctx context.Context, item *MarketplaceResource[
 
 	if !responseBody.Done {
 		errors := make([]string, 0)
-		for _, validationErr := range responseBody.Items[0].ValidationErrors {
+		for _, validationErr := range responseBody.Items[0].Errors {
 			errors = append(errors, validationErr.Message)
 		}
 

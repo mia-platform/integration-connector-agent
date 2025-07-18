@@ -75,5 +75,5 @@ type MarketplaceValidationError struct {
 }
 
 func (e *MarketplaceValidationError) Error() string {
-	return fmt.Sprintf("invalid marketplace item, validation errors: %s", strings.Join(e.Errors, ", "))
+	return fmt.Sprintf("invalid catalog item, validation errors: %s", strings.Join(e.Errors, ", "))
 }
