@@ -21,22 +21,25 @@ import (
 	"net/url"
 
 	"github.com/mia-platform/integration-connector-agent/config"
+	"github.com/mia-platform/integration-connector-agent/internal/sinks/console-catalog/consoleclient"
 )
 
 var (
-	ErrURLNotSet    = errors.New("URL not set in CRUD service sink configuration")
-	ErrInvalidURL   = errors.New("invalid URL in CRUD service sink configuration")
-	ErrMissingField = errors.New("missing required field in CRUD service sink configuration")
+	ErrURLNotSet              = errors.New("URL not set in Console Catalog sink configuration")
+	ErrInvalidURL             = errors.New("invalid URL in Console Catalog sink configuration")
+	ErrInvalidLifecycleStatus = errors.New("invalid itemLifecycleStatus in Console Catalog sink configuration")
+	ErrMissingField           = errors.New("missing required field in Console Catalog sink configuration")
 )
 
 type Config struct {
-	URL              string              `json:"url"`
-	ItemType         string              `json:"itemType"`
-	TenantID         string              `json:"tenantId"`
-	ClientID         string              `json:"clientId"`
-	ClientSecret     config.SecretSource `json:"clientSecret"`
-	ItemIDTemplate   string              `json:"itemIdTemplate"`
-	ItemNameTemplate string              `json:"itemNameTemplate"`
+	URL                 string                        `json:"url"`
+	TenantID            string                        `json:"tenantId"`
+	ClientID            string                        `json:"clientId"`
+	ClientSecret        config.SecretSource           `json:"clientSecret"`
+	ItemType            string                        `json:"itemType"`
+	ItemLifecycleStatus consoleclient.LifecycleStatus `json:"itemLifecycleStatus"`
+	ItemIDTemplate      string                        `json:"itemIdTemplate"`
+	ItemNameTemplate    string                        `json:"itemNameTemplate"`
 }
 
 func (c *Config) Validate() error {
@@ -70,6 +73,14 @@ func (c *Config) Validate() error {
 
 	if c.ItemNameTemplate == "" {
 		return fmt.Errorf("%w: itemNameTemplate", ErrMissingField)
+	}
+
+	if c.ItemLifecycleStatus == "" {
+		c.ItemLifecycleStatus = consoleclient.Published
+	}
+
+	if !consoleclient.IsValidLifecycleStatus(string(c.ItemLifecycleStatus)) {
+		return fmt.Errorf("%w: %s", ErrInvalidLifecycleStatus, c.ItemLifecycleStatus)
 	}
 
 	return nil

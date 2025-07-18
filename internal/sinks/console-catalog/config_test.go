@@ -117,6 +117,20 @@ func TestConfigValidate(t *testing.T) {
 			expectedErr:          ErrMissingField,
 			expectedMissingField: "itemNameTemplate",
 		},
+		{
+			name: "invalid lifecycle status",
+			config: &Config{
+				URL:                 "http://example.com",
+				TenantID:            "tenant-id",
+				ItemType:            "item-type",
+				ClientID:            "client-id",
+				ClientSecret:        "client-secret",
+				ItemIDTemplate:      "item-id-template",
+				ItemNameTemplate:    "item-name-template",
+				ItemLifecycleStatus: "invalid-status",
+			},
+			expectedErr: ErrInvalidLifecycleStatus,
+		},
 	}
 
 	for _, tc := range testCases {

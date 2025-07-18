@@ -164,16 +164,17 @@ func TestCatalogApply(t *testing.T) {
 		}
 
 		item := MarketplaceResource[testResource]{
-			ItemID:   "myItem",
-			Name:     "myItemName",
-			TenantID: tenantID,
-			Type:     "resType",
+			ItemID:          "myItem",
+			Name:            "myItemName",
+			TenantID:        tenantID,
+			Type:            "resType",
+			LifecycleStatus: Draft,
 			Resources: testResource{
 				"k1": "v1",
 			},
 		}
 
-		expectedMarketplaceRequestBodyString := fmt.Sprintf("{\"resources\":[{\"description\":\"\",\"itemId\":\"myItem\",\"name\":\"myItemName\",\"resources\":{\"k1\":\"v1\"},\"tenantId\":\"%s\",\"type\":\"resType\"}]}", tenantID)
+		expectedMarketplaceRequestBodyString := fmt.Sprintf("{\"resources\":[{\"description\":\"\",\"itemId\":\"myItem\",\"lifecycleStatus\":\"draft\",\"name\":\"myItemName\",\"resources\":{\"k1\":\"v1\"},\"tenantId\":\"%s\",\"type\":\"resType\"}]}", tenantID)
 
 		m := runMocha(t, marketplaceBaseURL)
 		m = registerAPI(t, m,
@@ -269,15 +270,16 @@ func TestCatalogApply(t *testing.T) {
 		}
 
 		item1 := MarketplaceResource[testResource]{
-			ItemID:   "myItem",
-			Name:     "myItemName",
-			TenantID: tenantID,
-			Type:     "resType",
+			ItemID:          "myItem",
+			Name:            "myItemName",
+			TenantID:        tenantID,
+			Type:            "resType",
+			LifecycleStatus: Published,
 			Resources: testResource{
 				"k1": "v1",
 			},
 		}
-		expectedMarketplaceRequestBodyString1 := fmt.Sprintf("{\"resources\":[{\"description\":\"\",\"itemId\":\"myItem\",\"name\":\"myItemName\",\"resources\":{\"k1\":\"v1\"},\"tenantId\":\"%s\",\"type\":\"resType\"}]}", tenantID)
+		expectedMarketplaceRequestBodyString1 := fmt.Sprintf("{\"resources\":[{\"description\":\"\",\"itemId\":\"myItem\",\"lifecycleStatus\":\"published\",\"name\":\"myItemName\",\"resources\":{\"k1\":\"v1\"},\"tenantId\":\"%s\",\"type\":\"resType\"}]}", tenantID)
 
 		m := runMocha(t, marketplaceBaseURL)
 		m = registerAPI(t, m,

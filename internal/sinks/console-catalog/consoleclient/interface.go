@@ -29,6 +29,25 @@ var (
 	ErrMarketplaceRequestBodyParse = errors.New("failed to prepare marketplace request")
 )
 
+type LifecycleStatus string
+
+const (
+	ComingSoon  LifecycleStatus = "coming-soon"
+	Draft       LifecycleStatus = "draft"
+	Published   LifecycleStatus = "published"
+	Maintenance LifecycleStatus = "maintenance"
+	Deprecated  LifecycleStatus = "deprecated"
+	Archived    LifecycleStatus = "archived"
+)
+
+func IsValidLifecycleStatus(status string) bool {
+	switch LifecycleStatus(status) {
+	case ComingSoon, Draft, Published, Maintenance, Deprecated, Archived:
+		return true
+	}
+	return false
+}
+
 type Resource any
 
 type CatalogClient[T Resource] interface {
@@ -37,13 +56,14 @@ type CatalogClient[T Resource] interface {
 }
 
 type MarketplaceResource[T Resource] struct {
-	ID          string `json:"_id,omitempty"` //nolint:tagliatelle
-	ItemID      string `json:"itemId"`
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	Description string `json:"description"`
-	TenantID    string `json:"tenantId"`
-	Resources   T      `json:"resources"`
+	ID              string          `json:"_id,omitempty"` //nolint:tagliatelle
+	ItemID          string          `json:"itemId"`
+	Name            string          `json:"name"`
+	Type            string          `json:"type"`
+	Description     string          `json:"description"`
+	TenantID        string          `json:"tenantId"`
+	LifecycleStatus LifecycleStatus `json:"lifecycleStatus"`
+	Resources       T               `json:"resources"`
 }
 
 type ValidationError struct {
