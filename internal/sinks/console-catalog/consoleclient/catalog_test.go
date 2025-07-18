@@ -31,7 +31,7 @@ func TestCatalogApply(t *testing.T) {
 	const marketplaceBaseURL = "127.0.0.1:45874"
 	const tenantID = "tenant123"
 
-	applyPath := fmt.Sprintf("/api/marketplace/tenants/%s/resources", tenantID)
+	applyPath := fmt.Sprintf("/api/tenants/%s/marketplace/items", tenantID)
 
 	client := New[testResource](fmt.Sprintf("http://%s/", marketplaceBaseURL), &mockedTokenManager{})
 	item := MarketplaceResource[testResource]{
@@ -164,16 +164,17 @@ func TestCatalogApply(t *testing.T) {
 		}
 
 		item := MarketplaceResource[testResource]{
-			ItemID:   "myItem",
-			Name:     "myItemName",
-			TenantID: tenantID,
-			Type:     "resType",
+			ItemID:          "myItem",
+			Name:            "myItemName",
+			TenantID:        tenantID,
+			Type:            "resType",
+			LifecycleStatus: Draft,
 			Resources: testResource{
 				"k1": "v1",
 			},
 		}
 
-		expectedMarketplaceRequestBodyString := fmt.Sprintf("{\"resources\":[{\"description\":\"\",\"itemId\":\"myItem\",\"name\":\"myItemName\",\"resources\":{\"k1\":\"v1\"},\"tenantId\":\"%s\",\"type\":\"resType\"}]}", tenantID)
+		expectedMarketplaceRequestBodyString := fmt.Sprintf("{\"resources\":[{\"description\":\"\",\"itemId\":\"myItem\",\"lifecycleStatus\":\"draft\",\"name\":\"myItemName\",\"resources\":{\"k1\":\"v1\"},\"tenantId\":\"%s\",\"type\":\"resType\"}]}", tenantID)
 
 		m := runMocha(t, marketplaceBaseURL)
 		m = registerAPI(t, m,
@@ -269,15 +270,16 @@ func TestCatalogApply(t *testing.T) {
 		}
 
 		item1 := MarketplaceResource[testResource]{
-			ItemID:   "myItem",
-			Name:     "myItemName",
-			TenantID: tenantID,
-			Type:     "resType",
+			ItemID:          "myItem",
+			Name:            "myItemName",
+			TenantID:        tenantID,
+			Type:            "resType",
+			LifecycleStatus: Published,
 			Resources: testResource{
 				"k1": "v1",
 			},
 		}
-		expectedMarketplaceRequestBodyString1 := fmt.Sprintf("{\"resources\":[{\"description\":\"\",\"itemId\":\"myItem\",\"name\":\"myItemName\",\"resources\":{\"k1\":\"v1\"},\"tenantId\":\"%s\",\"type\":\"resType\"}]}", tenantID)
+		expectedMarketplaceRequestBodyString1 := fmt.Sprintf("{\"resources\":[{\"description\":\"\",\"itemId\":\"myItem\",\"lifecycleStatus\":\"published\",\"name\":\"myItemName\",\"resources\":{\"k1\":\"v1\"},\"tenantId\":\"%s\",\"type\":\"resType\"}]}", tenantID)
 
 		m := runMocha(t, marketplaceBaseURL)
 		m = registerAPI(t, m,
@@ -337,7 +339,7 @@ func TestCatalogDelete(t *testing.T) {
 	const tenantID = "tenant123"
 	const itemID = "item123"
 
-	deletePath := fmt.Sprintf("/api/marketplace/tenants/%s/resources/%s/versions/NA", tenantID, itemID)
+	deletePath := fmt.Sprintf("/api/tenants/%s/marketplace/items/%s/versions/NA", tenantID, itemID)
 
 	client := New[testResource](fmt.Sprintf("http://%s/", marketplaceBaseURL), &mockedTokenManager{})
 

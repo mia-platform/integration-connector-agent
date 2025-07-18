@@ -42,7 +42,7 @@ func (c *consoleClient[T]) Apply(ctx context.Context, item *MarketplaceResource[
 		},
 	}
 
-	targetURL := fmt.Sprintf("%sapi/marketplace/tenants/%s/resources", c.url, item.TenantID)
+	targetURL := fmt.Sprintf("%sapi/tenants/%s/marketplace/items", c.url, item.TenantID)
 	resp, err := c.fireRequest(ctx, http.MethodPost, targetURL, marketplacePostExtension)
 	if err != nil {
 		return "", fmt.Errorf("error applying resource: %w", err)
@@ -72,7 +72,7 @@ func (c *consoleClient[T]) Apply(ctx context.Context, item *MarketplaceResource[
 }
 
 func (c *consoleClient[T]) Delete(ctx context.Context, tenantID string, itemID string) error {
-	targetURL := fmt.Sprintf("%sapi/marketplace/tenants/%s/resources/%s/versions/NA", c.url, tenantID, itemID)
+	targetURL := fmt.Sprintf("%sapi/tenants/%s/marketplace/items/%s/versions/NA", c.url, tenantID, itemID)
 	resp, err := c.fireRequest(ctx, http.MethodDelete, targetURL, nil)
 	if err != nil {
 		return fmt.Errorf("error deleting resource: %w", err)
