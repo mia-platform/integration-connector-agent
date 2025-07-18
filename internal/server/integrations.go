@@ -35,6 +35,8 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/sources/github"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
 	console "github.com/mia-platform/integration-connector-agent/internal/sources/mia-platform-console"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/vm"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
@@ -212,6 +214,15 @@ func runIntegration(ctx context.Context, log *logrus.Logger, pg pipeline.IPipeli
 		}
 	case sources.Github:
 		if err := github.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
+			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+		}
+	case sources.VM:
+		vmConfig, err := config.GetConfig[*vm.Config](cfgIntegration.Source)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := webhook.SetupService(ctx, oasRouter, &vmConfig.Configuration, pg); err != nil {
 			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
 		}
 	default:
