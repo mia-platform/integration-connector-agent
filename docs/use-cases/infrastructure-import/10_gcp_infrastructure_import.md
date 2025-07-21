@@ -7,13 +7,6 @@ Google Cloud Platform (GCP) infrastructure resource information into a Mia-Platf
 collection. Once imported, this data can be visualized and managed through the Microfrontend
 Composer, providing a centralized view of the organization's cloud resources.
 
-The flow enables you to:
-
-- Monitor GCP resource changes in real-time
-- Centralize infrastructure information in a MongoDB collection
-- Visualize and manage resources through an intuitive web interface
-- Create custom dashboards and reports on cloud resources
-
 ## Google Cloud Platform Configuration
 
 To enable the import of GCP resources, you need to configure the following services in the Google Cloud project:
@@ -120,7 +113,8 @@ It is recommended to create a unique index on the `name` field to ensure efficie
 
 ## Visualization with Microfrontend Composer
 
-Once the import flow is configured, you can [create a Composer page](https://docs.mia-platform.eu/docs/microfrontend-composer/overview) to
+Once the import flow is configured, you can
+[create a Composer page](https://docs.mia-platform.eu/docs/microfrontend-composer/overview) to
 display GCP infrastructure resources in an interactive table.
 
 To create a visualization page:

@@ -7,13 +7,6 @@ Microsoft Azure infrastructure resource information into a Mia-Platform CRUD Ser
 collection. Once imported, this data can be visualized and managed through the Microfrontend
 Composer, providing a centralized view of the organization's cloud resources.
 
-The flow enables you to:
-
-- Monitor Azure resource changes in real-time
-- Centralize infrastructure information in a MongoDB collection
-- Visualize and manage resources through an intuitive web interface
-- Create custom dashboards and reports on cloud resources
-
 ## Azure Configuration
 
 To enable the import of Azure resources, you need to configure the following services in your Azure subscription:

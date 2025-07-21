@@ -7,13 +7,6 @@ AWS infrastructure resource information into a Mia-Platform CRUD Service
 collection. Once imported, this data can be visualized and managed through the Microfrontend
 Composer, providing a centralized view of the organization's cloud resources.
 
-The flow enables you to:
-
-- Monitor AWS resource changes in real-time
-- Centralize infrastructure information in a MongoDB collection
-- Visualize and manage resources through an intuitive web interface
-- Create custom dashboards and reports on cloud resources
-
 ## AWS Configuration
 
 To enable the import of AWS resources, you need to configure the following services in your AWS account:
@@ -29,10 +22,18 @@ To enable the import of AWS resources, you need to configure the following servi
 You need to configure CloudTrail to send events to an SQS queue:
 
 1. Create a dedicated SQS queue (e.g., `aws-cloudtrail-queue`)
-1. Configure CloudTrail to send events to this SQS queue
+1. Configure CloudTrail to send events to this SQS queue (e.g. via an EventBridge rule)
 1. Ensure the IAM user/role has the necessary permissions to access the queue
 
 For more details on configuration, refer to the [official AWS CloudTrail documentation](https://docs.aws.amazon.com/cloudtrail/latest/userguide/getting_started.html).
+
+#### EventBridge Rule Configuration
+
+```json
+{
+  "source": ["aws.s3", "aws.ec2", "aws.rds", "aws.lambda"]
+}
+```
 
 ## Integration Connector Agent Configuration
 
