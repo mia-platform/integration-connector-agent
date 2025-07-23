@@ -205,7 +205,6 @@
                           "tenantId",
                           "clientId",
                           "clientSecret",
-                          "itemIdTemplate",
                           "itemNameTemplate"
                         ]
                       }
