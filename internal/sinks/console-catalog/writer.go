@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"
@@ -86,6 +87,18 @@ func (w *Writer[T]) createCatalogItem(event T) (*consoleclient.MarketplaceResour
 }
 
 func (w *Writer[T]) getItemID(event T) (string, error) {
+	if w.config.ItemIDTemplate == "" {
+		var itemIDBuilder strings.Builder
+		pks := event.GetPrimaryKeys()
+		for i, pk := range pks {
+			fmt.Fprintf(&itemIDBuilder, "%s-%s", slugify(pk.Key), slugify(pk.Value))
+			if i != len(pks)-1 {
+				itemIDBuilder.WriteString("-")
+			}
+		}
+		return itemIDBuilder.String(), nil
+	}
+
 	itemID, err := templetize(w.config.ItemIDTemplate, event.Data())
 	if err != nil {
 		return "", fmt.Errorf("error processing item ID template: %w", err)
