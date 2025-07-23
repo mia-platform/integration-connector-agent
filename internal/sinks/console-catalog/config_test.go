@@ -95,14 +95,13 @@ func TestConfigValidate(t *testing.T) {
 		{
 			name: "missing item ID template",
 			config: &Config{
-				URL:          "http://example.com",
-				TenantID:     "tenant-id",
-				ItemType:     "item-type",
-				ClientID:     "client-id",
-				ClientSecret: "client-secret",
+				URL:              "http://example.com",
+				TenantID:         "tenant-id",
+				ItemType:         "item-type",
+				ClientID:         "client-id",
+				ClientSecret:     "client-secret",
+				ItemNameTemplate: "item-name-template",
 			},
-			expectedErr:          ErrMissingField,
-			expectedMissingField: "itemIdTemplate",
 		},
 		{
 			name: "missing item name template",

@@ -100,6 +100,44 @@ func TestWriteData(t *testing.T) {
 		})
 		require.NoError(t, err)
 	})
+
+	t.Run("should invoke delete with correct itemId from primary keys when no itemIdTemplate is set", func(t *testing.T) {
+		mockClient := &mockConsoleClient{
+			DeleteAssert: func(ctx context.Context, tenantID string, itemID string) {
+				require.Equal(t, "tenant-id", tenantID)
+				require.Equal(t, "assetid-the-asset-id-resourceid-subscriptions-mysubscription-resourcegroups-myresourcegroup-providers-microsoft-web-sites-myappservice", itemID)
+			},
+		}
+
+		writer := &Writer[entities.PipelineEvent]{
+			client: mockClient,
+			config: &Config{
+				URL:              "http://example.com",
+				TenantID:         "tenant-id",
+				ItemType:         "item-type",
+				ClientID:         "client-id",
+				ClientSecret:     "secret",
+				ItemIDTemplate:   "",
+				ItemNameTemplate: "the-name-{{assetId}}",
+			},
+		}
+
+		err := writer.WriteData(context.Background(), &entities.Event{
+			OperationType: entities.Delete,
+			PrimaryKeys: entities.PkFields{
+				entities.PkField{
+					Key:   "assetId",
+					Value: "the-asset-id",
+				},
+				entities.PkField{
+					Key:   "resourceId",
+					Value: "/subscriptions/mysubscription/resourcegroups/myresourcegroup/providers/microsoft.web/sites/myappservice",
+				},
+			},
+			OriginalRaw: []byte(`{"name": "The Name", "assetId": "the-asset-id"}`),
+		})
+		require.NoError(t, err)
+	})
 }
 
 type mockConsoleClient struct {

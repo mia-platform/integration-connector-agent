@@ -67,10 +67,6 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("%w: clientSecret", ErrMissingField)
 	}
 
-	if c.ItemIDTemplate == "" {
-		return fmt.Errorf("%w: itemIdTemplate", ErrMissingField)
-	}
-
 	if c.ItemNameTemplate == "" {
 		return fmt.Errorf("%w: itemNameTemplate", ErrMissingField)
 	}
