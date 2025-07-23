@@ -79,7 +79,7 @@ func (w *Writer[T]) createCatalogItem(event T) (*consoleclient.MarketplaceResour
 	return &consoleclient.MarketplaceResource[any]{
 		TenantID:        w.config.TenantID,
 		Name:            itemName,
-		ItemID:          slugify(itemID),
+		ItemID:          itemID,
 		Type:            w.config.ItemType,
 		LifecycleStatus: w.config.ItemLifecycleStatus,
 		Resources:       res,
@@ -96,12 +96,12 @@ func (w *Writer[T]) getItemID(event T) (string, error) {
 				itemIDBuilder.WriteString("-")
 			}
 		}
-		return itemIDBuilder.String(), nil
+		return digestForCatalog63Bytes([]byte(itemIDBuilder.String())), nil
 	}
 
 	itemID, err := templetize(w.config.ItemIDTemplate, event.Data())
 	if err != nil {
 		return "", fmt.Errorf("error processing item ID template: %w", err)
 	}
-	return slugify(itemID), nil
+	return digestForCatalog63Bytes([]byte(slugify(itemID))), nil
 }

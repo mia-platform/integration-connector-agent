@@ -16,6 +16,8 @@
 package consolecatalog
 
 import (
+	"crypto/sha1" //nolint:gosec // sha1 is used to generate a digest for the Console Catalog item ID, not for a cryptographic purpose
+	"encoding/hex"
 	"fmt"
 	"regexp"
 	"strings"
@@ -49,4 +51,10 @@ func slugify(input string) (output string) {
 	output = reg.ReplaceAllString(output, "-")
 	output = strings.Trim(output, "-")
 	return
+}
+
+func digestForCatalog63Bytes(data []byte) string {
+	hash := sha1.New() //nolint:gosec // sha1 is used to generate a digest for the Console Catalog item ID, not for a cryptographic purpose
+	hash.Write(data)
+	return hex.EncodeToString(hash.Sum(nil))
 }

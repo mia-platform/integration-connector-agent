@@ -49,7 +49,7 @@ func TestWriteData(t *testing.T) {
 				require.Equal(t, "tenant-id", item.TenantID)
 				require.Equal(t, "item-type", item.Type)
 
-				require.Equal(t, "test-name-12345", item.ItemID)
+				require.Equal(t, "bd2700071a46b945e610d1fad65eff454595a9ac", item.ItemID)
 				require.Equal(t, "Test Name", item.Name)
 			},
 		}
@@ -78,7 +78,7 @@ func TestWriteData(t *testing.T) {
 		mockClient := &mockConsoleClient{
 			DeleteAssert: func(ctx context.Context, tenantID string, itemID string) {
 				require.Equal(t, "tenant-id", tenantID)
-				require.Equal(t, "the-name-the-asset-id", itemID)
+				require.Equal(t, "286be376dc09ca9196049a2ae222f36b6303b1f3", itemID)
 			},
 		}
 
@@ -105,7 +105,7 @@ func TestWriteData(t *testing.T) {
 		mockClient := &mockConsoleClient{
 			DeleteAssert: func(ctx context.Context, tenantID string, itemID string) {
 				require.Equal(t, "tenant-id", tenantID)
-				require.Equal(t, "assetid-the-asset-id-resourceid-subscriptions-mysubscription-resourcegroups-myresourcegroup-providers-microsoft-web-sites-myappservice", itemID)
+				require.Equal(t, "f52268d49ce3927826a9ed23465bf68e26282065", itemID)
 			},
 		}
 
