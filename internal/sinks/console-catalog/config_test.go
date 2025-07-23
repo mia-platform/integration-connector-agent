@@ -93,7 +93,7 @@ func TestConfigValidate(t *testing.T) {
 			expectedMissingField: "clientSecret",
 		},
 		{
-			name: "missing item ID template",
+			name: "configuration is valid even when missing item ID template",
 			config: &Config{
 				URL:              "http://example.com",
 				TenantID:         "tenant-id",
