@@ -88,15 +88,15 @@ func (w *Writer[T]) createCatalogItem(event T) (*consoleclient.MarketplaceResour
 
 func (w *Writer[T]) getItemID(event T) (string, error) {
 	if w.config.ItemIDTemplate == "" {
-		var itemIdBuilder strings.Builder
+		var itemIDBuilder strings.Builder
 		pks := event.GetPrimaryKeys()
 		for i, pk := range pks {
-			fmt.Fprintf(&itemIdBuilder, "%s-%s", slugify(pk.Key), slugify(pk.Value))
+			fmt.Fprintf(&itemIDBuilder, "%s-%s", slugify(pk.Key), slugify(pk.Value))
 			if i != len(pks)-1 {
-				itemIdBuilder.WriteString("-")
+				itemIDBuilder.WriteString("-")
 			}
 		}
-		return itemIdBuilder.String(), nil
+		return itemIDBuilder.String(), nil
 	}
 
 	itemID, err := templetize(w.config.ItemIDTemplate, event.Data())
