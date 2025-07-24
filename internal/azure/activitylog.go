@@ -26,21 +26,20 @@ type ActivityLogEventData struct {
 }
 
 type ActivityLogEventRecord struct {
-	RoleLocation    string                    `json:"RoleLocation,omitempty"`   //nolint:tagliatelle
-	Stamp           string                    `json:"Stamp,omitempty"`          //nolint:tagliatelle
-	ReleaseVersion  string                    `json:"ReleaseVersion,omitempty"` //nolint:tagliatelle
-	Time            string                    `json:"time,omitempty"`
-	ResourceID      string                    `json:"resourceId,omitempty"`
-	OperationName   string                    `json:"operationName,omitempty"`
-	Category        string                    `json:"category,omitempty"`
-	ResultType      string                    `json:"resultType,omitempty"`
-	ResultSignature string                    `json:"resultSignature,omitempty"`
-	DurationMs      string                    `json:"durationMs,omitempty"`
-	CallerIPAddress string                    `json:"callerIpAddress,omitempty"`
-	CorrelationID   string                    `json:"correlationId,omitempty"`
-	Identity        *ActivityLogEventIdentity `json:"identity,omitempty"`
-	Level           string                    `json:"level,omitempty"`
-	Properties      map[string]any            `json:"properties,omitempty"`
+	RoleLocation    string         `json:"RoleLocation,omitempty"`   //nolint:tagliatelle
+	Stamp           string         `json:"Stamp,omitempty"`          //nolint:tagliatelle
+	ReleaseVersion  string         `json:"ReleaseVersion,omitempty"` //nolint:tagliatelle
+	Time            string         `json:"time,omitempty"`
+	ResourceID      string         `json:"resourceId,omitempty"`
+	OperationName   string         `json:"operationName,omitempty"`
+	Category        string         `json:"category,omitempty"`
+	ResultType      string         `json:"resultType,omitempty"`
+	ResultSignature string         `json:"resultSignature,omitempty"`
+	DurationMs      string         `json:"durationMs,omitempty"`
+	CallerIPAddress string         `json:"callerIpAddress,omitempty"`
+	CorrelationID   string         `json:"correlationId,omitempty"`
+	Level           string         `json:"level,omitempty"`
+	Properties      map[string]any `json:"properties,omitempty"`
 }
 
 func (r *ActivityLogEventRecord) entityOperationType() entities.Operation {
@@ -50,24 +49,4 @@ func (r *ActivityLogEventRecord) entityOperationType() entities.Operation {
 	}
 
 	return entities.Write
-}
-
-type ActivityLogEventIdentity struct {
-	Authorization *ActivityLogAuthorization `json:"authorization,omitempty"`
-	Claims        map[string]string         `json:"claims,omitempty"`
-}
-
-type ActivityLogAuthorization struct {
-	Scope    string                `json:"scope,omitempty"`
-	Action   string                `json:"action,omitempty"`
-	Evidence AuthorizationEvidence `json:"evidence,omitempty"`
-}
-
-type AuthorizationEvidence struct {
-	Role                string `json:"role,omitempty"`
-	RoleAssignmentScope string `json:"roleAssignmentScope,omitempty"`
-	RoleAssignmentID    string `json:"roleAssignmentId,omitempty"`
-	RoleDefinitionID    string `json:"roleDefinitionId,omitempty"`
-	PrincipalID         string `json:"principalId,omitempty"`
-	PrincipalType       string `json:"principalType,omitempty"`
 }
