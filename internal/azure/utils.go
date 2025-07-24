@@ -26,6 +26,7 @@ import (
 const (
 	StorageAccountEventSource = "microsoft.storage/storageaccounts"
 	FunctionEventSource       = "microsoft.web/sites"
+	VirtualMachineEventSource = "microsoft.compute/virtualmachines"
 	TagsEventSource           = "microsoft.resources/tags"
 )
 

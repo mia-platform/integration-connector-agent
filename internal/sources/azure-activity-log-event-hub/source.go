@@ -128,6 +128,7 @@ func webhookHandler(client azure.GraphClientInterface, config *Config, pg pipeli
 		supportedTypes := []string{
 			azure.StorageAccountEventSource,
 			azure.FunctionEventSource,
+			azure.VirtualMachineEventSource,
 		}
 		entities, err := client.Resources(c.UserContext(), supportedTypes)
 		if err != nil {

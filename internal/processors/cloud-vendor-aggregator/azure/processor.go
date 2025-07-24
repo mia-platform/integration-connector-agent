@@ -25,6 +25,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/azure"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/services/functions"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/services/storage"
+	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/services/vm"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/config"
 
@@ -108,6 +109,8 @@ func (p *Processor) EventDataProcessor(activityLogEvent *azure.ActivityLogEventR
 		return storage.New(p.client), nil
 	case azure.EventIsForSource(activityLogEvent, azure.FunctionEventSource):
 		return functions.New(p.client), nil
+	case azure.EventIsForSource(activityLogEvent, azure.VirtualMachineEventSource):
+		return vm.New(p.client), nil
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedEventSource, activityLogEvent.OperationName)
 	}

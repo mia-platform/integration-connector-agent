@@ -130,6 +130,45 @@ func TestProcessor(t *testing.T) {
 				}(),
 				),
 		},
+		"request a virtual machine": {
+			client: &fakeClient{
+				t: t,
+				resource: &azure.Resource{
+					Name:     "vm",
+					Type:     "Microsoft.Compute/virtualMachines",
+					Tags:     map[string]string{"env": "test"},
+					Location: "eastus",
+				},
+				apiVersion: "2024-11-01",
+			},
+			input: &entities.Event{
+				PrimaryKeys: entities.PkFields{
+					{
+						Key:   "resourceId",
+						Value: "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group/providers/Microsoft.Compute/virtualMachines/vm",
+					},
+				},
+				Type:          azure.EventTypeRecordFromEventHub.String(),
+				OperationType: entities.Write,
+				OriginalRaw:   []byte(virtualMachineActivityLog),
+			},
+			expectedAsset: commons.NewAsset("vm", "Microsoft.Compute/virtualMachines", commons.AzureAssetProvider).
+				WithLocation("eastus").
+				WithRelationships([]string{
+					"subscription/00000000-0000-0000-0000-000000000000",
+					"resourceGroup/group",
+				}).
+				WithTags(map[string]string{"env": "test"}).
+				WithRawData(func() []byte {
+					event := new(azure.ActivityLogEventRecord)
+					err := json.Unmarshal([]byte(virtualMachineActivityLog), event)
+					require.NoError(t, err)
+					data, err := json.Marshal(event)
+					require.NoError(t, err)
+					return data
+				}(),
+				),
+		},
 		"event is from import event": {
 			input: &entities.Event{
 				PrimaryKeys: entities.PkFields{
@@ -267,6 +306,36 @@ const bucketActivityLog = `{
 		"eventCategory": "Administrative",
 		"entity": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group/providers/Microsoft.Storage/storageAccounts/account",
 		"message": "Microsoft.Storage/storageAccounts/write",
+		"hierarchy": "00000000-0000-0000-0000-000000000000/00000000-0000-0000-0000-000000000000"
+	},
+	"tenantId": "00000000-0000-0000-0000-000000000000"
+}`
+
+const virtualMachineActivityLog = `{
+	"resourceId": "/SUBSCRIPTIONS/00000000-0000-0000-0000-000000000000/RESOURCEGROUPS/GROUP/PROVIDERS/MICROSOFT.COMPUTE/VIRTUALMACHINES/VM",
+	"operationName": "MICROSOFT.COMPUTE/VIRTUALMACHINES/WRITE",
+	"category": "Administrative",
+	"resultType": "Succeeded",
+	"resultSignature": "Succeeded.",
+	"identity": {
+		"authorization": {
+			"scope": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group/providers/Microsoft.Compute/virtualMachines/vm",
+			"action": "Microsoft.Compute/virtualMachines/write",
+			"evidence": {
+				"role": "Contributor",
+				"roleAssignmentScope": "/subscriptions/00000000-0000-0000-0000-000000000000",
+				"roleAssignmentId": "00000000000000000000000000000000",
+				"roleDefinitionId": "00000000000000000000000000000000",
+				"principalId": "00000000000000000000000000000000",
+				"principalType": "ServicePrincipal"
+			}
+		}
+	},
+	"level": "Information",
+	"properties": {
+		"eventCategory": "Administrative",
+		"entity": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group/providers/Microsoft.Compute/virtualMachines/vm",
+		"message": "Microsoft.Compute/virtualMachines/write",
 		"hierarchy": "00000000-0000-0000-0000-000000000000/00000000-0000-0000-0000-000000000000"
 	},
 	"tenantId": "00000000-0000-0000-0000-000000000000"

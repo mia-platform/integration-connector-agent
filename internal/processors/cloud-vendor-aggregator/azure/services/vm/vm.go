@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage
+package vm
 
 import (
 	"context"
@@ -24,17 +24,17 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 )
 
-type AzureStorage struct {
+type AzureVM struct {
 	client azure.ClientInterface
 }
 
-func New(getter azure.ClientInterface) *AzureStorage {
-	return &AzureStorage{
+func New(getter azure.ClientInterface) *AzureVM {
+	return &AzureVM{
 		client: getter,
 	}
 }
 
-func (a *AzureStorage) GetData(ctx context.Context, event *azure.ActivityLogEventRecord) ([]byte, error) {
+func (a *AzureVM) GetData(ctx context.Context, event *azure.ActivityLogEventRecord) ([]byte, error) {
 	// it cannot fail because the event is already validated from the main processor
 	data, _ := json.Marshal(event)
 	entity, found := event.Properties["entity"]
@@ -42,7 +42,7 @@ func (a *AzureStorage) GetData(ctx context.Context, event *azure.ActivityLogEven
 		return nil, fmt.Errorf("entity not found in event properties")
 	}
 
-	resource, err := a.client.GetByID(ctx, entity.(string), "2025-01-01")
+	resource, err := a.client.GetByID(ctx, entity.(string), "2024-11-01")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get resource by ID: %w", err)
 	}
