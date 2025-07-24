@@ -115,6 +115,7 @@ jobs:
         path: bin/
 
   publish-docker:
+    name: "Publish Docker Images"
     runs-on: ubuntu-latest
     permissions:
       actions: read
