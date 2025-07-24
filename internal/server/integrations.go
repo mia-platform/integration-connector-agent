@@ -107,7 +107,7 @@ func setupIntegrationPipelines(ctx context.Context, log *logrus.Logger, cfgInteg
 			"processorsLen": len(cfgPipeline.Processors),
 		}).Trace("setting up pipeline processors")
 
-		sinks, err := setupSinks(ctx, cfgPipeline.Sinks)
+		sinks, err := setupSinks(ctx, log, cfgPipeline.Sinks)
 		if err != nil {
 			return nil, err
 		}
@@ -131,7 +131,7 @@ func setupIntegrationPipelines(ctx context.Context, log *logrus.Logger, cfgInteg
 	return pipelines, nil
 }
 
-func setupSinks(ctx context.Context, writers config.Sinks) ([]sinks.Sink[entities.PipelineEvent], error) {
+func setupSinks(ctx context.Context, log *logrus.Logger, writers config.Sinks) ([]sinks.Sink[entities.PipelineEvent], error) {
 	var w []sinks.Sink[entities.PipelineEvent]
 	for _, configuredWriter := range writers {
 		switch configuredWriter.Type {
@@ -160,7 +160,7 @@ func setupSinks(ctx context.Context, writers config.Sinks) ([]sinks.Sink[entitie
 			if err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
 			}
-			consoleCatalogWriter, err := consolecatalog.NewWriter[entities.PipelineEvent](config)
+			consoleCatalogWriter, err := consolecatalog.NewWriter[entities.PipelineEvent](config, log)
 			if err != nil {
 				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
 			}

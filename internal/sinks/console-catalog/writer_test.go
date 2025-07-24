@@ -22,10 +22,13 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks/console-catalog/consoleclient"
 
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
 
 func TestWriteData(t *testing.T) {
+	log, _ := test.NewNullLogger()
+
 	t.Run("should return error on invalid data", func(t *testing.T) {
 		writer, err := NewWriter[entities.PipelineEvent](&Config{
 			URL:          "http://example.com",
@@ -33,7 +36,7 @@ func TestWriteData(t *testing.T) {
 			ItemType:     "item-type",
 			ClientID:     "client-id",
 			ClientSecret: "secret",
-		})
+		}, log)
 		require.NoError(t, err)
 
 		evt := &entities.Event{
@@ -56,6 +59,7 @@ func TestWriteData(t *testing.T) {
 
 		writer := &Writer[entities.PipelineEvent]{
 			client: mockClient,
+			log:    log,
 			config: &Config{
 				URL:              "http://example.com",
 				TenantID:         "tenant-id",
@@ -83,6 +87,7 @@ func TestWriteData(t *testing.T) {
 		}
 
 		writer := &Writer[entities.PipelineEvent]{
+			log:    log,
 			client: mockClient,
 			config: &Config{
 				URL:            "http://example.com",
@@ -111,6 +116,7 @@ func TestWriteData(t *testing.T) {
 
 		writer := &Writer[entities.PipelineEvent]{
 			client: mockClient,
+			log:    log,
 			config: &Config{
 				URL:              "http://example.com",
 				TenantID:         "tenant-id",

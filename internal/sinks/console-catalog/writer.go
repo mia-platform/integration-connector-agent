@@ -24,19 +24,23 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks/console-catalog/consoleclient"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Writer[T entities.PipelineEvent] struct {
 	config *Config
 	client consoleclient.CatalogClient[any]
+	log    *logrus.Logger
 }
 
-func NewWriter[T entities.PipelineEvent](config *Config) (sinks.Sink[T], error) {
+func NewWriter[T entities.PipelineEvent](config *Config, log *logrus.Logger) (sinks.Sink[T], error) {
 	tokenManager := consoleclient.NewClientCredentialsTokenManager(config.URL, config.ClientID, config.ClientSecret.String())
 	client := consoleclient.New[any](config.URL, tokenManager)
 	return &Writer[T]{
 		client: client,
 		config: config,
+		log:    log,
 	}, nil
 }
 
@@ -86,7 +90,7 @@ func (w *Writer[T]) createCatalogItem(event T) (*consoleclient.MarketplaceResour
 	}, nil
 }
 
-func (w *Writer[T]) getItemID(event T) (string, error) {
+func (w *Writer[T]) getItemIDFromEvent(event T) (string, error) {
 	if w.config.ItemIDTemplate == "" {
 		var itemIDBuilder strings.Builder
 		pks := event.GetPrimaryKeys()
@@ -96,12 +100,28 @@ func (w *Writer[T]) getItemID(event T) (string, error) {
 				itemIDBuilder.WriteString("-")
 			}
 		}
-		return digestForCatalog63Bytes([]byte(itemIDBuilder.String())), nil
+		return itemIDBuilder.String(), nil
 	}
 
 	itemID, err := templetize(w.config.ItemIDTemplate, event.Data())
 	if err != nil {
 		return "", fmt.Errorf("error processing item ID template: %w", err)
 	}
-	return digestForCatalog63Bytes([]byte(slugify(itemID))), nil
+	return slugify(itemID), nil
+}
+
+func (w *Writer[T]) getItemID(event T) (string, error) {
+	itemID, err := w.getItemIDFromEvent(event)
+	if err != nil {
+		return "", fmt.Errorf("error getting item ID from event: %w", err)
+	}
+	digest := digestForCatalog63Bytes([]byte(itemID))
+
+	w.log.WithFields(logrus.Fields{
+		"itemId":      itemID,
+		"digest":      digest,
+		"primaryKeys": event.GetPrimaryKeys().Map(),
+	}).Trace("itemId for Console Catalog")
+
+	return digest, nil
 }

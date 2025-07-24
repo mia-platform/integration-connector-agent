@@ -76,7 +76,8 @@ func TestSetupWriters(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			w, err := setupSinks(ctx, tc.writers)
+			log, _ := test.NewNullLogger()
+			w, err := setupSinks(ctx, log, tc.writers)
 
 			if tc.expectError != "" {
 				require.EqualError(t, err, tc.expectError)
