@@ -18,7 +18,6 @@ package azureactivitylogeventhub
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/mia-platform/integration-connector-agent/internal/azure"
@@ -59,7 +58,7 @@ func (c *Config) checkSignature(ctx *fiber.Ctx) error {
 }
 
 func AddSource(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipelineGroup, logger *logrus.Logger, router *swagger.Router[fiber.Handler, fiber.Router]) error {
-	config, err := configFromGeneric(cfg, pg)
+	config, err := configFromGeneric(cfg, pg, logger)
 	if err != nil {
 		return err
 	}
@@ -89,21 +88,22 @@ func AddSource(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipel
 	return nil
 }
 
-func configFromGeneric(cfg config.GenericConfig, pg pipeline.IPipelineGroup) (*Config, error) {
+func configFromGeneric(cfg config.GenericConfig, pg pipeline.IPipelineGroup, logger *logrus.Logger) (*Config, error) {
 	sourceCfg, err := config.GetConfig[*Config](cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	sourceCfg.EventConsumer = activityLogConsumer(pg)
+	sourceCfg.EventConsumer = activityLogConsumer(pg, logger)
 	return sourceCfg, nil
 }
 
-func activityLogConsumer(pg pipeline.IPipelineGroup) azure.EventConsumer {
+func activityLogConsumer(pg pipeline.IPipelineGroup, logger *logrus.Logger) azure.EventConsumer {
 	return func(eventData *azeventhubs.ReceivedEventData) error {
 		activityLogEventData := new(azure.ActivityLogEventData)
 		if err := json.Unmarshal(eventData.Body, activityLogEventData); err != nil {
-			return fmt.Errorf("failed to read activity log event data: %w", err)
+			logger.WithError(err).Error("failed to unmarshal activity log event data")
+			return nil
 		}
 
 		for _, record := range activityLogEventData.Records {

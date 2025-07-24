@@ -25,6 +25,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/azure"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
+	"github.com/sirupsen/logrus/hooks/test"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2"
 	"github.com/stretchr/testify/assert"
@@ -118,9 +119,10 @@ func TestConfig(t *testing.T) {
 		},
 	}
 
+	logger, _ := test.NewNullLogger()
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
-			cfg, err := configFromGeneric(test.config, &testPipelineGroup{})
+			cfg, err := configFromGeneric(test.config, &testPipelineGroup{}, logger)
 			if len(test.expectedError) > 0 {
 				assert.Nil(t, cfg)
 				assert.ErrorContains(t, err, test.expectedError)
@@ -291,14 +293,14 @@ func TestActivityLogConsumer(t *testing.T) {
 					Body: []byte(`{"records":[{"":""}}`),
 				},
 			},
-			expectedError: true,
 		},
 	}
 
+	log, _ := test.NewNullLogger()
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
 			pg := &testPipelineGroup{}
-			consumerFunction := activityLogConsumer(pg)
+			consumerFunction := activityLogConsumer(pg, log)
 
 			err := consumerFunction(test.eventData)
 			if test.expectedError {
