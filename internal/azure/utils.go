@@ -25,9 +25,18 @@ import (
 
 const (
 	StorageAccountEventSource = "microsoft.storage/storageaccounts"
-	FunctionEventSource       = "microsoft.web/sites"
-	VirtualMachineEventSource = "microsoft.compute/virtualmachines"
-	TagsEventSource           = "microsoft.resources/tags"
+
+	WebSitesEventSource = "microsoft.web/sites"
+
+	ComputeVirtualMachineEventSource = "microsoft.compute/virtualmachines"
+	ComputeDiskEventSource           = "microsoft.compute/disks"
+
+	VirtualNetworkEventSource         = "microsoft.network/virtualnetworks"
+	NetworkInterfaceEventSource       = "microsoft.network/networkinterfaces"
+	NetworkSecurityGroupEventSource   = "microsoft.network/networksecuritygroups"
+	NetworkPublicIPAddressEventSource = "microsoft.network/publicipaddresses"
+
+	TagsEventSource = "microsoft.resources/tags"
 )
 
 func RelationshipFromID(id string) []string {
@@ -56,6 +65,34 @@ func EventIsForSource(event *ActivityLogEventRecord, resourceType string) bool {
 
 	return eventSource == resourceType+"/write" ||
 		(eventSource == TagsEventSource+"/write" && strings.Contains(resourceID, resourceType))
+}
+
+func EventSourceFromEvent(event *ActivityLogEventRecord) string {
+	allSources := []string{
+		StorageAccountEventSource,
+		WebSitesEventSource,
+		ComputeVirtualMachineEventSource,
+		ComputeDiskEventSource,
+		VirtualNetworkEventSource,
+		NetworkInterfaceEventSource,
+		NetworkSecurityGroupEventSource,
+		NetworkPublicIPAddressEventSource,
+	}
+
+	eventSource := strings.ToLower(event.OperationName)
+	for _, source := range allSources {
+		switch eventSource {
+		case source + "/write":
+			return source
+		case TagsEventSource + "/write":
+			resourceID := strings.ToLower(event.ResourceID)
+			if strings.Contains(resourceID, source) {
+				return source
+			}
+		}
+	}
+
+	return ""
 }
 
 func primaryKeys(resourceID string) entities.PkFields {
