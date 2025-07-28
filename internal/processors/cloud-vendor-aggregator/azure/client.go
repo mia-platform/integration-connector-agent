@@ -24,19 +24,6 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 )
 
-var (
-	apiVersionsMap = map[string]string{
-		azure.StorageAccountEventSource:         "2025-01-01",
-		azure.WebSitesEventSource:               "2024-11-01",
-		azure.ComputeVirtualMachineEventSource:  "2024-11-01",
-		azure.ComputeDiskEventSource:            "2025-01-02",
-		azure.VirtualNetworkEventSource:         "2025-01-01",
-		azure.NetworkInterfaceEventSource:       "2025-01-01",
-		azure.NetworkSecurityGroupEventSource:   "2025-01-01",
-		azure.NetworkPublicIPAddressEventSource: "2025-01-01",
-	}
-)
-
 type AzureClient struct {
 	client      azure.ClientInterface
 	eventSource string
@@ -74,7 +61,7 @@ func (a *AzureClient) GetData(ctx context.Context, event *azure.ActivityLogEvent
 func apiVersionForSource(source string) string {
 	// how to find the API version for a given source:
 	// https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types#azure-portal
-	apiVersionsMap = map[string]string{
+	apiVersionsMap := map[string]string{
 		azure.WebSitesEventSource:              "2024-11-01",
 		azure.ComputeVirtualMachineEventSource: "2024-11-01",
 		azure.ComputeDiskEventSource:           "2025-01-02",
