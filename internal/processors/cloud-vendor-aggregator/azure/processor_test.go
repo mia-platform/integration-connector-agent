@@ -190,6 +190,34 @@ func TestProcessor(t *testing.T) {
 				}).
 				WithRawData([]byte(liveData)),
 		},
+		"delete operation in success state": {
+			input: &entities.Event{
+				PrimaryKeys: entities.PkFields{
+					{
+						Key:   "resourceId",
+						Value: "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group/providers/Microsoft.Storage/storageAccounts/account",
+					},
+				},
+				Type:          azure.EventTypeRecordFromEventHub.String(),
+				OperationType: entities.Delete,
+				OriginalRaw:   []byte(deleteSuccededActivity),
+			},
+			expectedAsset: commons.NewAsset("", "", ""),
+		},
+		"delete operation in started state": {
+			input: &entities.Event{
+				PrimaryKeys: entities.PkFields{
+					{
+						Key:   "resourceId",
+						Value: "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group/providers/Microsoft.Storage/storageAccounts/account",
+					},
+				},
+				Type:          azure.EventTypeRecordFromEventHub.String(),
+				OperationType: entities.Delete,
+				OriginalRaw:   []byte(deleteStartedActivity),
+			},
+			expectedError: entities.ErrDiscardEvent,
+		},
 		"filter activity log not in success state": {
 			input: &entities.Event{
 				PrimaryKeys: entities.PkFields{
@@ -366,6 +394,66 @@ const functionActivityLog = `{
 		"eventCategory": "Administrative",
 		"entity": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group/providers/Microsoft.Web/sites/function",
 		"message": "Microsoft.Web/sites/write",
+		"hierarchy": "00000000-0000-0000-0000-000000000000/00000000-0000-0000-0000-000000000000"
+	},
+	"tenantId": "00000000-0000-0000-0000-000000000000"
+}`
+
+const deleteSuccededActivity = `{
+	"resourceId": "/SUBSCRIPTIONS/00000000-0000-0000-0000-000000000000/RESOURCEGROUPS/GROUP/PROVIDERS/MICROSOFT.WEB/SITES/FUNCTION",
+	"operationName": "MICROSOFT.WEB/SITES/DELETE",
+	"category": "Administrative",
+	"resultType": "Succeeded",
+	"resultSignature": "Succeeded.",
+	"identity": {
+		"authorization": {
+			"scope": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group/providers/Microsoft.Web/sites/function",
+			"action": "Microsoft.Web/sites/delete",
+			"evidence": {
+				"role": "Contributor",
+				"roleAssignmentScope": "/subscriptions/00000000-0000-0000-0000-000000000000",
+				"roleAssignmentId": "00000000000000000000000000000000",
+				"roleDefinitionId": "00000000000000000000000000000000",
+				"principalId": "00000000000000000000000000000000",
+				"principalType": "ServicePrincipal"
+			}
+		}
+	},
+	"level": "Information",
+	"properties": {
+		"eventCategory": "Administrative",
+		"entity": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group/providers/Microsoft.Web/sites/function",
+		"message": "Microsoft.Web/sites/delete",
+		"hierarchy": "00000000-0000-0000-0000-000000000000/00000000-0000-0000-0000-000000000000"
+	},
+	"tenantId": "00000000-0000-0000-0000-000000000000"
+}`
+
+const deleteStartedActivity = `{
+	"resourceId": "/SUBSCRIPTIONS/00000000-0000-0000-0000-000000000000/RESOURCEGROUPS/GROUP/PROVIDERS/MICROSOFT.WEB/SITES/FUNCTION",
+	"operationName": "MICROSOFT.WEB/SITES/DELETE",
+	"category": "Administrative",
+	"resultType": "Started",
+	"resultSignature": "Started.",
+	"identity": {
+		"authorization": {
+			"scope": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group/providers/Microsoft.Web/sites/function",
+			"action": "Microsoft.Web/sites/delete",
+			"evidence": {
+				"role": "Contributor",
+				"roleAssignmentScope": "/subscriptions/00000000-0000-0000-0000-000000000000",
+				"roleAssignmentId": "00000000000000000000000000000000",
+				"roleDefinitionId": "00000000000000000000000000000000",
+				"principalId": "00000000000000000000000000000000",
+				"principalType": "ServicePrincipal"
+			}
+		}
+	},
+	"level": "Information",
+	"properties": {
+		"eventCategory": "Administrative",
+		"entity": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group/providers/Microsoft.Web/sites/function",
+		"message": "Microsoft.Web/sites/delete",
 		"hierarchy": "00000000-0000-0000-0000-000000000000/00000000-0000-0000-0000-000000000000"
 	},
 	"tenantId": "00000000-0000-0000-0000-000000000000"

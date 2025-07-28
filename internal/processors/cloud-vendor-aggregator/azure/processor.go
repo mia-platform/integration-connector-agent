@@ -53,11 +53,6 @@ func New(logger *logrus.Logger, authOptions config.AuthOptions) (*Processor, err
 func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
 	output := input.Clone()
 
-	if input.Operation() == entities.Delete {
-		p.logger.Debug("Delete operation detected, skipping processing")
-		return output, nil
-	}
-
 	if input.GetType() == azure.EventTypeFromLiveLoad.String() {
 		newData, err := p.GetDataFromLiveEvent(input)
 		if err != nil {
@@ -82,6 +77,11 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 			}).
 			Debug("Event discarded for result type")
 		return nil, entities.ErrDiscardEvent
+	}
+
+	if input.Operation() == entities.Delete {
+		p.logger.Debug("Delete operation detected, skipping processing")
+		return output, nil
 	}
 
 	adapter, err := p.EventDataProcessor(activityLogEvent)
