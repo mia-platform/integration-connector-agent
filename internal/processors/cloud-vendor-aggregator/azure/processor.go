@@ -23,9 +23,6 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/azure"
-	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/services/functions"
-	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/services/storage"
-	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/azure/services/vm"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/config"
 
@@ -104,16 +101,12 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 }
 
 func (p *Processor) EventDataProcessor(activityLogEvent *azure.ActivityLogEventRecord) (commons.DataAdapter[*azure.ActivityLogEventRecord], error) {
-	switch {
-	case azure.EventIsForSource(activityLogEvent, azure.StorageAccountEventSource):
-		return storage.New(p.client), nil
-	case azure.EventIsForSource(activityLogEvent, azure.FunctionEventSource):
-		return functions.New(p.client), nil
-	case azure.EventIsForSource(activityLogEvent, azure.VirtualMachineEventSource):
-		return vm.New(p.client), nil
-	default:
+	source := azure.EventSourceFromEvent(activityLogEvent)
+	if source == "" {
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedEventSource, activityLogEvent.OperationName)
 	}
+
+	return NewClient(p.client, source), nil
 }
 
 func (p *Processor) GetDataFromLiveEvent(event entities.PipelineEvent) ([]byte, error) {

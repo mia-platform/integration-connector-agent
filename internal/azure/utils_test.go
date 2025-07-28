@@ -68,7 +68,7 @@ func TestEventIsForResourceType(t *testing.T) {
 				OperationName: "MICROSOFT.RESOURCES/TAGS/WRITE",
 				ResourceID:    "/SUBSCRIPTIONS/123/RESOURCEGROUPS/MYRESOURCEGROUP/PROVIDERS/MICROSOFT.WEB/SITES/MYFUNCTIONAPP",
 			},
-			resourceType: FunctionEventSource,
+			resourceType: WebSitesEventSource,
 			expected:     true,
 		},
 		"event for functions": {
@@ -76,7 +76,7 @@ func TestEventIsForResourceType(t *testing.T) {
 				OperationName: "MICROSOFT.WEB/SITES/WRITE",
 				ResourceID:    "/SUBSCRIPTIONS/123/RESOURCEGROUPS/MYRESOURCEGROUP/PROVIDERS/MICROSOFT.WEB/SITES/MYFUNCTIONAPP",
 			},
-			resourceType: FunctionEventSource,
+			resourceType: WebSitesEventSource,
 			expected:     true,
 		},
 		"delete event for functions": {
@@ -84,7 +84,7 @@ func TestEventIsForResourceType(t *testing.T) {
 				OperationName: "MICROSOFT.WEB/SITES/DELETE",
 				ResourceID:    "/SUBSCRIPTIONS/123/RESOURCEGROUPS/MYRESOURCEGROUP/PROVIDERS/MICROSOFT.WEB/SITES/MYFUNCTIONAPP",
 			},
-			resourceType: FunctionEventSource,
+			resourceType: WebSitesEventSource,
 			expected:     false,
 		},
 	}
