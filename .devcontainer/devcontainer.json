@@ -11,7 +11,7 @@
 		},
 		"ghcr.io/devcontainers/features/go:1": {
 			"version": "none",
-			"golangciLintVersion": "2.2.1"
+			"golangciLintVersion": "2.3.0"
 		},
 		"ghcr.io/devcontainers/features/git:1": {
 			"version": "latest",
