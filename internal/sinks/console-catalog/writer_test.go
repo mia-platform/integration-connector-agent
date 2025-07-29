@@ -42,7 +42,7 @@ func TestWriteData(t *testing.T) {
 		evt := &entities.Event{
 			OriginalRaw: []byte(`invalidata`),
 		}
-		require.ErrorContains(t, writer.WriteData(context.Background(), evt), "error creating catalog item")
+		require.ErrorContains(t, writer.WriteData(t.Context(), evt), "error creating catalog item")
 	})
 
 	t.Run("should invoke apply with correct item", func(t *testing.T) {
@@ -74,7 +74,7 @@ func TestWriteData(t *testing.T) {
 		evt := &entities.Event{
 			OriginalRaw: []byte(`{"name": "Test Name","assetId": "12345"}`),
 		}
-		err := writer.WriteData(context.Background(), evt)
+		err := writer.WriteData(t.Context(), evt)
 		require.NoError(t, err)
 	})
 
@@ -99,7 +99,7 @@ func TestWriteData(t *testing.T) {
 			},
 		}
 
-		err := writer.WriteData(context.Background(), &entities.Event{
+		err := writer.WriteData(t.Context(), &entities.Event{
 			OperationType: entities.Delete,
 			OriginalRaw:   []byte(`{"name": "The Name", "assetId": "the-asset-id"}`),
 		})
@@ -128,7 +128,7 @@ func TestWriteData(t *testing.T) {
 			},
 		}
 
-		err := writer.WriteData(context.Background(), &entities.Event{
+		err := writer.WriteData(t.Context(), &entities.Event{
 			OperationType: entities.Delete,
 			PrimaryKeys: entities.PkFields{
 				entities.PkField{

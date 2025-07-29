@@ -126,11 +126,7 @@ func (s *InventorySource) init(client gcpclient.GCP) error {
 	s.gcp = client
 
 	eventBuilder := gcppubsubevents.NewInventoryEventBuilder[gcppubsubevents.InventoryEvent]()
-	pubsub, err := newPubSub(s.ctx, s.log, s.pipeline, eventBuilder, s.gcp)
-	if err != nil {
-		return fmt.Errorf("failed to create pubsub consumer: %w", err)
-	}
-	s.pubsub = pubsub
+	s.pubsub = newPubSub(s.ctx, s.log, s.pipeline, eventBuilder, s.gcp)
 
 	if s.config.WebhookPath != "" {
 		s.log.WithField("webhookPath", s.config.WebhookPath).Info("Registering import webhook")

@@ -63,8 +63,7 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		consumer, err := newSQS(ctx, log, pg, e, client)
-		require.NoError(t, err)
+		consumer := newSQS(ctx, log, pg, e, client)
 		require.NotNil(t, consumer)
 
 		// Allow some time for the goroutine to start
@@ -105,8 +104,7 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		consumer, err := newSQS(ctx, log, pg, e, client)
-		require.NoError(t, err)
+		consumer := newSQS(ctx, log, pg, e, client)
 		require.NotNil(t, consumer)
 
 		// Allow some time for the goroutine to start
@@ -158,8 +156,7 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			},
 		}
 
-		consumer, err := newSQS(ctx, log, pg, e, client)
-		require.NoError(t, err)
+		consumer := newSQS(ctx, log, pg, e, client)
 		require.NotNil(t, consumer)
 
 		// Allow some time for the goroutine to start
@@ -171,14 +168,9 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 		defer handlerRefLock.Unlock()
 		require.NotNil(t, handlerRef)
 
-		err = handlerRef(ctx, dataFromPubSub)
-		require.NoError(t, err)
-
-		err = handlerRef(ctx, []byte("failing payload"))
-		require.Error(t, err, "failing to process payload")
-
-		err = handlerRef(ctx, dataFromPubSub)
-		require.NoError(t, err)
+		require.NoError(t, handlerRef(ctx, dataFromPubSub))
+		require.Error(t, handlerRef(ctx, []byte("failing payload")), "failing to process payload")
+		require.NoError(t, handlerRef(ctx, dataFromPubSub))
 
 		cancel()
 		time.Sleep(10 * time.Millisecond)

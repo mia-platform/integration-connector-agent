@@ -45,7 +45,7 @@ func TestDelete(t *testing.T) {
 				{Key: "key2", Value: "12345"},
 			},
 		}
-		err := client.Delete(context.Background(), event)
+		err := client.Delete(t.Context(), event)
 		require.NoError(t, err)
 	})
 
@@ -62,7 +62,7 @@ func TestDelete(t *testing.T) {
 				{Key: "key2", Value: "12345"},
 			},
 		}
-		err := client.Delete(context.Background(), event)
+		err := client.Delete(t.Context(), event)
 		require.Error(t, err)
 	})
 }
@@ -92,7 +92,7 @@ func TestUpsert(t *testing.T) {
 			},
 			OriginalRaw: []byte(`{"data": "some data"}`),
 		}
-		err := client.Upsert(context.Background(), event)
+		err := client.Upsert(t.Context(), event)
 		require.NoError(t, err)
 	})
 
@@ -112,7 +112,7 @@ func TestUpsert(t *testing.T) {
 			},
 			OriginalRaw: []byte(`This ain't valid JSON`),
 		}
-		err := client.Upsert(context.Background(), event)
+		err := client.Upsert(t.Context(), event)
 		require.ErrorContains(t, err, "invalid character")
 	})
 
@@ -141,7 +141,7 @@ func TestUpsert(t *testing.T) {
 			},
 			OriginalRaw: []byte(`{"data": "some data"}`),
 		}
-		err := client.Upsert(context.Background(), event)
+		err := client.Upsert(t.Context(), event)
 		require.ErrorContains(t, err, "some error from crud")
 	})
 }
@@ -173,7 +173,7 @@ func TestInsert(t *testing.T) {
 			},
 			OriginalRaw: []byte(`{"data": "some data"}`),
 		}
-		err := client.Insert(context.Background(), event)
+		err := client.Insert(t.Context(), event)
 		require.NoError(t, err)
 		require.True(t, invoked, "Create should have been called")
 	})
@@ -194,7 +194,7 @@ func TestInsert(t *testing.T) {
 			},
 			OriginalRaw: []byte(`This ain't valid JSON`),
 		}
-		err := client.Insert(context.Background(), event)
+		err := client.Insert(t.Context(), event)
 		require.ErrorContains(t, err, "invalid character")
 	})
 
@@ -223,7 +223,7 @@ func TestInsert(t *testing.T) {
 			},
 			OriginalRaw: []byte(`{"data": "some data"}`),
 		}
-		err := client.Insert(context.Background(), event)
+		err := client.Insert(t.Context(), event)
 		require.ErrorContains(t, err, "some error from crud")
 	})
 }

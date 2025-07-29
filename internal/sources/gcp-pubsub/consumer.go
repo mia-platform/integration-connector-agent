@@ -37,7 +37,7 @@ func newPubSub(
 	pipeline pipeline.IPipelineGroup,
 	eventBuilder entities.EventBuilder,
 	client gcpclient.GCP,
-) (*pubsubConsumer, error) {
+) *pubsubConsumer {
 	go func(ctx context.Context, log *logrus.Logger, client gcpclient.GCP) {
 		err := client.Listen(ctx, func(ctx context.Context, data []byte) error {
 			event, err := eventBuilder.GetPipelineEvent(ctx, data)
@@ -59,7 +59,7 @@ func newPubSub(
 		log:      log,
 		client:   client,
 		pipeline: pipeline,
-	}, nil
+	}
 }
 
 func (g *pubsubConsumer) Close() error {

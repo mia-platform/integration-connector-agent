@@ -1,45 +1,46 @@
 version: "2"
 run:
   build-tags:
-    - conformance
-    - integration
+  - conformance
+  - integration
 linters:
   default: none
   enable:
-    - asasalint
-    - asciicheck
-    - bidichk
-    - bodyclose
-    - copyloopvar
-    - decorder
-    - dogsled
-    - durationcheck
-    - errcheck
-    - errname
-    - fatcontext
-    - goconst
-    - gocritic
-    - gocyclo
-    - goheader
-    - gosec
-    - gosmopolitan
-    - govet
-    - ineffassign
-    - misspell
-    - mnd
-    - nolintlint
-    - prealloc
-    - predeclared
-    - revive
-    - staticcheck
-    - tagliatelle
-    - thelper
-    - unconvert
-    - unused
-    - usestdlibvars
-    - usetesting
-    - whitespace
-    - zerologlint
+  - asasalint
+  - asciicheck
+  - bidichk
+  - bodyclose
+  - copyloopvar
+  - decorder
+  - dogsled
+  - durationcheck
+  - errcheck
+  - errname
+  - fatcontext
+  - goconst
+  - gocritic
+  - gocyclo
+  - goheader
+  - gosec
+  - gosmopolitan
+  - govet
+  - ineffassign
+  - misspell
+  - mnd
+  - nolintlint
+  - prealloc
+  - predeclared
+  - revive
+  - staticcheck
+  - tagliatelle
+  - thelper
+  - unconvert
+  - unparam
+  - unused
+  - usestdlibvars
+  - usetesting
+  - whitespace
+  - zerologlint
   settings:
     gocyclo:
       min-complexity: 15
@@ -64,54 +65,64 @@ linters:
         limitations under the License.
     mnd:
       checks:
-        - case
-        - condition
-        - return
+      - case
+      - condition
+      - return
     revive:
       rules:
-        - name: var-naming
-          arguments:
-            - [] # allow list
-            - [] # block list
-            - - skip-package-name-checks: true # options
+      - name: var-naming
+        arguments:
+          - [] # allow list
+          - [] # block list
+          - - skip-package-name-checks: true # options
     tagliatelle:
       case:
         rules:
           yaml: camel
         use-field-name: true
+    unparam:
+      check-exported: false
     usetesting:
-      context-background: false
+      context-background: true
+      context-todo: true
+      os-chdir: true
+      os-mkdir-temp: true
+      os-setenv: true
+      os-temp-dir: true
+      os-create-temp: true
   exclusions:
     generated: lax
     presets:
-      - comments
-      - common-false-positives
-      - legacy
-      - std-error-handling
+    - comments
+    - common-false-positives
+    - legacy
+    - std-error-handling
     rules:
-      - linters:
-          - errcheck
-          - gosec
-          - tagliatelle
-        path: _test\.go
-      - linters:
-          - goconst
-        path: (.+)_test\.go
+    - linters:
+      - errcheck
+      - gocyclo
+      - gosec
+      - unparam
+      - tagliatelle
+      path: _test\.go
+    - linters:
+      - goconst
+      path: (.+)_test\.go
     paths:
-      - third_party$
-      - builtin$
-      - examples$
+    - third_party$
+    - builtin$
+    - examples$
 formatters:
   enable:
-    - gofmt
-    - goimports
+  - gofmt
+  - goimports
   settings:
     gofmt:
       simplify: true
   exclusions:
     generated: lax
     paths:
-      - third_party$
-      - builtin$
-      - examples$
-      - zz_generated
+    - third_party$
+    - builtin$
+    - examples$
+    - zz_generated

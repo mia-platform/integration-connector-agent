@@ -37,7 +37,7 @@ func newSQS(
 	pipeline pipeline.IPipelineGroup,
 	eventBuilder entities.EventBuilder,
 	client awsclient.AWS,
-) (*sqsConsumer, error) {
+) *sqsConsumer {
 	go func(ctx context.Context, log *logrus.Logger, client awsclient.AWS) {
 		err := client.Listen(ctx, func(ctx context.Context, data []byte) error {
 			event, err := eventBuilder.GetPipelineEvent(ctx, data)
@@ -63,7 +63,7 @@ func newSQS(
 		pipeline: pipeline,
 		log:      log,
 		client:   client,
-	}, nil
+	}
 }
 
 func (a *sqsConsumer) Close() error {

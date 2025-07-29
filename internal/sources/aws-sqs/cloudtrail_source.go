@@ -122,11 +122,7 @@ func (s *CloudTrailSource) init(client awsclient.AWS) error {
 	s.aws = client
 
 	eventBuilder := awssqsevents.NewCloudTrailEventBuilder[*awssqsevents.CloudTrailEvent]()
-	sqsConsumer, err := newSQS(s.ctx, s.log, s.pipeline, eventBuilder, s.aws)
-	if err != nil {
-		return fmt.Errorf("failed to create SQS consumer: %w", err)
-	}
-	s.sqs = sqsConsumer
+	s.sqs = newSQS(s.ctx, s.log, s.pipeline, eventBuilder, s.aws)
 
 	if s.config.WebhookPath != "" {
 		s.log.WithField("webhookPath", s.config.WebhookPath).Info("Registering import webhook")
