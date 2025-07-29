@@ -19,7 +19,7 @@
 package kafka
 
 import (
-	"context"
+	"strings"
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
@@ -32,17 +32,20 @@ import (
 )
 
 func TestKafkaConsumer(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
+
 	kafkaClusterID := testutils.RandomString(t, 6)
-	kafkaContainer, err := tcKafka.Run(ctx, "confluentinc/confluent-local:7.5.0", tcKafka.WithClusterID(kafkaClusterID))
-	testcontainers.CleanupContainer(t, kafkaContainer)
+	kafkaContainer, err := tcKafka.Run(ctx, "confluentinc/confluent-local:7.8.3", tcKafka.WithClusterID(kafkaClusterID))
 	require.NoError(t, err)
+
+	defer testcontainers.CleanupContainer(t, kafkaContainer)
 
 	servers, err := kafkaContainer.Brokers(ctx)
 	require.NoError(t, err)
 
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": servers,
+		"bootstrap.servers": strings.Join(servers, ","),
+		"group.id":          "testgroup",
 	})
 	require.NoError(t, err)
 
@@ -50,12 +53,12 @@ func TestKafkaConsumer(t *testing.T) {
 		sink, err := New[*entities.Event](&Config{
 			Topic: "test",
 			ProducerConfig: &kafka.ConfigMap{
-				"bootstrap.servers": servers,
+				"bootstrap.servers": strings.Join(servers, ","),
 			},
 		})
 		require.NoError(t, err)
 
-		err = sink.WriteData(context.Background(), &entities.Event{
+		err = sink.WriteData(t.Context(), &entities.Event{
 			OriginalRaw: []byte("test"),
 		})
 		require.NoError(t, err)
