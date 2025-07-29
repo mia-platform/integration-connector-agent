@@ -132,7 +132,7 @@ func setupIntegrationPipelines(ctx context.Context, log *logrus.Logger, cfgInteg
 	return pipelines, nil
 }
 
-func setupSinks(ctx context.Context, log *logrus.Logger, writers config.Sinks) ([]sinks.Sink[entities.PipelineEvent], error) {
+func setupSinks(ctx context.Context, log *logrus.Logger, writers config.Sinks) ([]sinks.Sink[entities.PipelineEvent], error) { //nolint: gocyclo
 	var w []sinks.Sink[entities.PipelineEvent]
 	for _, configuredWriter := range writers {
 		switch configuredWriter.Type {
