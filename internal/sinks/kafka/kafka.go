@@ -17,6 +17,7 @@ package kafka
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 
@@ -88,12 +89,17 @@ func (k *Sink[T]) WriteData(_ context.Context, data T) error {
 		return fmt.Errorf("failed to serialize primary keys: %w", err)
 	}
 
+	hasher := sha256.New()
+	if _, err := hasher.Write(keys); err != nil {
+		return fmt.Errorf("failed to hash primary keys: %w", err)
+	}
+
 	return k.producer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{
 			Topic:     &k.topic,
 			Partition: kafka.PartitionAny,
 		},
-		Value: data.Data(),
+		Key: hasher.Sum(nil),
 		Headers: []kafka.Header{
 			{
 				Key:   "operation_type",
@@ -103,8 +109,12 @@ func (k *Sink[T]) WriteData(_ context.Context, data T) error {
 				Key:   "event_type",
 				Value: []byte(data.GetType()),
 			},
+			{
+				Key:   "primary_key",
+				Value: keys,
+			},
 		},
-		Key: keys,
+		Value: data.Data(),
 	}, nil)
 }
 
