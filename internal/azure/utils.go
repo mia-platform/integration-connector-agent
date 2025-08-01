@@ -82,6 +82,8 @@ func EventSourceFromEvent(event *ActivityLogEventRecord) string {
 	eventSource := strings.ToLower(event.OperationName)
 	for _, source := range allSources {
 		switch eventSource {
+		case source + "/delete":
+			return source
 		case source + "/write":
 			return source
 		case TagsEventSource + "/write":

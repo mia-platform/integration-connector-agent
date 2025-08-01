@@ -79,17 +79,19 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 		return nil, entities.ErrDiscardEvent
 	}
 
+	source := azure.EventSourceFromEvent(activityLogEvent)
+	if source == "" {
+		err := fmt.Errorf("%w: %s", ErrUnsupportedEventSource, activityLogEvent.OperationName)
+		p.logger.WithError(err).Error("Failed to process Azure event")
+		return nil, fmt.Errorf("failed to process Azure event: %w", err)
+	}
+
 	if input.Operation() == entities.Delete {
 		p.logger.Debug("Delete operation detected, skipping processing")
 		return output, nil
 	}
 
-	adapter, err := p.EventDataProcessor(activityLogEvent)
-	if err != nil {
-		p.logger.WithError(err).Error("Failed to process Azure event")
-		return nil, fmt.Errorf("failed to process Azure event: %w", err)
-	}
-
+	adapter := NewClient(p.client, source)
 	newData, err := adapter.GetData(context.Background(), activityLogEvent)
 	if err != nil {
 		p.logger.WithError(err).Error("Failed to get data from Azure service")
@@ -98,15 +100,6 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 
 	output.WithData(newData)
 	return output, nil
-}
-
-func (p *Processor) EventDataProcessor(activityLogEvent *azure.ActivityLogEventRecord) (commons.DataAdapter[*azure.ActivityLogEventRecord], error) {
-	source := azure.EventSourceFromEvent(activityLogEvent)
-	if source == "" {
-		return nil, fmt.Errorf("%w: %s", ErrUnsupportedEventSource, activityLogEvent.OperationName)
-	}
-
-	return NewClient(p.client, source), nil
 }
 
 func (p *Processor) GetDataFromLiveEvent(event entities.PipelineEvent) ([]byte, error) {
