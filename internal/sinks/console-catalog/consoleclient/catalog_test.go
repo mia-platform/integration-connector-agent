@@ -198,7 +198,8 @@ func TestCatalogApply(t *testing.T) {
 
 	t.Run("correctly sets authorization header", func(t *testing.T) {
 		url := fmt.Sprintf("http://%s/", marketplaceBaseURL)
-		tknmngr := NewClientCredentialsTokenManager(url, "myClientId", "myClientSecret")
+		tknmngr, err := NewClientCredentialsTokenManager(url, "myClientId", "myClientSecret")
+		require.NoError(t, err)
 		client := New[testResource](url, tknmngr)
 
 		mockedItemID := "createdItemId"
@@ -259,7 +260,8 @@ func TestCatalogApply(t *testing.T) {
 
 	t.Run("correctly reuses non expired authorization header", func(t *testing.T) {
 		url := fmt.Sprintf("http://%s/", marketplaceBaseURL)
-		tknmngr := NewClientCredentialsTokenManager(url, "myClientId", "myClientSecret")
+		tknmngr, err := NewClientCredentialsTokenManager(url, "myClientId", "myClientSecret")
+		require.NoError(t, err)
 
 		client := New[testResource](url, tknmngr)
 

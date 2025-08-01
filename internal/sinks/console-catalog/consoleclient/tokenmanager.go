@@ -17,17 +17,16 @@ package consoleclient
 
 import (
 	"context"
-	"fmt"
 	"net/http"
+	"net/url"
 	"sync"
-	"time"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
 const (
-	m2mTokenPath = "api/m2m/oauth/token" //nolint:gosec // false positive for G101
+	m2mTokenPath = "/api/m2m/oauth/token" //nolint:gosec // false positive for G101
 )
 
 type TokenManager interface {
@@ -44,13 +43,20 @@ type ClientSecretBasic struct {
 	lock      sync.Mutex
 }
 
-func NewClientCredentialsTokenManager(baseURL, clientID, clientSecret string) *ClientSecretBasic {
+func NewClientCredentialsTokenManager(baseURL, clientID, clientSecret string) (*ClientSecretBasic, error) {
+	endpointURL, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	endpointURL.Path = m2mTokenPath
+	endpoint := endpointURL.String()
 	return &ClientSecretBasic{
 		BaseURL:      baseURL,
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
-		endpoint:     fmt.Sprintf("%s%s", baseURL, m2mTokenPath),
-	}
+		endpoint:     endpoint,
+	}, nil
 }
 
 func (t *ClientSecretBasic) SetAuthHeader(req *http.Request) error {
@@ -66,7 +72,7 @@ func (t *ClientSecretBasic) ensureCachedToken(ctx context.Context) error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
-	if t.cachedTkn != nil && !isExpired(t.cachedTkn.ExpiresIn) {
+	if t.cachedTkn.Valid() {
 		return nil
 	}
 
@@ -77,15 +83,11 @@ func (t *ClientSecretBasic) ensureCachedToken(ctx context.Context) error {
 		AuthStyle:    oauth2.AuthStyleInHeader,
 	}
 
-	tkn, err := config.TokenSource(ctx).Token()
+	tkn, err := config.Token(ctx)
 	if err != nil {
 		return err
 	}
 
 	t.cachedTkn = tkn
 	return nil
-}
-
-func isExpired(expiresIn int64) bool {
-	return time.Now().After(time.Now().Add(time.Duration(expiresIn) * time.Second))
 }

@@ -35,7 +35,11 @@ type Writer[T entities.PipelineEvent] struct {
 }
 
 func NewWriter[T entities.PipelineEvent](config *Config, log *logrus.Logger) (sinks.Sink[T], error) {
-	tokenManager := consoleclient.NewClientCredentialsTokenManager(config.URL, config.ClientID, config.ClientSecret.String())
+	tokenManager, err := consoleclient.NewClientCredentialsTokenManager(config.URL, config.ClientID, config.ClientSecret.String())
+	if err != nil {
+		return nil, fmt.Errorf("error creating catalog client: %w", err)
+	}
+
 	client := consoleclient.New[any](config.URL, tokenManager)
 	return &Writer[T]{
 		client: client,
