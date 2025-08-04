@@ -23,10 +23,12 @@ require (
 	github.com/getkin/kin-openapi v0.132.0
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/google/cel-go v0.22.1
+	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-plugin v1.6.3
 	github.com/mia-platform/glogger/v4 v4.2.0
 	github.com/mia-platform/go-crud-service-client v0.14.0
+	github.com/microsoft/azure-devops-go-api/azuredevops/v7 v7.1.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.18.0
@@ -88,7 +90,6 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.1 // indirect
 	github.com/h2non/gock v1.2.0 // indirect

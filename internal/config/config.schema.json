@@ -18,6 +18,7 @@
                   "github",
                   "gcp-inventory-pubsub",
                   "azure-activity-log-event-hub",
+                  "azure-devops",
                   "aws-cloudtrail-sqs"
                 ]
               },
