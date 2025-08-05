@@ -1,0 +1,137 @@
+// Copyright Mia srl
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package hmac
+
+import (
+	"testing"
+
+	"github.com/mia-platform/integration-connector-agent/internal/config"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestValidation(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		authentication webhook.Authentication
+		expectedErr    error
+	}{
+		"valid authentication": {
+			authentication: Authentication{
+				HeaderName: "X-Header-Name",
+				Secret:     config.SecretSource("It's a Secret to Everybody"),
+			},
+		},
+		"missing hader name": {
+			authentication: Authentication{
+				Secret: config.SecretSource("It's a Secret to Everybody"),
+			},
+			expectedErr: webhook.ErrInvalidWebhookAuthenticationConfig,
+		},
+		"missing secret": {
+			authentication: Authentication{
+				HeaderName: "X-Header-Name",
+			},
+			expectedErr: webhook.ErrInvalidWebhookAuthenticationConfig,
+		},
+	}
+
+	for testName, test := range testCases {
+		t.Run(testName, func(t *testing.T) {
+			err := test.authentication.Validate()
+			assert.ErrorIs(t, err, test.expectedErr)
+		})
+	}
+}
+
+func TestCheckHMACSignature(t *testing.T) {
+	t.Parallel()
+
+	webhookSignatureHeader := "X-Hub-Signature"
+	tests := map[string]struct {
+		request        fakeValidatingRequest
+		authentication webhook.Authentication
+		expectedErr    error
+	}{
+		"no header and no secret return no error": {
+			authentication: &Authentication{},
+		},
+		"missing secret return error": {
+			authentication: &Authentication{
+				HeaderName: webhookSignatureHeader,
+			},
+			request: fakeValidatingRequest{
+				headers: map[string][]string{
+					webhookSignatureHeader: {"signature"},
+				},
+			},
+			expectedErr: ErrSignatureHeaderButNoSecret,
+		},
+		"multiple header return error": {
+			authentication: &Authentication{
+				HeaderName: webhookSignatureHeader,
+				Secret:     "secret",
+			},
+			request: fakeValidatingRequest{
+				headers: map[string][]string{
+					webhookSignatureHeader: {"signature", "other"},
+				},
+			},
+			expectedErr: ErrMultipleSignatureHeaders,
+		},
+		"valid signature return nil": {
+			authentication: &Authentication{
+				HeaderName: webhookSignatureHeader,
+				Secret:     "It's a Secret to Everybody",
+			},
+			request: fakeValidatingRequest{
+				body: []byte("Hello World!"),
+				headers: map[string][]string{
+					webhookSignatureHeader: {"sha256=a4771c39fbe90f317c7824e83ddef3caae9cb3d976c214ace1f2937e133263c9"},
+				},
+			},
+		},
+		"invalid signature return error": {
+			authentication: &Authentication{
+				HeaderName: webhookSignatureHeader,
+				Secret:     "It's a Secret to Everybody",
+			},
+			request: fakeValidatingRequest{
+				body: []byte("tampered body"),
+				headers: map[string][]string{
+					webhookSignatureHeader: {"sha256=a4771c39fbe90f317c7824e83ddef3caae9cb3d976c214ace1f2937e133263c9"},
+				},
+			},
+			expectedErr: ErrInvalidSignature,
+		},
+	}
+
+	for testName, test := range tests {
+		t.Run(testName, func(t *testing.T) {
+			err := test.authentication.CheckSignature(test.request)
+			assert.Equal(t, test.expectedErr, err)
+		})
+	}
+}
+
+type fakeValidatingRequest struct {
+	headers map[string][]string
+	body    []byte
+}
+
+func (r fakeValidatingRequest) GetReqHeaders() map[string][]string { return r.headers }
+func (r fakeValidatingRequest) Body() []byte                       { return r.body }

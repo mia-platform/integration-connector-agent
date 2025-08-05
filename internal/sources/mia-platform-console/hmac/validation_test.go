@@ -13,30 +13,65 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package webhook
+package hmac
 
 import (
-	"errors"
 	"testing"
 
+	"github.com/mia-platform/integration-connector-agent/internal/config"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestValidation(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		authentication webhook.Authentication
+		expectedErr    error
+	}{
+		"valid authentication": {
+			authentication: Authentication{
+				HeaderName: "X-Header-Name",
+				Secret:     config.SecretSource("It's a Secret to Everybody"),
+			},
+		},
+		"missing hader name": {
+			authentication: Authentication{
+				Secret: config.SecretSource("It's a Secret to Everybody"),
+			},
+			expectedErr: webhook.ErrInvalidWebhookAuthenticationConfig,
+		},
+		"missing secret": {
+			authentication: Authentication{
+				HeaderName: "X-Header-Name",
+			},
+			expectedErr: webhook.ErrInvalidWebhookAuthenticationConfig,
+		},
+	}
+
+	for testName, test := range testCases {
+		t.Run(testName, func(t *testing.T) {
+			err := test.authentication.Validate()
+			assert.ErrorIs(t, err, test.expectedErr)
+		})
+	}
+}
 
 func TestCheckHMACSignature(t *testing.T) {
 	t.Parallel()
 
 	webhookSignatureHeader := "X-Hub-Signature"
-
 	tests := map[string]struct {
 		request        fakeValidatingRequest
-		authentication Authentication
+		authentication webhook.Authentication
 		expectedErr    error
 	}{
 		"no header and no secret return no error": {
-			authentication: &HMAC{},
+			authentication: &Authentication{},
 		},
 		"missing secret return error": {
-			authentication: &HMAC{
+			authentication: &Authentication{
 				HeaderName: webhookSignatureHeader,
 			},
 			request: fakeValidatingRequest{
@@ -44,17 +79,10 @@ func TestCheckHMACSignature(t *testing.T) {
 					webhookSignatureHeader: {"signature"},
 				},
 			},
-			expectedErr: errors.New(SignatureHeaderButNoSecretError),
-		},
-		"missing header return error": {
-			authentication: &HMAC{
-				HeaderName: webhookSignatureHeader,
-				Secret:     "secret",
-			},
-			expectedErr: errors.New(NoSignatureHeaderButSecretError),
+			expectedErr: ErrSignatureHeaderButNoSecret,
 		},
 		"multiple header return error": {
-			authentication: &HMAC{
+			authentication: &Authentication{
 				HeaderName: webhookSignatureHeader,
 				Secret:     "secret",
 			},
@@ -63,32 +91,32 @@ func TestCheckHMACSignature(t *testing.T) {
 					webhookSignatureHeader: {"signature", "other"},
 				},
 			},
-			expectedErr: errors.New(MultipleSignatureHeadersError),
+			expectedErr: ErrMultipleSignatureHeaders,
 		},
 		"valid signature return nil": {
-			authentication: &HMAC{
+			authentication: &Authentication{
 				HeaderName: webhookSignatureHeader,
 				Secret:     "It's a Secret to Everybody",
 			},
 			request: fakeValidatingRequest{
 				body: []byte("Hello World!"),
 				headers: map[string][]string{
-					webhookSignatureHeader: {"sha256=a4771c39fbe90f317c7824e83ddef3caae9cb3d976c214ace1f2937e133263c9"},
+					webhookSignatureHeader: {"sha256=b738052486cd876b13b5404a45479bd8caca05e5267c10d8436f1570547e3056"},
 				},
 			},
 		},
 		"invalid signature return error": {
-			authentication: &HMAC{
+			authentication: &Authentication{
 				HeaderName: webhookSignatureHeader,
 				Secret:     "It's a Secret to Everybody",
 			},
 			request: fakeValidatingRequest{
 				body: []byte("tampered body"),
 				headers: map[string][]string{
-					webhookSignatureHeader: {"sha256=a4771c39fbe90f317c7824e83ddef3caae9cb3d976c214ace1f2937e133263c9"},
+					webhookSignatureHeader: {"sha256=b738052486cd876b13b5404a45479bd8caca05e5267c10d8436f1570547e3056"},
 				},
 			},
-			expectedErr: errors.New(InvalidSignatureError),
+			expectedErr: ErrInvalidSignature,
 		},
 	}
 
@@ -105,10 +133,5 @@ type fakeValidatingRequest struct {
 	body    []byte
 }
 
-func (r fakeValidatingRequest) GetReqHeaders() map[string][]string {
-	return r.headers
-}
-
-func (r fakeValidatingRequest) Body() []byte {
-	return r.body
-}
+func (r fakeValidatingRequest) GetReqHeaders() map[string][]string { return r.headers }
+func (r fakeValidatingRequest) Body() []byte                       { return r.body }

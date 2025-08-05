@@ -16,11 +16,13 @@
 package github
 
 import (
+	"cmp"
 	"context"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook/hmac"
 
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
@@ -28,42 +30,23 @@ import (
 
 const (
 	defaultWebhookPath = "/github/webhook"
-
-	authHeaderName = "X-Hub-Signature-256"
+	authHeaderName     = "X-Hub-Signature-256"
 )
 
 type Config struct {
-	WebhookPath    string       `json:"webhookPath"`
-	Authentication webhook.HMAC `json:"authentication"`
+	webhook.Configuration[hmac.Authentication]
 }
 
 func (c *Config) Validate() error {
 	c.withDefault()
-
-	return nil
+	return c.Configuration.Validate()
 }
+
 func (c *Config) withDefault() *Config {
-	if c.WebhookPath == "" {
-		c.WebhookPath = defaultWebhookPath
-	}
-	if c.Authentication.HeaderName == "" {
-		c.Authentication.HeaderName = authHeaderName
-	}
-
+	c.WebhookPath = cmp.Or(c.WebhookPath, defaultWebhookPath)
+	c.Authentication.HeaderName = cmp.Or(c.Authentication.HeaderName, authHeaderName)
+	c.Events = cmp.Or(c.Events, SupportedEvents)
 	return c
-}
-
-func (c *Config) getWebhookConfig() (*webhook.Configuration, error) {
-	config := &webhook.Configuration{
-		WebhookPath:    c.WebhookPath,
-		Authentication: c.Authentication,
-		Events:         &SupportedEvents,
-	}
-
-	if err := config.Validate(); err != nil {
-		return nil, err
-	}
-	return config, nil
 }
 
 func AddSourceToRouter(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipelineGroup, router *swagger.Router[fiber.Handler, fiber.Router]) error {
@@ -71,9 +54,6 @@ func AddSourceToRouter(ctx context.Context, cfg config.GenericConfig, pg pipelin
 	if err != nil {
 		return err
 	}
-	webhookConfig, err := githubConfig.getWebhookConfig()
-	if err != nil {
-		return err
-	}
-	return webhook.SetupService(ctx, router, webhookConfig, pg)
+
+	return webhook.SetupService(ctx, router, githubConfig.Configuration, pg)
 }

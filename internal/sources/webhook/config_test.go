@@ -16,89 +16,121 @@
 package webhook
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestValidateConfiguration(t *testing.T) {
-	testCases := map[string]struct {
-		config Configuration
+	t.Parallel()
 
-		expectedErr string
+	testCases := map[string]struct {
+		config      Configuration[*fakeAuthentication]
+		expectedErr error
 	}{
-		"empty configuration": {
-			expectedErr: "webhook path is required",
-		},
-		"empty events": {
-			config: Configuration{
-				WebhookPath: "/path",
-			},
-			expectedErr: "events are empty",
-		},
-		"ok": {
-			config: Configuration{
+		"valid config without authorization": {
+			config: Configuration[*fakeAuthentication]{
 				WebhookPath: "/path",
 				Events:      &Events{},
 			},
+		},
+		"valid config with authorization": {
+			config: Configuration[*fakeAuthentication]{
+				WebhookPath:    "/path",
+				Events:         &Events{},
+				Authentication: &fakeAuthentication{},
+			},
+		},
+		"empty configuration": {
+			expectedErr: ErrWebhookPathRequired,
+		},
+		"empty events": {
+			config: Configuration[*fakeAuthentication]{
+				WebhookPath: "/path",
+			},
+			expectedErr: ErrSupportedEventsRequired,
+		},
+		"invalid authorization": {
+			config: Configuration[*fakeAuthentication]{
+				WebhookPath: "/path",
+				Events:      &Events{},
+				Authentication: &fakeAuthentication{
+					validationErr: ErrInvalidWebhookAuthenticationConfig,
+				},
+			},
+			expectedErr: ErrInvalidWebhookAuthenticationConfig,
 		},
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			err := tc.config.Validate()
-			if tc.expectedErr != "" {
-				require.EqualError(t, err, tc.expectedErr)
+			if tc.expectedErr != nil {
+				assert.ErrorIs(t, err, tc.expectedErr)
 				return
 			}
-			require.NoError(t, err)
+
+			assert.NoError(t, err)
 		})
 	}
 }
 
-type fakeRequest struct {
-	body    []byte
-	headers map[string][]string
-}
-
-func (f fakeRequest) GetReqHeaders() map[string][]string {
-	return f.headers
-}
-func (f fakeRequest) Body() []byte {
-	return f.body
-}
-
 func TestCheckSignature(t *testing.T) {
-	testCases := map[string]struct {
-		config Configuration
-		req    ValidatingRequest
+	t.Parallel()
 
-		expectedErr string
+	invalidAuhtErr := fmt.Errorf("invalid authentication")
+	testCases := map[string]struct {
+		config      Configuration[*fakeAuthentication]
+		req         ValidatingRequest
+		expectedErr error
 	}{
 		"no authentication": {},
 		"request is nil": {
-			config: Configuration{
-				Authentication: &HMAC{},
+			config: Configuration[*fakeAuthentication]{
+				Authentication: &fakeAuthentication{},
 			},
-			expectedErr: "invalid webhook authentication configuration: request is nil",
+			expectedErr: ErrMissingRequest,
 		},
-		"ok": {
-			config: Configuration{},
-			req: &fakeRequest{
-				body:    []byte("body"),
-				headers: map[string][]string{"header": {"sha256=signature"}},
+		"valid authentication": {
+			config: Configuration[*fakeAuthentication]{
+				Authentication: &fakeAuthentication{},
 			},
+			req: &fakeRequest{},
+		},
+		"invalid authentication": {
+			config: Configuration[*fakeAuthentication]{
+				Authentication: &fakeAuthentication{
+					checkErr: invalidAuhtErr,
+				},
+			},
+			req:         &fakeRequest{},
+			expectedErr: invalidAuhtErr,
 		},
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			err := tc.config.CheckSignature(tc.req)
-			if tc.expectedErr != "" {
-				require.EqualError(t, err, tc.expectedErr)
+			if tc.expectedErr != nil {
+				assert.ErrorIs(t, err, tc.expectedErr)
 				return
 			}
-			require.NoError(t, err)
+
+			assert.NoError(t, err)
 		})
 	}
 }
+
+type fakeRequest struct{}
+
+func (f fakeRequest) GetReqHeaders() map[string][]string { return map[string][]string{} }
+func (f fakeRequest) Body() []byte                       { return nil }
+
+type fakeAuthentication struct {
+	checkErr      error
+	validationErr error
+}
+
+func (f *fakeAuthentication) CheckSignature(req ValidatingRequest) error { return f.checkErr }
+func (f *fakeAuthentication) Validate() error                            { return f.validationErr }

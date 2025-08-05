@@ -27,7 +27,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/awsclient"
 	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook/hmac"
 	"github.com/mia-platform/integration-connector-agent/internal/testutils"
 
 	"github.com/sirupsen/logrus/hooks/test"
@@ -95,7 +95,7 @@ func TestImportWebhook(t *testing.T) {
 			app, router := testutils.GetTestRouter(t)
 			config := &CloudTrailSourceConfig{
 				WebhookPath: "/awssqs/import",
-				Authentication: webhook.HMAC{
+				Authentication: hmac.Authentication{
 					HeaderName: "X-Hmac-Signature",
 					Secret:     "It's a Secret to Everybody",
 				},
@@ -121,7 +121,7 @@ func TestImportWebhook(t *testing.T) {
 			app, router := testutils.GetTestRouter(t)
 			config := &CloudTrailSourceConfig{
 				WebhookPath: "/awssqs/import",
-				Authentication: webhook.HMAC{
+				Authentication: hmac.Authentication{
 					HeaderName: "X-Hmac-Signature",
 					Secret:     "It's a Secret to Everybody",
 				},

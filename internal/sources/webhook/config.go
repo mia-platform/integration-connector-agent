@@ -17,11 +17,15 @@ package webhook
 
 import (
 	"errors"
-	"fmt"
+
+	"github.com/mia-platform/integration-connector-agent/internal/utils"
 )
 
 var (
-	ErrWebhookPathRequired = errors.New("webhook path is required")
+	ErrWebhookPathRequired                = errors.New("webhook path is required")
+	ErrSupportedEventsRequired            = errors.New("supported events are required")
+	ErrInvalidWebhookAuthenticationConfig = errors.New("invalid webhook authentication configuration")
+	ErrMissingRequest                     = errors.New("missing request for webhook authentication check")
 )
 
 type ValidatingRequest interface {
@@ -31,35 +35,44 @@ type ValidatingRequest interface {
 
 type Authentication interface {
 	CheckSignature(req ValidatingRequest) error
+	Validate() error
 }
 
 // ContentTypeConfig allows configuring how to extract the payload field for a given content-type
 type ContentTypeConfig map[string]string
 
-// Configuration is the representation of the configuration for a Jira Cloud webhook
-type Configuration struct {
+type Configuration[T Authentication] struct {
 	// Secret the webhook secret configuration for validating the data received
-	Authentication Authentication `json:"authentication"`
-	WebhookPath    string         `json:"webhookPath"`
+	Authentication T      `json:"authentication"`
+	WebhookPath    string `json:"webhookPath"`
 
-	Events *Events `json:"events,omitempty"`
+	Events *Events `json:"-"`
 }
 
-func (c *Configuration) Validate() error {
+func (c *Configuration[T]) Validate() error {
 	if c.WebhookPath == "" {
 		return ErrWebhookPathRequired
 	}
 
 	if c.Events == nil {
-		return fmt.Errorf("events are empty")
+		return ErrSupportedEventsRequired
+	}
+
+	if !utils.IsNil(c.Authentication) {
+		return c.Authentication.Validate()
 	}
 
 	return nil
 }
 
-func (c *Configuration) CheckSignature(req ValidatingRequest) error {
-	if c == nil || c.Authentication == nil {
+func (c *Configuration[T]) CheckSignature(req ValidatingRequest) error {
+	if c == nil || utils.IsNil(c.Authentication) {
 		return nil
 	}
+
+	if req == nil {
+		return ErrMissingRequest
+	}
+
 	return c.Authentication.CheckSignature(req)
 }

@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package webhook
+package hmac
 
 import (
 	"crypto/hmac"
@@ -24,44 +24,50 @@ import (
 	"strings"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
 )
 
-const (
-	InvalidWebhookAuthenticationConfig = "invalid webhook authentication configuration"
-	SignatureHeaderButNoSecretError    = "secret not configured for validating webhook signature"
-	NoSignatureHeaderButSecretError    = "missing webhook signature"
-	MultipleSignatureHeadersError      = "multiple signature headers found"
-	InvalidSignatureError              = "invalid signature in request"
+var (
+	ErrSignatureHeaderButNoSecret = errors.New("secret not configured for validating webhook signature")
+	ErrMultipleSignatureHeaders   = errors.New("multiple signature headers found")
+	ErrInvalidSignature           = errors.New("invalid signature in request")
 )
 
-type HMAC struct {
+var _ webhook.Authentication = Authentication{}
+
+type Authentication struct {
 	Secret     config.SecretSource `json:"secret"`
 	HeaderName string              `json:"headerName"`
 }
 
 // CheckSignature will read the webhook signature header and the given secret for validating the webhook
-// payload. It will fail if there is a mismatch in the signatures and if a signature or a secret is provided and the
-// other is not present.
-func (h HMAC) CheckSignature(req ValidatingRequest) error {
-	if req == nil {
-		return fmt.Errorf("%s: request is nil", InvalidWebhookAuthenticationConfig)
-	}
-	secret := h.Secret.String()
-	if secret != "" && h.HeaderName == "" {
-		return fmt.Errorf("%s: secret is set but headerName not present", InvalidWebhookAuthenticationConfig)
-	}
-
-	headerValues, err := GetHeaderValues(req, h.HeaderName, secret)
-	if err != nil {
+// payload. It will fail if there is a mismatch in the signatures
+func (a Authentication) CheckSignature(req webhook.ValidatingRequest) error {
+	secret := a.Secret.String()
+	signatureValue, err := hmacSignatureHeaderValue(req, a.HeaderName, secret)
+	if err != nil || signatureValue == "" {
 		return err
 	}
-	if headerValues == nil {
-		return nil
+
+	signature, _ := strings.CutPrefix(signatureValue, "sha256=")
+	if !validateBody(req.Body(), secret, signature) {
+		return ErrInvalidSignature
 	}
 
-	signature, _ := strings.CutPrefix(headerValues[0], "sha256=")
-	if !validateBody(req.Body(), secret, signature) {
-		return errors.New(InvalidSignatureError)
+	return nil
+}
+
+// Validate checks if the HMAC configuration is valid. It requires that both secret and headerName are set
+func (a Authentication) Validate() error {
+	switch {
+	case a.HeaderName == "":
+		if a.Secret.String() != "" {
+			return fmt.Errorf("%w: headerName not present but secret is set", webhook.ErrInvalidWebhookAuthenticationConfig)
+		}
+	case a.Secret.String() == "":
+		if a.HeaderName != "" {
+			return fmt.Errorf("%w: secret not present but headerName is set", webhook.ErrInvalidWebhookAuthenticationConfig)
+		}
 	}
 
 	return nil
@@ -81,18 +87,16 @@ func validateBody(bodyData []byte, secret, expectedSignature string) bool {
 	return hmac.Equal(generatedMAC, expectedMac)
 }
 
-func GetHeaderValues(req ValidatingRequest, headerName, secret string) ([]string, error) {
+func hmacSignatureHeaderValue(req webhook.ValidatingRequest, headerName, secret string) (string, error) {
 	headerValues := req.GetReqHeaders()[headerName]
 	switch {
 	case len(headerValues) == 0 && len(secret) == 0:
-		return nil, nil
-	case len(headerValues) == 0 && len(secret) != 0:
-		return nil, errors.New(NoSignatureHeaderButSecretError)
+		return "", nil
 	case len(headerValues) != 0 && len(secret) == 0:
-		return nil, errors.New(SignatureHeaderButNoSecretError)
+		return "", ErrSignatureHeaderButNoSecret
 	case len(headerValues) > 1:
-		return nil, errors.New(MultipleSignatureHeadersError)
+		return "", ErrMultipleSignatureHeaders
 	}
 
-	return headerValues, nil
+	return headerValues[0], nil
 }
