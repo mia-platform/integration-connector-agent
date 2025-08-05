@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package hmac
+package basic
 
 import (
 	"testing"
@@ -31,19 +31,23 @@ func TestValidation(t *testing.T) {
 	}{
 		"valid authentication": {
 			authentication: Authentication{
-				HeaderName: "X-Header-Name",
-				Secret:     "It's a Secret to Everybody",
+				Username: "testuser",
+				Secret:   "secret",
 			},
 		},
-		"missing hader name": {
+		"empty config is valid": {
+			authentication: Authentication{},
+		},
+		"missing username is valid": {
 			authentication: Authentication{
-				Secret: "It's a Secret to Everybody",
+				Username: "",
+				Secret:   "secret",
 			},
-			expectedErr: webhook.ErrInvalidWebhookAuthenticationConfig,
 		},
 		"missing secret": {
 			authentication: Authentication{
-				HeaderName: "X-Header-Name",
+				Username: "testuser",
+				Secret:   "",
 			},
 			expectedErr: webhook.ErrInvalidWebhookAuthenticationConfig,
 		},
@@ -57,72 +61,77 @@ func TestValidation(t *testing.T) {
 	}
 }
 
-func TestCheckHMACSignature(t *testing.T) {
+func TestChekBasicAuth(t *testing.T) {
 	t.Parallel()
 
-	webhookSignatureHeader := "X-Hub-Signature"
-	tests := map[string]struct {
+	testCases := map[string]struct {
 		request        fakeValidatingRequest
 		authentication webhook.Authentication
 		expectedErr    error
 	}{
-		"no header and no secret return no error": {
-			authentication: &Authentication{},
-		},
-		"missing secret return error": {
+		"valid basic auth return nil": {
 			authentication: &Authentication{
-				HeaderName: webhookSignatureHeader,
+				Username: "testuser",
+				Secret:   "secret",
 			},
 			request: fakeValidatingRequest{
 				headers: map[string][]string{
-					webhookSignatureHeader: {"signature"},
-				},
-			},
-			expectedErr: ErrSignatureHeaderButNoSecret,
-		},
-		"multiple header return error": {
-			authentication: &Authentication{
-				HeaderName: webhookSignatureHeader,
-				Secret:     "secret",
-			},
-			request: fakeValidatingRequest{
-				headers: map[string][]string{
-					webhookSignatureHeader: {"signature", "other"},
-				},
-			},
-			expectedErr: ErrMultipleSignatureHeaders,
-		},
-		"valid signature return nil": {
-			authentication: &Authentication{
-				HeaderName: webhookSignatureHeader,
-				Secret:     "It's a Secret to Everybody",
-			},
-			request: fakeValidatingRequest{
-				body: []byte("Hello World!"),
-				headers: map[string][]string{
-					webhookSignatureHeader: {"sha256=a4771c39fbe90f317c7824e83ddef3caae9cb3d976c214ace1f2937e133263c9"},
+					"Authorization": {"Basic dGVzdHVzZXI6c2VjcmV0"},
 				},
 			},
 		},
-		"invalid signature return error": {
+		"invalid auth return error": {
 			authentication: &Authentication{
-				HeaderName: webhookSignatureHeader,
-				Secret:     "It's a Secret to Everybody",
+				Username: "",
+				Secret:   "secret",
 			},
 			request: fakeValidatingRequest{
-				body: []byte("tampered body"),
 				headers: map[string][]string{
-					webhookSignatureHeader: {"sha256=a4771c39fbe90f317c7824e83ddef3caae9cb3d976c214ace1f2937e133263c9"},
+					"Authorization": {"Basic dGVzdHVzZXI6c2VjcmV0"},
 				},
 			},
-			expectedErr: ErrInvalidSignature,
+			expectedErr: ErrUnauthorized,
+		},
+		"multiple auth headers return error": {
+			authentication: &Authentication{
+				Username: "testuser",
+				Secret:   "secret",
+			},
+			request: fakeValidatingRequest{
+				headers: map[string][]string{
+					"Authorization": {"Basic dGVzdHVzZXI6c2VjcmV0", "Basic dGVzdHVzZXI6c2VjcmV0"},
+				},
+			},
+			expectedErr: ErrMultipleAuthenticationHeadersFound,
+		},
+		"different authorization type return error": {
+			authentication: &Authentication{
+				Username: "testuser",
+				Secret:   "secret",
+			},
+			request: fakeValidatingRequest{
+				headers: map[string][]string{
+					"Authorization": {"Bearer dGVzdHVzZXI6c2VjcmV0"},
+				},
+			},
+			expectedErr: ErrInvalidAuthenticationType,
+		},
+		"no authorization header return error": {
+			authentication: &Authentication{
+				Username: "testuser",
+				Secret:   "secret",
+			},
+			request: fakeValidatingRequest{
+				headers: map[string][]string{},
+			},
+			expectedErr: ErrNoAuthenticationHeaderFound,
 		},
 	}
 
-	for testName, test := range tests {
+	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
 			err := test.authentication.CheckSignature(test.request)
-			assert.Equal(t, test.expectedErr, err)
+			assert.ErrorIs(t, err, test.expectedErr)
 		})
 	}
 }
