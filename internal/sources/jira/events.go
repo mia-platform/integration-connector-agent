@@ -47,7 +47,7 @@ const (
 	versionEventIDPath   = "version.id"
 )
 
-var DefaultSupportedEvents = webhook.Events{
+var SupportedEvents = &webhook.Events{
 	Supported: map[string]webhook.Event{
 		issueCreated: {
 			Operation:  entities.Write,
