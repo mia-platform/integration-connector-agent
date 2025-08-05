@@ -16,11 +16,13 @@
 package jira
 
 import (
+	"cmp"
 	"context"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook/hmac"
 
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
@@ -34,37 +36,19 @@ const (
 )
 
 type Config struct {
-	Authentication webhook.HMAC `json:"authentication"`
-	WebhookPath    string       `json:"webhookPath"`
-}
-
-func (c *Config) withDefault() *Config {
-	if c.WebhookPath == "" {
-		c.WebhookPath = defaultWebhookPath
-	}
-	if c.Authentication.HeaderName == "" {
-		c.Authentication.HeaderName = authHeaderName
-	}
-
-	return c
+	webhook.Configuration[hmac.Authentication]
 }
 
 func (c *Config) Validate() error {
 	c.withDefault()
-
-	return nil
+	return c.Configuration.Validate()
 }
 
-func (c *Config) getWebhookConfig() (*webhook.Configuration, error) {
-	webhookConfig := &webhook.Configuration{
-		WebhookPath:    c.WebhookPath,
-		Authentication: c.Authentication,
-		Events:         &DefaultSupportedEvents,
-	}
-	if err := webhookConfig.Validate(); err != nil {
-		return nil, err
-	}
-	return webhookConfig, nil
+func (c *Config) withDefault() *Config {
+	c.WebhookPath = cmp.Or(c.WebhookPath, defaultWebhookPath)
+	c.Authentication.HeaderName = cmp.Or(c.Authentication.HeaderName, authHeaderName)
+	c.Events = cmp.Or(c.Events, SupportedEvents)
+	return c
 }
 
 func AddSourceToRouter(
@@ -78,10 +62,5 @@ func AddSourceToRouter(
 		return err
 	}
 
-	webhookConfig, err := jiraConfig.getWebhookConfig()
-	if err != nil {
-		return err
-	}
-
-	return webhook.SetupService(ctx, router, webhookConfig, pg)
+	return webhook.SetupService(ctx, router, jiraConfig.Configuration, pg)
 }

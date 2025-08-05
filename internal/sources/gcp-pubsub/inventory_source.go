@@ -26,7 +26,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
 	gcppubsubevents "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/events"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/gcpclient"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook/hmac"
 	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	swagger "github.com/davidebianchi/gswagger"
@@ -41,8 +41,8 @@ type InventorySourceConfig struct {
 	AckDeadlineSeconds int                 `json:"ackDeadlineSeconds,omitempty"`
 	CredentialsJSON    config.SecretSource `json:"credentialsJson,omitempty"`
 
-	WebhookPath    string       `json:"webhookPath,omitempty"`
-	Authentication webhook.HMAC `json:"authentication"`
+	WebhookPath    string              `json:"webhookPath,omitempty"`
+	Authentication hmac.Authentication `json:"authentication"`
 }
 
 func (c *InventorySourceConfig) Validate() error {
@@ -56,7 +56,7 @@ func (c *InventorySourceConfig) Validate() error {
 		return fmt.Errorf("subscriptionId must be provided")
 	}
 
-	return nil
+	return c.Authentication.Validate()
 }
 
 type InventorySource struct {

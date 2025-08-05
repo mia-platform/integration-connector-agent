@@ -25,7 +25,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook/hmac"
 	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	swagger "github.com/davidebianchi/gswagger"
@@ -40,15 +40,16 @@ var (
 )
 
 const (
-	defaultWebhookPath = "/azure-devops/webhook"
+	defaultImportWebhookPath = "/azure-devops/webhook/import"
+	defaultAzureWebhookPath  = "/azure-devops/webhook"
 )
 
 type Config struct {
 	AzureDevOpsOrganizationURL     string              `json:"azureDevOpsOrganizationUrl"`
 	AzureDevOpsPersonalAccessToken config.SecretSource `json:"azureDevOpsPersonalAccessToken"`
 
-	Authentication *webhook.HMAC `json:"authentication,omitempty"`
-	WebhookPath    string        `json:"webhookPath"`
+	Authentication hmac.Authentication `json:"authentication,omitempty"`
+	WebhookPath    string              `json:"webhookPath"`
 }
 
 func (c *Config) Validate() error {
@@ -60,7 +61,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("%w: %s", ErrMissingRequiredField, "azureDevOpsPersonalAccessToken")
 	}
 	if c.WebhookPath == "" {
-		c.WebhookPath = defaultWebhookPath
+		c.WebhookPath = defaultImportWebhookPath
 	}
 
 	return nil

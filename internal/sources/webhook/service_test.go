@@ -18,6 +18,7 @@ package webhook
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -39,19 +40,20 @@ import (
 )
 
 func TestSetupServiceWithConfig(t *testing.T) {
+	t.Parallel()
 	logger, _ := test.NewNullLogger()
 	defaultWebhookEndpoint := "/webhook-path"
 
 	type testItem struct {
-		config *Configuration
-		req    func(t *testing.T) *http.Request
-
+		config             Configuration[*fakeAuthentication]
+		req                func(t *testing.T) *http.Request
 		expectedStatusCode int
 		expectedBody       func(t *testing.T, body io.ReadCloser)
 	}
-	tests := map[string]testItem{
+
+	testCases := map[string]testItem{
 		"expose the correct API - empty body": {
-			config: &Configuration{
+			config: Configuration[*fakeAuthentication]{
 				WebhookPath: defaultWebhookEndpoint,
 				Events:      &Events{},
 			},
@@ -62,13 +64,10 @@ func TestSetupServiceWithConfig(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 		},
 		"fails validation": {
-			config: &Configuration{
-				WebhookPath: defaultWebhookEndpoint,
-				Authentication: HMAC{
-					Secret:     "SECRET",
-					HeaderName: "X-Hub-Signature",
-				},
-				Events: &Events{},
+			config: Configuration[*fakeAuthentication]{
+				WebhookPath:    defaultWebhookEndpoint,
+				Authentication: &fakeAuthentication{checkErr: errors.New("failed to authenticate")},
+				Events:         &Events{},
 			},
 			req: func(t *testing.T) *http.Request {
 				t.Helper()
@@ -79,14 +78,14 @@ func TestSetupServiceWithConfig(t *testing.T) {
 				t.Helper()
 				expectedBody := utils.HTTPError{}
 				require.NoError(t, json.NewDecoder(body).Decode(&expectedBody))
-				require.Equal(t, utils.HTTPError{
+				assert.Equal(t, utils.HTTPError{
 					Error:   "Validation Error",
-					Message: NoSignatureHeaderButSecretError,
+					Message: "failed to authenticate",
 				}, expectedBody)
 			},
 		},
 		"expose the correct default path API": {
-			config: &Configuration{
+			config: Configuration[*fakeAuthentication]{
 				WebhookPath: defaultWebhookEndpoint,
 				Events: &Events{
 					Supported: map[string]Event{
@@ -117,7 +116,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 		},
 		"handle x-www-form-urlencoded payload": {
-			config: &Configuration{
+			config: Configuration[*fakeAuthentication]{
 				WebhookPath: defaultWebhookEndpoint,
 				Events: &Events{
 					Supported: map[string]Event{
@@ -148,7 +147,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 		},
 	}
 
-	for name, test := range tests {
+	for name, test := range testCases {
 		t.Run(name, func(t *testing.T) {
 			app, router := testutils.GetTestRouter(t)
 
@@ -166,7 +165,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 			require.NoError(t, err)
 			defer res.Body.Close()
 
-			require.Equal(t, test.expectedStatusCode, res.StatusCode)
+			assert.Equal(t, test.expectedStatusCode, res.StatusCode)
 
 			if test.expectedBody != nil {
 				test.expectedBody(t, res.Body)
@@ -176,8 +175,9 @@ func TestSetupServiceWithConfig(t *testing.T) {
 }
 
 func TestExtractBodyFromContentType(t *testing.T) {
-	tests := []struct {
-		name        string
+	t.Parallel()
+
+	testCases := map[string]struct {
 		contentType string
 		body        string
 		events      *Events
@@ -185,29 +185,25 @@ func TestExtractBodyFromContentType(t *testing.T) {
 		expectedBody  []byte
 		expectedError error
 	}{
-		{
-			name:          "JSON content type with valid JSON body",
+		"JSON content type with valid JSON body": {
 			contentType:   "application/json",
 			body:          `{"key": "value", "number": 123}`,
 			expectedBody:  []byte(`{"key": "value", "number": 123}`),
 			expectedError: nil,
 		},
-		{
-			name:          "JSON content type with charset parameter",
+		"JSON content type with charset parameter": {
 			contentType:   "application/json; charset=utf-8",
 			body:          `{"test": true}`,
 			expectedBody:  []byte(`{"test": true}`),
 			expectedError: nil,
 		},
-		{
-			name:          "JSON content type with trailing semicolon",
+		"JSON content type with trailing semicolon": {
 			contentType:   "application/json;",
 			body:          `{"test": true}`,
 			expectedBody:  []byte(`{"test": true}`),
 			expectedError: nil,
 		},
-		{
-			name:        "Form urlencoded content type with payload with json content",
+		"Form urlencoded content type with payload with json content": {
 			contentType: "application/x-www-form-urlencoded",
 			body:        "payload=%7B%22key1%22%3A%22value1%22%2C%22key2%22%3A%22value2%22%7D",
 			events: &Events{
@@ -218,55 +214,49 @@ func TestExtractBodyFromContentType(t *testing.T) {
 			expectedBody:  []byte(`{"key1":"value1","key2":"value2"}`),
 			expectedError: nil,
 		},
-		{
-			name:        "Unknown content type raise error",
+		"Unknown content type raise error": {
 			contentType: "text/plain",
 			body:        "key=value",
 			expectedBody: func() []byte {
 				expected := map[string]any{
 					"key": "value",
 				}
-				b, _ := json.Marshal(expected)
+				b, err := json.Marshal(expected)
+				require.NoError(t, err)
 				return b
 			}(),
 			expectedError: ErrUnsupportedContentType,
 		},
-		{
-			name:          "Invalid content type header",
+		"Invalid content type header": {
 			contentType:   "invalid/content-type-header-with-bad-chars-<>",
 			body:          "test",
 			expectedBody:  nil,
 			expectedError: ErrFailedToParseContentType,
 		},
-		{
-			name:         "empty content type returns body as is",
+		"empty content type returns body as is": {
 			contentType:  "",
 			body:         `{}`,
 			expectedBody: []byte(`{}`),
 		},
-		{
-			name:          "Empty body with JSON content type",
+		"Empty body with JSON content type": {
 			contentType:   "application/json",
 			body:          "",
 			expectedBody:  []byte(""),
 			expectedError: nil,
 		},
-		{
-			name:          "JSON content type with empty object",
+		"JSON content type with empty object": {
 			contentType:   "application/json",
 			body:          `{}`,
 			expectedBody:  []byte(`{}`),
 			expectedError: nil,
 		},
-		{
-			name:          "JSON content type with array",
+		"JSON content type with array": {
 			contentType:   "application/json",
 			body:          `[1,2,3]`,
 			expectedBody:  []byte(`[1,2,3]`),
 			expectedError: nil,
 		},
-		{
-			name:        "Malformed form body",
+		"Malformed form body": {
 			contentType: "application/x-www-form-urlencoded",
 			events: &Events{
 				PayloadKey: ContentTypeConfig{
@@ -278,16 +268,16 @@ func TestExtractBodyFromContentType(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for testName, test := range testCases {
+		t.Run(testName, func(t *testing.T) {
 			app := fiber.New()
 
 			var actualBody []byte
 			var actualError error
 
 			var events = &Events{}
-			if tt.events != nil {
-				events = tt.events
+			if test.events != nil {
+				events = test.events
 			}
 
 			app.Post("/test", func(c *fiber.Ctx) error {
@@ -296,29 +286,27 @@ func TestExtractBodyFromContentType(t *testing.T) {
 			})
 
 			var reqBody io.Reader
-			if tt.body != "" {
-				reqBody = strings.NewReader(tt.body)
+			if test.body != "" {
+				reqBody = strings.NewReader(test.body)
 			}
 
-			req, err := http.NewRequest(http.MethodPost, "/test", reqBody)
-			require.NoError(t, err)
-
-			if tt.contentType != "" {
-				req.Header.Set("Content-Type", tt.contentType)
+			req := httptest.NewRequest(http.MethodPost, "/test", reqBody)
+			if test.contentType != "" {
+				req.Header.Set("Content-Type", test.contentType)
 			}
 
 			res, err := app.Test(req)
 			require.NoError(t, err)
 			defer res.Body.Close()
 
-			if tt.expectedError != nil {
+			if test.expectedError != nil {
 				require.Error(t, actualError)
-				assert.ErrorIs(t, actualError, tt.expectedError)
+				assert.ErrorIs(t, actualError, test.expectedError)
 				assert.Nil(t, actualBody)
 			} else {
-				require.NoError(t, actualError)
-				if string(tt.expectedBody) != "" {
-					assert.JSONEq(t, string(tt.expectedBody), string(actualBody))
+				assert.NoError(t, actualError)
+				if string(test.expectedBody) != "" {
+					assert.JSONEq(t, string(test.expectedBody), string(actualBody))
 				}
 			}
 		})

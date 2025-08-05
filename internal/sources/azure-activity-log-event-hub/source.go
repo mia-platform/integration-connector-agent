@@ -24,7 +24,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	azureeventhub "github.com/mia-platform/integration-connector-agent/internal/sources/azure-event-hub"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook/hmac"
 	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azeventhubs/v2"
@@ -37,8 +37,8 @@ import (
 type Config struct {
 	azure.EventHubConfig
 
-	Authentication *webhook.HMAC `json:"authentication,omitempty"`
-	WebhookPath    string        `json:"webhookPath"`
+	Authentication hmac.Authentication `json:"authentication,omitempty"`
+	WebhookPath    string              `json:"webhookPath"`
 }
 
 func (c *Config) Validate() error {
@@ -50,10 +50,6 @@ func (c *Config) Validate() error {
 }
 
 func (c *Config) checkSignature(ctx *fiber.Ctx) error {
-	if c.Authentication == nil {
-		return nil
-	}
-
 	return c.Authentication.CheckSignature(ctx)
 }
 
