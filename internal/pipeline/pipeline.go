@@ -57,7 +57,11 @@ func (p Pipeline) Start(ctx context.Context) error {
 	return nil
 }
 
-func (p Pipeline) Close() error {
+func (p Pipeline) Close(ctx context.Context) error {
+	if err := p.sinks.Close(ctx); err != nil {
+		return err
+	}
+
 	return p.processors.Close()
 }
 

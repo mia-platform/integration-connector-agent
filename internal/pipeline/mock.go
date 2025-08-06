@@ -44,7 +44,7 @@ func (p *PipelineGroupMock) Start(_ context.Context) {
 	p.StartInvoked = true
 }
 
-func (p *PipelineGroupMock) Close() error {
+func (p *PipelineGroupMock) Close(_ context.Context) error {
 	p.CloseInvoked = true
 	return p.CloseErr
 }

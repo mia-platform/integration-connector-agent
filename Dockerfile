@@ -1,17 +1,19 @@
 # syntax=docker/dockerfile:1
-FROM docker.io/library/alpine:3.22.1@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1 AS builder
+FROM docker.io/library/golang:1.24.5-bookworm@sha256:ef8c5c733079ac219c77edab604c425d748c740d8699530ea6aced9de79aea40 AS builder
 
 ARG TARGETPLATFORM
 
-WORKDIR /app
+WORKDIR /build
 
-COPY bin/${TARGETPLATFORM}/integration-connector-agent .
-COPY LICENSE .
+COPY go.* .
+RUN go mod download
+COPY . .
 
-FROM scratch
+RUN make build
 
-# Import the certs from the builder.
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+RUN mkdir /app && cp -r LICENSE bin/${TARGETPLATFORM}/integration-connector-agent /app
+
+FROM gcr.io/distroless/base-debian12:nonroot@sha256:0a0dc2036b7c56d1a9b6b3eed67a974b6d5410187b88cbd6f1ef305697210ee2
 
 COPY --from=builder /app /app
 
