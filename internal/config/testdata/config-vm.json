@@ -1,0 +1,28 @@
+{
+  "integrations": [
+    {
+      "source": {
+        "type": "vm",
+        "webhookPath": "/vm/webhook",
+        "authentication": {
+          "secret": {
+            "fromFile": "testdata/secret"
+          }
+        }
+      },
+      "pipelines": [
+        {
+          "processors": [],
+          "sinks": [
+            {
+              "type": "fake",
+              "url": {
+                "fromEnv": "TEST_LOAD_SERVICE_MONGO_URL"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

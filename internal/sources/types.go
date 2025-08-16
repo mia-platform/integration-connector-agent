@@ -22,6 +22,7 @@ const (
 	GCPInventoryPubSub       = "gcp-inventory-pubsub"
 	AzureActivityLogEventHub = "azure-activity-log-event-hub"
 	AWSCloudTrailSQS         = "aws-cloudtrail-sqs"
+	VM                       = "vm"
 )
 
 type CloseableSource interface {
