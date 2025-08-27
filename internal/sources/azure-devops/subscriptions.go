@@ -26,19 +26,23 @@ import (
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/servicehooks"
 )
 
+const (
+	publisherID = "tfs"
+)
+
 var (
 	supportedSubscriptions = []servicehooks.Subscription{
 		{
-			EventType:   to.Ptr("git.repo.created"),
-			PublisherId: to.Ptr("tfs"),
+			EventType:   to.Ptr(repositoryCreated),
+			PublisherId: to.Ptr(publisherID),
 		},
 		{
-			EventType:   to.Ptr("git.repo.renamed"),
-			PublisherId: to.Ptr("tfs"),
+			EventType:   to.Ptr(repositoryRenamed),
+			PublisherId: to.Ptr(publisherID),
 		},
 		{
-			EventType:   to.Ptr("git.repo.deleted"),
-			PublisherId: to.Ptr("tfs"),
+			EventType:   to.Ptr(repositoryDeleted),
+			PublisherId: to.Ptr(publisherID),
 		},
 	}
 )
@@ -116,7 +120,7 @@ func subscriptionAlreadyExists(subscription servicehooks.Subscription, subscript
 func queryArgs(projectID string) servicehooks.CreateSubscriptionsQueryArgs {
 	query := servicehooks.CreateSubscriptionsQueryArgs{
 		Query: &servicehooks.SubscriptionsQuery{
-			PublisherId: to.Ptr("tfs"),
+			PublisherId: to.Ptr(publisherID),
 		},
 	}
 
