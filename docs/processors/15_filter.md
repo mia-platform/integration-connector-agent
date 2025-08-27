@@ -63,6 +63,7 @@ In the following example, the filter processor will filter out all events that d
   "celExpression": "eventType.startsWith('my')"
 }
 ```
+
 #### Data field equality
 
 In the following example, the filter processor will filter out all events which have the `parentId` field different from `my-parent`.
