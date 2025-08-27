@@ -168,7 +168,7 @@ func setupProjectsHooks(ctx context.Context, connection *azuredevops.Connection,
 
 		for _, project := range projects.Value {
 			if project.Id != nil {
-				err := createSubscriptionsForProject(ctx, connection, project.Id.String(), devopsConfig)
+				err := createSubscriptionsForProject(ctx, connection, devopsConfig, project.Id.String())
 				if err != nil {
 					return fmt.Errorf("failed to create subscriptions for project %s: %w", *project.Name, err)
 				}

@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -261,6 +262,12 @@ func TestImportFunction(t *testing.T) {
 				},
 			},
 		},
+		"error on get repositories": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				http.Error(w, "Bad Request", http.StatusBadRequest)
+			}),
+			expectedError: `{"error":"Validation Error","message":"Bad Request\n"}`,
+		},
 	}
 
 	for testName, test := range testCases {
@@ -272,13 +279,17 @@ func TestImportFunction(t *testing.T) {
 			defer pg.Close()
 
 			response, err := app.Test(httptest.NewRequest(http.MethodPost, "/webhook", nil))
+			require.NoError(t, err)
+			defer response.Body.Close()
+
 			if len(test.expectedError) > 0 {
-				assert.ErrorContains(t, err, test.expectedError)
+				errorBody, err := io.ReadAll(response.Body)
+				require.NoError(t, err)
+				assert.Equal(t, http.StatusInternalServerError, response.StatusCode)
+				assert.Equal(t, test.expectedError, string(errorBody))
 				return
 			}
 
-			require.NoError(t, err)
-			defer response.Body.Close()
 			assert.Equal(t, http.StatusNoContent, response.StatusCode)
 			assert.Eventually(t, func() bool {
 				return len(sink.Calls()) == len(test.expectedCalls)
@@ -631,7 +642,6 @@ func importTestServer(t *testing.T, handler http.Handler) *httptest.Server {
 	testServer := httptest.NewServer(nil)
 	testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "Basic OnBhdA==", r.Header.Get("Authorization"))
-		fmt.Println("Request:", r.Method, r.RequestURI)
 		switch {
 		case r.Method == http.MethodOptions && r.RequestURI == "/_apis":
 			w.Header().Set("Content-Type", "application/json")

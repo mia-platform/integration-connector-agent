@@ -43,25 +43,10 @@ var (
 	}
 )
 
-func createSubscriptionsForProject(ctx context.Context, connection *azuredevops.Connection, projectID string, devopsConfig *Config) error {
+func createSubscriptionsForProject(ctx context.Context, connection *azuredevops.Connection, devopsConfig *Config, projectID string) error {
 	// get all subscription on project
 	client := servicehooks.NewClient(ctx, connection)
-	subscriptions, err := client.CreateSubscriptionsQuery(ctx, servicehooks.CreateSubscriptionsQueryArgs{
-		Query: &servicehooks.SubscriptionsQuery{
-			PublisherId: to.Ptr("tfs"),
-			PublisherInputFilters: &[]forminput.InputFilter{
-				{
-					Conditions: &[]forminput.InputFilterCondition{
-						{
-							InputId:    to.Ptr("projectId"),
-							Operator:   to.Ptr(forminput.InputFilterOperatorValues.Equals),
-							InputValue: to.Ptr(projectID),
-						},
-					},
-				},
-			},
-		},
-	})
+	subscriptions, err := client.CreateSubscriptionsQuery(ctx, queryArgs(projectID))
 	if err != nil {
 		return fmt.Errorf("failed to get existing subscriptions for project %s: %w", projectID, err)
 	}
@@ -72,23 +57,7 @@ func createSubscriptionsForProject(ctx context.Context, connection *azuredevops.
 	subscriptionToDelete := make([]servicehooks.Subscription, 0)
 	subscriptionToCreate := make([]servicehooks.Subscription, 0)
 	for _, supportedSubscription := range supportedSubscriptions {
-		subscription := servicehooks.Subscription{
-			EventType:   supportedSubscription.EventType,
-			PublisherId: supportedSubscription.PublisherId,
-			ConsumerInputs: &map[string]string{
-				"url": webhookURL.String(),
-			},
-			PublisherInputs: &map[string]string{
-				"projectId": projectID,
-			},
-		}
-
-		if devopsConfig.Authentication != nil && len(devopsConfig.Authentication.Username) > 0 {
-			(*subscription.ConsumerInputs)["basicAuthUsername"] = devopsConfig.Authentication.Username
-		}
-		if devopsConfig.Authentication != nil && len(devopsConfig.Authentication.Secret.String()) > 0 {
-			(*subscription.ConsumerInputs)["basicAuthPassword"] = devopsConfig.Authentication.Secret.String()
-		}
+		subscription := newSubscription(supportedSubscription, projectID, webhookURL.String(), devopsConfig)
 
 		existringSubscription := subscriptionAlreadyExists(subscription, subscriptions.Results)
 		if existringSubscription == nil {
@@ -142,4 +111,51 @@ func subscriptionAlreadyExists(subscription servicehooks.Subscription, subscript
 	}
 
 	return nil
+}
+
+func queryArgs(projectID string) servicehooks.CreateSubscriptionsQueryArgs {
+	query := servicehooks.CreateSubscriptionsQueryArgs{
+		Query: &servicehooks.SubscriptionsQuery{
+			PublisherId: to.Ptr("tfs"),
+		},
+	}
+
+	if projectID != "" {
+		query.Query.PublisherInputFilters = &[]forminput.InputFilter{
+			{
+				Conditions: &[]forminput.InputFilterCondition{
+					{
+						InputId:    to.Ptr("projectId"),
+						Operator:   to.Ptr(forminput.InputFilterOperatorValues.Equals),
+						InputValue: to.Ptr(projectID),
+					},
+				},
+			},
+		}
+	}
+
+	return query
+}
+
+func newSubscription(supportedSubscription servicehooks.Subscription, projectID string, webhookURL string, devopsConfig *Config) servicehooks.Subscription {
+	subscription := servicehooks.Subscription{
+		EventType:   supportedSubscription.EventType,
+		PublisherId: supportedSubscription.PublisherId,
+		ConsumerInputs: &map[string]string{
+			"url": webhookURL,
+		},
+	}
+	if projectID != "" {
+		subscription.PublisherInputs = &map[string]string{
+			"projectId": projectID,
+		}
+	}
+
+	if devopsConfig.Authentication != nil && len(devopsConfig.Authentication.Username) > 0 {
+		(*subscription.ConsumerInputs)["basicAuthUsername"] = devopsConfig.Authentication.Username
+	}
+	if devopsConfig.Authentication != nil && len(devopsConfig.Authentication.Secret.String()) > 0 {
+		(*subscription.ConsumerInputs)["basicAuthPassword"] = devopsConfig.Authentication.Secret.String()
+	}
+	return subscription
 }
