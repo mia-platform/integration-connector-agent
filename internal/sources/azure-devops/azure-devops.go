@@ -16,40 +16,47 @@
 package azuredevops
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook/hmac"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook/basic"
 	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
 	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/core"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/git"
 )
 
 var (
 	ErrMissingRequiredField = errors.New("missing required field")
+	ErrInvalidHost          = errors.New("invalid host URL")
 )
 
 const (
-	defaultImportWebhookPath = "/azure-devops/webhook/import"
-	defaultAzureWebhookPath  = "/azure-devops/webhook"
+	defaultAzureWebhookPath = "/azure-devops/webhook"
 )
 
 type Config struct {
 	AzureDevOpsOrganizationURL     string              `json:"azureDevOpsOrganizationUrl"`
 	AzureDevOpsPersonalAccessToken config.SecretSource `json:"azureDevOpsPersonalAccessToken"`
+	ImportWebhookPath              string              `json:"importWebhookPath"`
+	WebhookHost                    string              `json:"webhookHost"`
 
-	Authentication hmac.Authentication `json:"authentication,omitempty"`
-	WebhookPath    string              `json:"webhookPath"`
+	webhook.Configuration[*basic.Authentication]
 }
 
 func (c *Config) Validate() error {
@@ -60,11 +67,15 @@ func (c *Config) Validate() error {
 	if c.AzureDevOpsPersonalAccessToken.String() == "" {
 		return fmt.Errorf("%w: %s", ErrMissingRequiredField, "azureDevOpsPersonalAccessToken")
 	}
-	if c.WebhookPath == "" {
-		c.WebhookPath = defaultImportWebhookPath
+	if c.WebhookHost == "" {
+		return fmt.Errorf("%w: %s", ErrMissingRequiredField, "webhookHost")
+	} else if _, err := url.Parse(c.WebhookHost); err != nil {
+		return fmt.Errorf("%w: %s", ErrInvalidHost, err)
 	}
 
-	return nil
+	c.WebhookPath = cmp.Or(c.WebhookPath, defaultAzureWebhookPath)
+	c.Events = supportedEvents
+	return c.Configuration.Validate()
 }
 
 func AddSourceToRouter(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipelineGroup, router *swagger.Router[fiber.Handler, fiber.Router]) error {
@@ -74,23 +85,34 @@ func AddSourceToRouter(ctx context.Context, cfg config.GenericConfig, pg pipelin
 	}
 
 	connection := azuredevops.NewPatConnection(devopsConfig.AzureDevOpsOrganizationURL, devopsConfig.AzureDevOpsPersonalAccessToken.String())
-	repoClient, err := git.NewClient(context.Background(), connection)
+	repoClient, err := git.NewClient(ctx, connection)
 	if err != nil {
 		return fmt.Errorf("failed to create Azure DevOps git client: %w", err)
 	}
 
 	pg.Start(ctx)
-	_, err = router.AddRoute(http.MethodPost, devopsConfig.WebhookPath, webhookHandler(repoClient, pg), swagger.Definitions{})
-	if err != nil {
-		return fmt.Errorf("failed to add route: %w", err)
+	if err := setupProjectsHooks(ctx, connection, devopsConfig); err != nil {
+		return fmt.Errorf("failed to setup Azure DevOps source: %w", err)
 	}
+
+	if err := webhook.SetupService(ctx, router, devopsConfig.Configuration, pg); err != nil {
+		return err
+	}
+
+	if devopsConfig.ImportWebhookPath != "" {
+		_, err = router.AddRoute(http.MethodPost, devopsConfig.ImportWebhookPath, importWebhookHandler(repoClient, pg), swagger.Definitions{})
+		if err != nil {
+			return fmt.Errorf("failed to add route: %w", err)
+		}
+	}
+
 	return nil
 }
 
-func webhookHandler(repoClient git.Client, pg pipeline.IPipelineGroup) fiber.Handler {
+func importWebhookHandler(repoClient git.Client, pg pipeline.IPipelineGroup) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		log := glogrus.FromContext(c.UserContext())
-		repositories, err := repoClient.GetRepositories(c.Context(), git.GetRepositoriesArgs{})
+		repositories, err := repoClient.GetRepositories(c.UserContext(), git.GetRepositoriesArgs{})
 		if err != nil {
 			log.WithError(err).Error("failed to get repositories")
 			return c.Status(fiber.StatusInternalServerError).JSON(utils.ValidationError(err.Error()))
@@ -123,4 +145,43 @@ func webhookHandler(repoClient git.Client, pg pipeline.IPipelineGroup) fiber.Han
 		c.Status(http.StatusNoContent)
 		return nil
 	}
+}
+
+func setupProjectsHooks(ctx context.Context, connection *azuredevops.Connection, devopsConfig *Config) error {
+	coreClient, err := core.NewClient(ctx, connection)
+	if err != nil {
+		return fmt.Errorf("failed to create Azure DevOps client: %w", err)
+	}
+
+	getProjectsArgs := core.GetProjectsArgs{
+		StateFilter: to.Ptr(core.ProjectStateValues.WellFormed),
+	}
+
+	for {
+		projects, err := coreClient.GetProjects(ctx, getProjectsArgs)
+		if err != nil || projects == nil {
+			return fmt.Errorf("failed to get Azure DevOps projects: %w", err)
+		}
+
+		for _, project := range projects.Value {
+			if project.Id != nil {
+				err := createSubscriptionsForProject(ctx, connection, project.Id.String(), devopsConfig)
+				if err != nil {
+					return fmt.Errorf("failed to create subscriptions for project %s: %w", *project.Name, err)
+				}
+			}
+		}
+
+		if projects.ContinuationToken == "" {
+			break
+		}
+		continuationToken, err := strconv.Atoi(projects.ContinuationToken)
+		if err != nil {
+			break
+		}
+
+		getProjectsArgs.ContinuationToken = to.Ptr(continuationToken)
+	}
+
+	return nil
 }

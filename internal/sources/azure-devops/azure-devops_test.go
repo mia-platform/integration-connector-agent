@@ -16,6 +16,7 @@
 package azuredevops
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -50,30 +51,51 @@ func TestValidateConfig(t *testing.T) {
 	}{
 		"valid": {
 			config: &Config{
-				WebhookPath:                    "/webhook",
+				ImportWebhookPath:              "/webhook",
 				AzureDevOpsOrganizationURL:     "https://dev.azure.com/myorg",
 				AzureDevOpsPersonalAccessToken: config.SecretSource("pat"),
+				WebhookHost:                    "https://example.com",
 			},
 		},
 		"valid with missing webhook path": {
 			config: &Config{
 				AzureDevOpsOrganizationURL:     "https://dev.azure.com/myorg",
 				AzureDevOpsPersonalAccessToken: config.SecretSource("pat"),
+				WebhookHost:                    "https://example.com",
 			},
 		},
 		"missing organization path": {
 			config: &Config{
-				WebhookPath:                    "/webhook",
+				ImportWebhookPath:              "/webhook",
 				AzureDevOpsPersonalAccessToken: config.SecretSource("pat"),
+				WebhookHost:                    "https://example.com",
 			},
 			expectedError: ErrMissingRequiredField,
 		},
 		"missing PAT": {
 			config: &Config{
-				WebhookPath:                "/webhook",
+				ImportWebhookPath:          "/webhook",
 				AzureDevOpsOrganizationURL: "https://dev.azure.com/myorg",
+				WebhookHost:                "https://example.com",
 			},
 			expectedError: ErrMissingRequiredField,
+		},
+		"missing host": {
+			config: &Config{
+				ImportWebhookPath:              "/webhook",
+				AzureDevOpsPersonalAccessToken: config.SecretSource("pat"),
+				AzureDevOpsOrganizationURL:     "https://dev.azure.com/myorg",
+			},
+			expectedError: ErrMissingRequiredField,
+		},
+		"unparsable host": {
+			config: &Config{
+				ImportWebhookPath:              "/webhook",
+				AzureDevOpsPersonalAccessToken: config.SecretSource("pat"),
+				AzureDevOpsOrganizationURL:     "https://dev.azure.com/myorg",
+				WebhookHost:                    "://wrong.host",
+			},
+			expectedError: ErrInvalidHost,
 		},
 	}
 
@@ -268,16 +290,17 @@ func setup(t *testing.T, serverURL string) (*fiber.App, *fakewriter.Writer, pipe
 
 	rawConfig := json.RawMessage(fmt.Sprintf(`{
 	"type": "azure-devops",
-	"webhookPath": "/webhook",
+	"importWebhookPath": "/webhook",
 	"azureDevOpsOrganizationUrl": "%s",
 	"azureDevOpsPersonalAccessToken": {
 		"fromFile": "testdata/pat-file"
-	}
+	},
+	"webhookHost": "https://example.com"
 }`, serverURL))
 
 	cfg := new(config.GenericConfig)
 	json.Unmarshal(rawConfig, cfg)
-	err = AddSourceToRouter(t.Context(), *cfg, pg, router)
+	err = AddSourceToRouter(context.WithoutCancel(t.Context()), *cfg, pg, router)
 	require.NoError(t, err)
 
 	return app, sink, pg
@@ -288,15 +311,20 @@ func testServer(t *testing.T, handler http.Handler) *httptest.Server {
 	testServer := httptest.NewServer(nil)
 	testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "Basic OnBhdA==", r.Header.Get("Authorization"))
+		fmt.Println("Request:", r.Method, r.RequestURI)
 		switch {
 		case r.Method == http.MethodOptions && r.RequestURI == "/_apis":
 			w.Header().Set("Content-Type", "application/json")
-			_, err := fmt.Fprint(w, `{"value":[{"id": "225f7195-f9c7-4d14-ab28-a83f7ff77e1f","area": "git","resourceName": "repositories","routeTemplate": "{project}/_apis/{area}/{resource}/{repositoryId}","resourceVersion": 2,"minVersion": "1.0","maxVersion": "7.2","releasedVersion": "7.1"},{"id":"e81700f7-3be2-46de-8624-2eb35882fcaa","area":"Location","resourceName":"ResourceAreas","routeTemplate":"_apis/{resource}/{areaId}","resourceVersion":1,"minVersion":"3.2","maxVersion":"7.2","releasedVersion":"0.0"}],"count":2}`)
+			_, err := fmt.Fprint(w, `{"value":[{"id":"225f7195-f9c7-4d14-ab28-a83f7ff77e1f","area":"git","resourceName":"repositories","routeTemplate":"{project}/_apis/{area}/{resource}/{repositoryId}","resourceVersion":2,"minVersion":"1.0","maxVersion":"7.2","releasedVersion":"7.1"},{"id":"e81700f7-3be2-46de-8624-2eb35882fcaa","area":"Location","resourceName":"ResourceAreas","routeTemplate":"_apis/{resource}/{areaId}","resourceVersion":1,"minVersion":"3.2","maxVersion":"7.2","releasedVersion":"0.0"},{"id":"603fe2ac-9723-48b9-88ad-09305aa6c6e1","area":"core","resourceName":"projects","routeTemplate":"_apis/{resource}/{*projectId}","resourceVersion":4,"minVersion":"1.0","maxVersion":"7.2","releasedVersion":"7.1"},{"id":"c7c3c1cf-9e05-4c0d-a425-a0f922c2c6ed","area":"hooks","resourceName":"subscriptionsQuery","routeTemplate":"_apis/{area}/{resource}","resourceVersion":1,"minVersion":"1.0","maxVersion":"7.2","releasedVersion":"7.1"}],"count":4}`)
 			require.NoError(t, err)
 			return
 		case r.Method == http.MethodGet && r.RequestURI == "/_apis/ResourceAreas":
 			w.Header().Set("Content-Type", "application/json")
-			_, err := fmt.Fprintf(w, `{"value":[{"id": "4e080c62-fa21-4fbc-8fef-2a10a2b38049","name": "git","locationUrl": "%s/"}],"count":1}`, testServer.URL)
+			_, err := fmt.Fprintf(w, `{"value":[{"id": "4e080c62-fa21-4fbc-8fef-2a10a2b38049","name": "git","locationUrl": "%s/"},{"id":"79134c72-4a58-4b42-976c-04e7115f32bf","name":"core","locationUrl":"%[1]s/"}],"count":2}`, testServer.URL)
+			require.NoError(t, err)
+		case r.Method == http.MethodGet && r.RequestURI == "/_apis/projects?stateFilter=wellFormed":
+			w.Header().Set("Content-Type", "application/json")
+			_, err := fmt.Fprintf(w, `{"count":0,"value":[]}`)
 			require.NoError(t, err)
 		default:
 			handler.ServeHTTP(w, r)
