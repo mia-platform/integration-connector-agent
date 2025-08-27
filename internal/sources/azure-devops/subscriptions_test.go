@@ -31,12 +31,12 @@ func TestAlreadyExists(t *testing.T) {
 		{
 			Id:          to.Ptr(uuid.MustParse("00000000-0000-0000-0000-000000000001")),
 			EventType:   to.Ptr(repositoryCreated),
-			PublisherId: to.Ptr("tfs"),
+			PublisherId: to.Ptr(publisherID),
 		},
 		{
 			Id:          to.Ptr(uuid.MustParse("00000000-0000-0000-0000-000000000002")),
 			EventType:   to.Ptr(repositoryDeleted),
-			PublisherId: to.Ptr("tfs"),
+			PublisherId: to.Ptr(publisherID),
 			ConsumerInputs: &map[string]string{
 				"url": "",
 			},
@@ -44,7 +44,7 @@ func TestAlreadyExists(t *testing.T) {
 		{
 			Id:          to.Ptr(uuid.MustParse("00000000-0000-0000-0000-000000000003")),
 			EventType:   to.Ptr(repositoryRenamed),
-			PublisherId: to.Ptr("tfs"),
+			PublisherId: to.Ptr(publisherID),
 			ConsumerInputs: &map[string]string{
 				"url": "",
 			},
@@ -60,7 +60,7 @@ func TestAlreadyExists(t *testing.T) {
 		"complete subscription exists": {
 			subscription: servicehooks.Subscription{
 				EventType:   to.Ptr(repositoryRenamed),
-				PublisherId: to.Ptr("tfs"),
+				PublisherId: to.Ptr(publisherID),
 				ConsumerInputs: &map[string]string{
 					"url": "",
 				},
@@ -71,7 +71,7 @@ func TestAlreadyExists(t *testing.T) {
 			expectedResult: &servicehooks.Subscription{
 				Id:          to.Ptr(uuid.MustParse("00000000-0000-0000-0000-000000000003")),
 				EventType:   to.Ptr(repositoryRenamed),
-				PublisherId: to.Ptr("tfs"),
+				PublisherId: to.Ptr(publisherID),
 				ConsumerInputs: &map[string]string{
 					"url": "",
 				},
@@ -83,7 +83,7 @@ func TestAlreadyExists(t *testing.T) {
 		"without publisher inputs exits": {
 			subscription: servicehooks.Subscription{
 				EventType:   to.Ptr(repositoryDeleted),
-				PublisherId: to.Ptr("tfs"),
+				PublisherId: to.Ptr(publisherID),
 				ConsumerInputs: &map[string]string{
 					"url": "",
 				},
@@ -91,7 +91,7 @@ func TestAlreadyExists(t *testing.T) {
 			expectedResult: &servicehooks.Subscription{
 				Id:          to.Ptr(uuid.MustParse("00000000-0000-0000-0000-000000000002")),
 				EventType:   to.Ptr(repositoryDeleted),
-				PublisherId: to.Ptr("tfs"),
+				PublisherId: to.Ptr(publisherID),
 				ConsumerInputs: &map[string]string{
 					"url": "",
 				},
@@ -100,7 +100,7 @@ func TestAlreadyExists(t *testing.T) {
 		"without consumer & publisher inputs return nil": {
 			subscription: servicehooks.Subscription{
 				EventType:   to.Ptr(repositoryCreated),
-				PublisherId: to.Ptr("tfs"),
+				PublisherId: to.Ptr(publisherID),
 				ConsumerInputs: &map[string]string{
 					"url": "",
 				},
@@ -109,7 +109,7 @@ func TestAlreadyExists(t *testing.T) {
 		"with different event type return nil": {
 			subscription: servicehooks.Subscription{
 				EventType:   to.Ptr("git.pull.created"),
-				PublisherId: to.Ptr("tfs"),
+				PublisherId: to.Ptr(publisherID),
 				ConsumerInputs: &map[string]string{
 					"url": "",
 				},
@@ -127,7 +127,7 @@ func TestAlreadyExists(t *testing.T) {
 		"with different url return nil": {
 			subscription: servicehooks.Subscription{
 				EventType:   to.Ptr(repositoryRenamed),
-				PublisherId: to.Ptr("tfs"),
+				PublisherId: to.Ptr(publisherID),
 				ConsumerInputs: &map[string]string{
 					"url": "http://example.com",
 				},
@@ -139,7 +139,7 @@ func TestAlreadyExists(t *testing.T) {
 		"with nil publisher input return nil": {
 			subscription: servicehooks.Subscription{
 				EventType:   to.Ptr(repositoryDeleted),
-				PublisherId: to.Ptr("tfs"),
+				PublisherId: to.Ptr(publisherID),
 				ConsumerInputs: &map[string]string{
 					"url": "",
 				},
@@ -151,7 +151,7 @@ func TestAlreadyExists(t *testing.T) {
 		"with different publisher input return nil": {
 			subscription: servicehooks.Subscription{
 				EventType:   to.Ptr(repositoryRenamed),
-				PublisherId: to.Ptr("tfs"),
+				PublisherId: to.Ptr(publisherID),
 				ConsumerInputs: &map[string]string{
 					"url": "",
 				},
