@@ -85,10 +85,6 @@ func AddSourceToRouter(ctx context.Context, cfg config.GenericConfig, pg pipelin
 	}
 
 	connection := azuredevops.NewPatConnection(devopsConfig.AzureDevOpsOrganizationURL, devopsConfig.AzureDevOpsPersonalAccessToken.String())
-	repoClient, err := git.NewClient(ctx, connection)
-	if err != nil {
-		return fmt.Errorf("failed to create Azure DevOps git client: %w", err)
-	}
 
 	pg.Start(ctx)
 	if err := setupProjectsHooks(ctx, connection, devopsConfig); err != nil {
@@ -100,7 +96,7 @@ func AddSourceToRouter(ctx context.Context, cfg config.GenericConfig, pg pipelin
 	}
 
 	if devopsConfig.ImportWebhookPath != "" {
-		_, err = router.AddRoute(http.MethodPost, devopsConfig.ImportWebhookPath, importWebhookHandler(repoClient, pg), swagger.Definitions{})
+		_, err = router.AddRoute(http.MethodPost, devopsConfig.ImportWebhookPath, importWebhookHandler(connection, pg), swagger.Definitions{})
 		if err != nil {
 			return fmt.Errorf("failed to add route: %w", err)
 		}
@@ -109,9 +105,16 @@ func AddSourceToRouter(ctx context.Context, cfg config.GenericConfig, pg pipelin
 	return nil
 }
 
-func importWebhookHandler(repoClient git.Client, pg pipeline.IPipelineGroup) fiber.Handler {
+func importWebhookHandler(connection *azuredevops.Connection, pg pipeline.IPipelineGroup) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		log := glogrus.FromContext(c.UserContext())
+
+		repoClient, err := git.NewClient(c.UserContext(), connection)
+		if err != nil {
+			log.WithError(err).Error("failed to create Azure DevOps git client")
+			return c.Status(fiber.StatusInternalServerError).JSON(utils.ValidationError(err.Error()))
+		}
+
 		repositories, err := repoClient.GetRepositories(c.UserContext(), git.GetRepositoriesArgs{})
 		if err != nil {
 			log.WithError(err).Error("failed to get repositories")

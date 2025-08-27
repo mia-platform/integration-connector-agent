@@ -16,6 +16,7 @@
 package azuredevops
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -160,7 +161,7 @@ var repository2 = git.GitRepository{
 	IsInMaintenance: to.Ptr(false),
 }
 
-func TestAddSourceToRouter(t *testing.T) {
+func TestImportFunction(t *testing.T) {
 	t.Parallel()
 
 	repo1Data, err := json.Marshal(repository1)
@@ -176,10 +177,16 @@ func TestAddSourceToRouter(t *testing.T) {
 	}{
 		"get only one repository": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				_, err = fmt.Fprintf(w, `{"value":[%s],"count":1}`, string(repo1Data))
-				require.NoError(t, err)
+				if r.Method == http.MethodGet && r.RequestURI == "/_apis/git/repositories" {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					_, err = fmt.Fprintf(w, `{"value":[%s],"count":1}`, string(repo1Data))
+					require.NoError(t, err)
+					return
+				}
+
+				http.NotFound(w, r)
+				assert.Fail(t, "unexpected request", "%s: %s", r.Method, r.RequestURI)
 			}),
 			expectedCalls: fakewriter.Calls{
 				{
@@ -204,10 +211,16 @@ func TestAddSourceToRouter(t *testing.T) {
 		},
 		"get multiple repository": {
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				_, err = fmt.Fprintf(w, `{"value":[%s,%s],"count":2}`, string(repo1Data), string(repo2Data))
-				require.NoError(t, err)
+				if r.Method == http.MethodGet && r.RequestURI == "/_apis/git/repositories" {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					_, err = fmt.Fprintf(w, `{"value":[%s,%s],"count":2}`, string(repo1Data), string(repo2Data))
+					require.NoError(t, err)
+					return
+				}
+
+				http.NotFound(w, r)
+				assert.Fail(t, "unexpected request", "%s: %s", r.Method, r.RequestURI)
 			}),
 			expectedCalls: fakewriter.Calls{
 				{
@@ -252,7 +265,7 @@ func TestAddSourceToRouter(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
-			server := testServer(t, test.handler)
+			server := importTestServer(t, test.handler)
 			defer server.Close()
 
 			app, sink, pg := setup(t, server.URL)
@@ -267,6 +280,309 @@ func TestAddSourceToRouter(t *testing.T) {
 			require.NoError(t, err)
 			defer response.Body.Close()
 			assert.Equal(t, http.StatusNoContent, response.StatusCode)
+			assert.Eventually(t, func() bool {
+				return len(sink.Calls()) == len(test.expectedCalls)
+			}, 1*time.Second, 10*time.Millisecond)
+
+			assert.Equal(t, test.expectedCalls, sink.Calls())
+		})
+	}
+}
+
+func TestWebhookFunction(t *testing.T) {
+	t.Parallel()
+
+	createRepoData := json.RawMessage(`{
+	"id": "a0a0a0a0-bbbb-cccc-dddd-e1e1e1e1e1e1",
+	"eventType": "git.repo.created",
+	"publisherId": "tfs",
+	"message": {
+			"text": "A new Git repository was created with name Fabrikam-Fiber-Git and ID c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3.",
+			"html": "A new Git repository was created with name <a href=\"https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_git/Fabrikam-Fiber-Git/\">Fabrikam-Fiber-Git</a> and ID c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3.",
+			"markdown": "A new Git repository was created with name [Fabrikam-Fiber-Git](https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_git/Fabrikam-Fiber-Git/) and ID 'c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3'."
+	},
+	"detailedMessage": {
+			"text": "A new Git repository was created with name Fabrikam-Fiber-Git and ID c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3.",
+			"html": "A new Git repository was created with name <a href=\"https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_git/Fabrikam-Fiber-Git/\">Fabrikam-Fiber-Git</a> and ID c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3.",
+			"markdown": "A new Git repository was created with name [Fabrikam-Fiber-Git](https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_git/Fabrikam-Fiber-Git/) and ID 'c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3'."
+	},
+	"resource": {
+			"repository": {
+					"id": "c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3",
+					"name": "Fabrikam-Fiber-Git",
+					"url": "https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/git/repositories/c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3",
+					"project": {
+							"id": "00aa00aa-bb11-cc22-dd33-44ee44ee44ee",
+							"name": "Fabrikam-Fiber-Git",
+							"url": "https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/projects/00aa00aa-bb11-cc22-dd33-44ee44ee44ee",
+							"state": "wellFormed",
+							"revision": 11,
+							"visibility": "private",
+							"lastUpdateTime": "2025-06-12T20:22:53.7494088+00:00"
+					},
+					"defaultBranch": "refs/heads/main",
+					"size": 728,
+					"remoteUrl": "https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_git/Fabrikam-Fiber-Git",
+					"sshUrl": "ssh://git@ssh.fabrikam-fiber-inc.visualstudio.com/v3/DefaultCollection/Fabrikam-Fiber-Git",
+					"isDisabled": false
+			},
+			"initiatedBy": {
+					"displayName": "Ivan Yurev",
+					"id": "22cc22cc-dd33-ee44-ff55-66aa66aa66aa",
+					"uniqueName": "user@fabrikamfiber.com"
+			},
+			"utcTimestamp": "2022-12-12T12:34:56.5498459Z"
+	},
+	"resourceVersion": "1.0-preview.1",
+	"resourceContainers": {
+			"collection": {
+					"id": "b1b1b1b1-cccc-dddd-eeee-f2f2f2f2f2f2"
+			},
+			"account": {
+					"id": "bbbb1b1b-cc2c-dd3d-ee4e-ffffff5f5f5f"
+			},
+			"project": {
+					"id": "00aa00aa-bb11-cc22-dd33-44ee44ee44ee"
+			}
+	},
+	"createdDate": "2025-06-12T20:22:53.818Z"
+}`)
+	renamedRepoData := json.RawMessage(`{
+	"id": "a0a0a0a0-bbbb-cccc-dddd-e1e1e1e1e1e1",
+	"eventType": "git.repo.renamed",
+	"publisherId": "tfs",
+	"message": {
+			"text": "Git repository c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3 was renamed to Fabrikam-Fiber-Git.",
+			"html": "Git repository c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3 was renamed to  <a href=\"https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/git/repositories/c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3\">Fabrikam-Fiber-Git</a>.",
+			"markdown": "Git repository c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3 was renamed to [Fabrikam-Fiber-Git](https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/git/repositories/c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3)."
+	},
+	"detailedMessage": {
+			"text": "Git repository c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3 was renamed to Fabrikam-Fiber-Git.\r\nProject name: Contoso\r\n\r\nRepository name before renaming: Diber-Git\r\n\r\nDefault branch: refs/heads/main\r\n\r\nRepository link(https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/git/repositories/c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3)\r\n",
+			"html": "Git repository c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3 was renamed to  <a href=\"https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/git/repositories/c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3\">Fabrikam-Fiber-Git</a>.<p>Project name: Contoso</p><p>Repository name before renaming: Diber-Git</p><p>Default branch: refs/heads/main</p><p><a href=\"https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/git/repositories/c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3\">Repository link</a></p>",
+			"markdown": "Git repository c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3 was renamed to [Fabrikam-Fiber-Git](https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/git/repositories/c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3).\r\nProject name: Contoso\r\n\r\nRepository name before renaming: Diber-Git\r\n\r\nDefault branch: refs/heads/main\r\n\r\n[Repository link](https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/git/repositories/c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3)\r\n"
+	},
+	"resource": {
+			"oldName": "Diber-Git",
+			"newName": "Fabrikam-Fiber-Git",
+			"repository": {
+					"id": "c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3",
+					"name": "Fabrikam-Fiber-Git",
+					"url": "https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/git/repositories/c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3",
+					"project": {
+							"id": "11bb11bb-cc22-dd33-ee44-55ff55ff55ff",
+							"name": "Contoso",
+							"url": "https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/projects/11bb11bb-cc22-dd33-ee44-55ff55ff55ff",
+							"state": "wellFormed",
+							"revision": 11,
+							"visibility": "private",
+							"lastUpdateTime": "2025-06-12T20:48:38.8174565+00:00"
+					},
+					"defaultBranch": "refs/heads/main",
+					"size": 728,
+					"remoteUrl": "https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_git/Fabrikam-Fiber-Git",
+					"sshUrl": "ssh://git@ssh.fabrikam-fiber-inc.visualstudio.com/v3/DefaultCollection/Fabrikam-Fiber-Git",
+					"isDisabled": false
+			},
+			"initiatedBy": {
+					"displayName": "Himani Maharjan",
+					"id": "a0a0a0a0-bbbb-cccc-dddd-e1e1e1e1e1e1",
+					"uniqueName": "himani@fabrikamfiber.com"
+			},
+			"utcTimestamp": "2022-12-12T12:34:56.5498459Z"
+	},
+	"resourceVersion": "1.0-preview.1",
+	"resourceContainers": {
+			"collection": {
+					"id": "b1b1b1b1-cccc-dddd-eeee-f2f2f2f2f2f2"
+			},
+			"account": {
+					"id": "bbbb1b1b-cc2c-dd3d-ee4e-ffffff5f5f5f"
+			},
+			"project": {
+					"id": "00aa00aa-bb11-cc22-dd33-44ee44ee44ee"
+			}
+	},
+	"createdDate": "2025-06-12T20:48:38.859Z"
+}`)
+	deletedRepoData := json.RawMessage(`{
+	"id": "a0a0a0a0-bbbb-cccc-dddd-e1e1e1e1e1e1",
+	"eventType": "git.repo.deleted",
+	"publisherId": "tfs",
+	"message": {
+			"text": "Git repository c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3 was deleted.",
+			"html": "Git repository c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3 was deleted.",
+			"markdown": "Git repository c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3 was deleted."
+	},
+	"detailedMessage": {
+			"text": "Git repository c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3 was deleted.\r\nProject name: Contoso\r\n\r\nRepository name: Fabrikam-Fiber-Git\r\n\r\nRepository can be restored: true\r\n",
+			"html": "Git repository c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3 was deleted.<p>Project name: Contoso</p><p>Repository name: Fabrikam-Fiber-Git</p><p>Repository can be restored: true</p>",
+			"markdown": "Git repository c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3 was deleted.\r\nProject name: Contoso\r\n\r\nRepository name: Fabrikam-Fiber-Git\r\n\r\nRepository can be restored: true\r\n"
+	},
+	"resource": {
+			"project": {
+					"id": "00aa00aa-bb11-cc22-dd33-44ee44ee44ee",
+					"name": "Contoso",
+					"url": "https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_apis/projects/00aa00aa-bb11-cc22-dd33-44ee44ee44ee",
+					"state": "wellFormed",
+					"revision": 11,
+					"visibility": "private",
+					"lastUpdateTime": "2025-06-12T20:33:32.4370396+00:00"
+			},
+			"repositoryId": "c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3",
+			"repositoryName": "Fabrikam-Fiber-Git",
+			"isHardDelete": false,
+			"initiatedBy": {
+					"displayName": "Himani Maharjan",
+					"id": "d3d3d3d3-eeee-ffff-aaaa-b4b4b4b4b4b4",
+					"uniqueName": "himani@fabrikamfiber.com"
+			},
+			"utcTimestamp": "2022-12-12T12:34:56.5498459Z"
+	},
+	"resourceVersion": "1.0-preview.1",
+	"resourceContainers": {
+			"collection": {
+					"id": "b1b1b1b1-cccc-dddd-eeee-f2f2f2f2f2f2"
+			},
+			"account": {
+					"id": "bbbb1b1b-cc2c-dd3d-ee4e-ffffff5f5f5f"
+			},
+			"project": {
+					"id": "00aa00aa-bb11-cc22-dd33-44ee44ee44ee"
+			}
+	},
+	"createdDate": "2025-06-12T20:33:32.512Z"
+}`)
+
+	testCases := map[string]struct {
+		handler       http.Handler
+		webhookData   json.RawMessage
+		expectedCalls fakewriter.Calls
+		expectedError string
+	}{
+		"webhook for create repository": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == http.MethodGet && r.RequestURI == "/_apis/projects?stateFilter=wellFormed" {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					_, err := fmt.Fprintf(w, `{"value":[],"count":0}`)
+					require.NoError(t, err)
+					return
+				}
+				http.NotFound(w, r)
+				assert.Fail(t, "unexpected request", "%s: %s", r.Method, r.RequestURI)
+			}),
+			webhookData: createRepoData,
+			expectedCalls: fakewriter.Calls{
+				{
+					Data: &entities.Event{
+						PrimaryKeys: entities.PkFields{
+							{
+								Key:   "repositoryId",
+								Value: "c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3",
+							},
+							{
+								Key:   "type",
+								Value: "repository",
+							},
+						},
+						Type:          repositoryCreated,
+						OperationType: entities.Write,
+						OriginalRaw:   createRepoData,
+					},
+					Operation: entities.Write,
+				},
+			},
+		},
+		"webhook for renamed repository": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == http.MethodGet && r.RequestURI == "/_apis/projects?stateFilter=wellFormed" {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					_, err := fmt.Fprintf(w, `{"value":[],"count":0}`)
+					require.NoError(t, err)
+					return
+				}
+				http.NotFound(w, r)
+				assert.Fail(t, "unexpected request", "%s: %s", r.Method, r.RequestURI)
+			}),
+			webhookData: renamedRepoData,
+			expectedCalls: fakewriter.Calls{
+				{
+					Data: &entities.Event{
+						PrimaryKeys: entities.PkFields{
+							{
+								Key:   "repositoryId",
+								Value: "c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3",
+							},
+							{
+								Key:   "type",
+								Value: "repository",
+							},
+						},
+						Type:          repositoryRenamed,
+						OperationType: entities.Write,
+						OriginalRaw:   renamedRepoData,
+					},
+					Operation: entities.Write,
+				},
+			},
+		},
+		"webhook for deleted repository": {
+			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == http.MethodGet && r.RequestURI == "/_apis/projects?stateFilter=wellFormed" {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					_, err := fmt.Fprintf(w, `{"value":[],"count":0}`)
+					require.NoError(t, err)
+					return
+				}
+				http.NotFound(w, r)
+				assert.Fail(t, "unexpected request", "%s: %s", r.Method, r.RequestURI)
+			}),
+			webhookData: deletedRepoData,
+			expectedCalls: fakewriter.Calls{
+				{
+					Data: &entities.Event{
+						PrimaryKeys: entities.PkFields{
+							{
+								Key:   "repositoryId",
+								Value: "c2c2c2c2-dddd-eeee-ffff-a3a3a3a3a3a3",
+							},
+							{
+								Key:   "type",
+								Value: "repository",
+							},
+						},
+						Type:          repositoryDeleted,
+						OperationType: entities.Delete,
+						OriginalRaw:   deletedRepoData,
+					},
+					Operation: entities.Delete,
+				},
+			},
+		},
+	}
+
+	for testName, test := range testCases {
+		t.Run(testName, func(t *testing.T) {
+			server := webhookTestServer(t, test.handler)
+			defer server.Close()
+
+			app, sink, pg := setup(t, server.URL)
+			defer pg.Close()
+
+			bodyBuffer := bytes.NewBuffer(test.webhookData)
+			req := httptest.NewRequest(http.MethodPost, defaultAzureWebhookPath, bodyBuffer)
+			req.SetBasicAuth("user", "pat")
+			response, err := app.Test(req)
+			if len(test.expectedError) > 0 {
+				assert.ErrorContains(t, err, test.expectedError)
+				return
+			}
+
+			require.NoError(t, err)
+			defer response.Body.Close()
+			assert.Equal(t, http.StatusOK, response.StatusCode)
 			assert.Eventually(t, func() bool {
 				return len(sink.Calls()) == len(test.expectedCalls)
 			}, 1*time.Second, 10*time.Millisecond)
@@ -295,7 +611,11 @@ func setup(t *testing.T, serverURL string) (*fiber.App, *fakewriter.Writer, pipe
 	"azureDevOpsPersonalAccessToken": {
 		"fromFile": "testdata/pat-file"
 	},
-	"webhookHost": "https://example.com"
+	"webhookHost": "https://example.com",
+	"authentication": {
+		"username": "user",
+		"secret": {"fromFile": "testdata/pat-file"}
+	}
 }`, serverURL))
 
 	cfg := new(config.GenericConfig)
@@ -306,7 +626,7 @@ func setup(t *testing.T, serverURL string) (*fiber.App, *fakewriter.Writer, pipe
 	return app, sink, pg
 }
 
-func testServer(t *testing.T, handler http.Handler) *httptest.Server {
+func importTestServer(t *testing.T, handler http.Handler) *httptest.Server {
 	t.Helper()
 	testServer := httptest.NewServer(nil)
 	testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -325,6 +645,29 @@ func testServer(t *testing.T, handler http.Handler) *httptest.Server {
 		case r.Method == http.MethodGet && r.RequestURI == "/_apis/projects?stateFilter=wellFormed":
 			w.Header().Set("Content-Type", "application/json")
 			_, err := fmt.Fprintf(w, `{"count":0,"value":[]}`)
+			require.NoError(t, err)
+		default:
+			handler.ServeHTTP(w, r)
+		}
+	})
+
+	return testServer
+}
+
+func webhookTestServer(t *testing.T, handler http.Handler) *httptest.Server {
+	t.Helper()
+	testServer := httptest.NewServer(nil)
+	testServer.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "Basic OnBhdA==", r.Header.Get("Authorization"))
+		switch {
+		case r.Method == http.MethodOptions && r.RequestURI == "/_apis":
+			w.Header().Set("Content-Type", "application/json")
+			_, err := fmt.Fprint(w, `{"value":[{"id":"e81700f7-3be2-46de-8624-2eb35882fcaa","area":"Location","resourceName":"ResourceAreas","routeTemplate":"_apis/{resource}/{areaId}","resourceVersion":1,"minVersion":"3.2","maxVersion":"7.2","releasedVersion":"0.0"},{"id":"603fe2ac-9723-48b9-88ad-09305aa6c6e1","area":"core","resourceName":"projects","routeTemplate":"_apis/{resource}/{*projectId}","resourceVersion":4,"minVersion":"1.0","maxVersion":"7.2","releasedVersion":"7.1"},{"id":"c7c3c1cf-9e05-4c0d-a425-a0f922c2c6ed","area":"hooks","resourceName":"subscriptionsQuery","routeTemplate":"_apis/{area}/{resource}","resourceVersion":1,"minVersion":"1.0","maxVersion":"7.2","releasedVersion":"7.1"}],"count":4}`)
+			require.NoError(t, err)
+			return
+		case r.Method == http.MethodGet && r.RequestURI == "/_apis/ResourceAreas":
+			w.Header().Set("Content-Type", "application/json")
+			_, err := fmt.Fprintf(w, `{"value":[{"id":"79134c72-4a58-4b42-976c-04e7115f32bf","name":"core","locationUrl":"%[1]s/"}],"count":1}`, testServer.URL)
 			require.NoError(t, err)
 		default:
 			handler.ServeHTTP(w, r)
