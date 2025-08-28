@@ -2,6 +2,12 @@
 
 The Microsoft Azure DevOps source allows the integration-connector-agent to receive events from Azure DevOps.
 
+## Full Import
+
+This source supports a full import of all the git repositories reachable with the configured Azure DevOps PAT.  
+To trigger a full import, you can send a `POST` request to the import webhook path configured in the service
+configuration.
+
 ## Webhook Integration
 
 The Jira source integrates with webhooks by exposing an endpoint at `/azure-devops/webhook`. When a webhook event is
@@ -23,6 +29,7 @@ The following configuration options are supported by the GitHub source:
 - **azureDevOpsOrganizationUrl** (*string*): The Azure DevOps organization URL
 - **azureDevOpsPersonalAccessToken** ([*SecretSource*](../20_install.md#secretsource)): The PAT used to authorize the
   calls to th Azure DevOps endpoint
+- **importWebhookPath** (*string*) *optional*: The path to enable the webhook to trigger a full load from Azure DevOps
 
 #### Example
 
