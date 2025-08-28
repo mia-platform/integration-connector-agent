@@ -23,9 +23,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
@@ -37,7 +35,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/core"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/git"
 )
 
@@ -87,7 +84,7 @@ func AddSourceToRouter(ctx context.Context, cfg config.GenericConfig, pg pipelin
 	connection := azuredevops.NewPatConnection(devopsConfig.AzureDevOpsOrganizationURL, devopsConfig.AzureDevOpsPersonalAccessToken.String())
 
 	pg.Start(ctx)
-	if err := setupProjectsHooks(ctx, connection, devopsConfig); err != nil {
+	if err := setupSubscriptions(ctx, connection, devopsConfig); err != nil {
 		return fmt.Errorf("failed to setup Azure DevOps source: %w", err)
 	}
 
@@ -148,43 +145,4 @@ func importWebhookHandler(connection *azuredevops.Connection, pg pipeline.IPipel
 		c.Status(http.StatusNoContent)
 		return nil
 	}
-}
-
-func setupProjectsHooks(ctx context.Context, connection *azuredevops.Connection, devopsConfig *Config) error {
-	coreClient, err := core.NewClient(ctx, connection)
-	if err != nil {
-		return fmt.Errorf("failed to create Azure DevOps client: %w", err)
-	}
-
-	getProjectsArgs := core.GetProjectsArgs{
-		StateFilter: to.Ptr(core.ProjectStateValues.WellFormed),
-	}
-
-	for {
-		projects, err := coreClient.GetProjects(ctx, getProjectsArgs)
-		if err != nil || projects == nil {
-			return fmt.Errorf("failed to get Azure DevOps projects: %w", err)
-		}
-
-		for _, project := range projects.Value {
-			if project.Id != nil {
-				err := createSubscriptionsForProject(ctx, connection, devopsConfig, project.Id.String())
-				if err != nil {
-					return fmt.Errorf("failed to create subscriptions for project %s: %w", *project.Name, err)
-				}
-			}
-		}
-
-		if projects.ContinuationToken == "" {
-			break
-		}
-		continuationToken, err := strconv.Atoi(projects.ContinuationToken)
-		if err != nil {
-			break
-		}
-
-		getProjectsArgs.ContinuationToken = to.Ptr(continuationToken)
-	}
-
-	return nil
 }

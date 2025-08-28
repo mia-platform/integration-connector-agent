@@ -465,23 +465,11 @@ func TestWebhookFunction(t *testing.T) {
 }`)
 
 	testCases := map[string]struct {
-		handler       http.Handler
 		webhookData   json.RawMessage
 		expectedCalls fakewriter.Calls
 		expectedError string
 	}{
 		"webhook for create repository": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method == http.MethodGet && r.RequestURI == "/_apis/projects?stateFilter=wellFormed" {
-					w.Header().Set("Content-Type", "application/json")
-					w.WriteHeader(http.StatusOK)
-					_, err := fmt.Fprintf(w, `{"value":[],"count":0}`)
-					require.NoError(t, err)
-					return
-				}
-				http.NotFound(w, r)
-				assert.Fail(t, "unexpected request", "%s: %s", r.Method, r.RequestURI)
-			}),
 			webhookData: createRepoData,
 			expectedCalls: fakewriter.Calls{
 				{
@@ -505,17 +493,6 @@ func TestWebhookFunction(t *testing.T) {
 			},
 		},
 		"webhook for renamed repository": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method == http.MethodGet && r.RequestURI == "/_apis/projects?stateFilter=wellFormed" {
-					w.Header().Set("Content-Type", "application/json")
-					w.WriteHeader(http.StatusOK)
-					_, err := fmt.Fprintf(w, `{"value":[],"count":0}`)
-					require.NoError(t, err)
-					return
-				}
-				http.NotFound(w, r)
-				assert.Fail(t, "unexpected request", "%s: %s", r.Method, r.RequestURI)
-			}),
 			webhookData: renamedRepoData,
 			expectedCalls: fakewriter.Calls{
 				{
@@ -539,17 +516,6 @@ func TestWebhookFunction(t *testing.T) {
 			},
 		},
 		"webhook for deleted repository": {
-			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method == http.MethodGet && r.RequestURI == "/_apis/projects?stateFilter=wellFormed" {
-					w.Header().Set("Content-Type", "application/json")
-					w.WriteHeader(http.StatusOK)
-					_, err := fmt.Fprintf(w, `{"value":[],"count":0}`)
-					require.NoError(t, err)
-					return
-				}
-				http.NotFound(w, r)
-				assert.Fail(t, "unexpected request", "%s: %s", r.Method, r.RequestURI)
-			}),
 			webhookData: deletedRepoData,
 			expectedCalls: fakewriter.Calls{
 				{
@@ -576,7 +542,17 @@ func TestWebhookFunction(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
-			server := webhookTestServer(t, test.handler)
+			server := webhookTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == http.MethodGet && r.RequestURI == "/_apis/projects?stateFilter=wellFormed" {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					_, err := fmt.Fprintf(w, `{"value":[],"count":0}`)
+					require.NoError(t, err)
+					return
+				}
+				http.NotFound(w, r)
+				assert.Fail(t, "unexpected request", "%s: %s", r.Method, r.RequestURI)
+			}))
 			defer server.Close()
 
 			app, sink, pg := setup(t, server.URL)
