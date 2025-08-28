@@ -19,9 +19,11 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
+	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/core"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/forminput"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/servicehooks"
 )
@@ -46,6 +48,45 @@ var (
 		},
 	}
 )
+
+func setupSubscriptions(ctx context.Context, connection *azuredevops.Connection, devopsConfig *Config) error {
+	coreClient, err := core.NewClient(ctx, connection)
+	if err != nil {
+		return fmt.Errorf("failed to create Azure DevOps client: %w", err)
+	}
+
+	getProjectsArgs := core.GetProjectsArgs{
+		StateFilter: to.Ptr(core.ProjectStateValues.WellFormed),
+	}
+
+	for {
+		projects, err := coreClient.GetProjects(ctx, getProjectsArgs)
+		if err != nil || projects == nil {
+			return fmt.Errorf("failed to get Azure DevOps projects: %w", err)
+		}
+
+		for _, project := range projects.Value {
+			if project.Id != nil {
+				err := createSubscriptionsForProject(ctx, connection, devopsConfig, project.Id.String())
+				if err != nil {
+					return fmt.Errorf("failed to create subscriptions for project %s: %w", *project.Name, err)
+				}
+			}
+		}
+
+		if projects.ContinuationToken == "" {
+			break
+		}
+		continuationToken, err := strconv.Atoi(projects.ContinuationToken)
+		if err != nil {
+			break
+		}
+
+		getProjectsArgs.ContinuationToken = to.Ptr(continuationToken)
+	}
+
+	return nil
+}
 
 func createSubscriptionsForProject(ctx context.Context, connection *azuredevops.Connection, devopsConfig *Config, projectID string) error {
 	// get all subscription on project
