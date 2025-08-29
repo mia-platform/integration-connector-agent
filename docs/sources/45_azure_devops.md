@@ -26,6 +26,8 @@ The following configuration options are supported by the GitHub source:
   - **username** (*string*): The username used to validate incoming webhook requests
   - **secret** ([*SecretSource*](../20_install.md#secretsource)): The secret used to validate incoming webhook requests
 - **webhookPath** (*string*) *optional*: The path where to receive the webhook events. Defaults to `/azure-devops/webhook`.
+- **organizationSubscriptions** (*boolean*) *optional*: if set to true the Azure DevOps PAT must have admin privileges
+	and the webhooks subscriptions will be registered on the organization itself receiving events from all the projects
 - **azureDevOpsOrganizationUrl** (*string*): The Azure DevOps organization URL
 - **azureDevOpsPersonalAccessToken** ([*SecretSource*](../20_install.md#secretsource)): The PAT used to authorize the
   calls to th Azure DevOps endpoint
