@@ -52,6 +52,7 @@ type Config struct {
 	AzureDevOpsPersonalAccessToken config.SecretSource `json:"azureDevOpsPersonalAccessToken"`
 	ImportWebhookPath              string              `json:"importWebhookPath"`
 	WebhookHost                    string              `json:"webhookHost"`
+	OrganizationSubscriptions      bool                `json:"organizationSubscriptions"`
 
 	webhook.Configuration[*basic.Authentication]
 }

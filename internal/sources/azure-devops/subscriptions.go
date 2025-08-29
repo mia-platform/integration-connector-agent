@@ -50,6 +50,19 @@ var (
 )
 
 func setupSubscriptions(ctx context.Context, connection *azuredevops.Connection, devopsConfig *Config) error {
+	if devopsConfig.OrganizationSubscriptions {
+		err := createSubscriptionsForProject(ctx, connection, devopsConfig, "")
+		if err != nil {
+			return fmt.Errorf("failed to create subscriptions for organization: %w", err)
+		}
+
+		return nil
+	}
+
+	return createSubscriptionsForProjects(ctx, connection, devopsConfig)
+}
+
+func createSubscriptionsForProjects(ctx context.Context, connection *azuredevops.Connection, devopsConfig *Config) error {
 	coreClient, err := core.NewClient(ctx, connection)
 	if err != nil {
 		return fmt.Errorf("failed to create Azure DevOps client: %w", err)
