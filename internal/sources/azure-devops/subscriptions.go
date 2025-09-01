@@ -35,16 +35,22 @@ const (
 var (
 	supportedSubscriptions = []servicehooks.Subscription{
 		{
-			EventType:   to.Ptr(repositoryCreated),
-			PublisherId: to.Ptr(publisherID),
+			EventType:        to.Ptr(repositoryCreated),
+			PublisherId:      to.Ptr(publisherID),
+			ConsumerId:       to.Ptr("webHooks"),
+			ConsumerActionId: to.Ptr("httpRequest"),
 		},
 		{
-			EventType:   to.Ptr(repositoryRenamed),
-			PublisherId: to.Ptr(publisherID),
+			EventType:        to.Ptr(repositoryRenamed),
+			PublisherId:      to.Ptr(publisherID),
+			ConsumerId:       to.Ptr("webHooks"),
+			ConsumerActionId: to.Ptr("httpRequest"),
 		},
 		{
-			EventType:   to.Ptr(repositoryDeleted),
-			PublisherId: to.Ptr(publisherID),
+			EventType:        to.Ptr(repositoryDeleted),
+			PublisherId:      to.Ptr(publisherID),
+			ConsumerId:       to.Ptr("webHooks"),
+			ConsumerActionId: to.Ptr("httpRequest"),
 		},
 	}
 )
@@ -197,8 +203,10 @@ func queryArgs(projectID string) servicehooks.CreateSubscriptionsQueryArgs {
 
 func newSubscription(supportedSubscription servicehooks.Subscription, projectID string, webhookURL string, devopsConfig *Config) servicehooks.Subscription {
 	subscription := servicehooks.Subscription{
-		EventType:   supportedSubscription.EventType,
-		PublisherId: supportedSubscription.PublisherId,
+		EventType:        supportedSubscription.EventType,
+		PublisherId:      supportedSubscription.PublisherId,
+		ConsumerId:       supportedSubscription.ConsumerId,
+		ConsumerActionId: supportedSubscription.ConsumerActionId,
 		ConsumerInputs: &map[string]string{
 			"url": webhookURL,
 		},
