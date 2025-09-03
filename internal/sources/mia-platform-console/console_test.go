@@ -32,8 +32,8 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
-	webhookhmac "github.com/mia-platform/integration-connector-agent/internal/sources/mia-platform-console/hmac"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	webhookhmac "github.com/mia-platform/integration-connector-agent/internal/sources/webhook/hmac"
 	"github.com/mia-platform/integration-connector-agent/internal/testutils"
 
 	"github.com/sirupsen/logrus/hooks/test"
@@ -109,9 +109,8 @@ func TestValidateConfig(t *testing.T) {
 				},
 			},
 		},
-		"empty config return error": {
-			config:        &Config{},
-			expectedError: webhook.ErrInvalidWebhookAuthenticationConfig,
+		"empty config return default": {
+			config: &Config{},
 			expectedConfig: &Config{
 				Configuration: webhook.Configuration[webhookhmac.Authentication]{
 					WebhookPath: defaultWebhookPath,
@@ -132,6 +131,8 @@ func TestValidateConfig(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+			assert.NotNil(t, tc.config.Authentication.CustomValidator)
+			tc.config.Authentication.CustomValidator = nil
 			assert.Equal(t, tc.expectedConfig, tc.config)
 		})
 	}

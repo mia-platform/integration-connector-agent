@@ -41,11 +41,10 @@ func TestValidation(t *testing.T) {
 			},
 			expectedErr: webhook.ErrInvalidWebhookAuthenticationConfig,
 		},
-		"missing secret": {
+		"missing secret is valid": {
 			authentication: Authentication{
 				HeaderName: "X-Header-Name",
 			},
-			expectedErr: webhook.ErrInvalidWebhookAuthenticationConfig,
 		},
 	}
 

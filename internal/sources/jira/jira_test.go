@@ -110,9 +110,8 @@ func TestValidateConfig(t *testing.T) {
 				},
 			},
 		},
-		"empty config return error": {
-			config:        &Config{},
-			expectedError: webhook.ErrInvalidWebhookAuthenticationConfig,
+		"empty config return default": {
+			config: &Config{},
 			expectedConfig: &Config{
 				Configuration: webhook.Configuration[webhookhmac.Authentication]{
 					WebhookPath: defaultWebhookPath,

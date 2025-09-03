@@ -29,6 +29,7 @@ import (
 
 var (
 	ErrSignatureHeaderButNoSecret = errors.New("secret not configured for validating webhook signature")
+	ErrSecretButNoSignatureHeader = errors.New("secret configured but no signature header found in request")
 	ErrMultipleSignatureHeaders   = errors.New("multiple signature headers found")
 	ErrInvalidSignature           = errors.New("invalid signature in request")
 )
@@ -38,6 +39,8 @@ var _ webhook.Authentication = Authentication{}
 type Authentication struct {
 	Secret     config.SecretSource `json:"secret"`
 	HeaderName string              `json:"headerName"`
+
+	CustomValidator func(bodyData []byte, secret, expectedSignature string) bool `json:"-"`
 }
 
 // CheckSignature will read the webhook signature header and the given secret for validating the webhook
@@ -50,7 +53,12 @@ func (a Authentication) CheckSignature(req webhook.ValidatingRequest) error {
 	}
 
 	signature, _ := strings.CutPrefix(signatureValue, "sha256=")
-	if !validateBody(req.Body(), secret, signature) {
+
+	validator := validateBody
+	if a.CustomValidator != nil {
+		validator = a.CustomValidator
+	}
+	if !validator(req.Body(), secret, signature) {
 		return ErrInvalidSignature
 	}
 
@@ -59,15 +67,8 @@ func (a Authentication) CheckSignature(req webhook.ValidatingRequest) error {
 
 // Validate checks if the HMAC configuration is valid. It requires that both secret and headerName are set
 func (a Authentication) Validate() error {
-	switch {
-	case a.HeaderName == "":
-		if a.Secret.String() != "" {
-			return fmt.Errorf("%w: headerName not present but secret is set", webhook.ErrInvalidWebhookAuthenticationConfig)
-		}
-	case a.Secret.String() == "":
-		if a.HeaderName != "" {
-			return fmt.Errorf("%w: secret not present but headerName is set", webhook.ErrInvalidWebhookAuthenticationConfig)
-		}
+	if a.HeaderName == "" && a.Secret.String() != "" {
+		return fmt.Errorf("%w: headerName not present but secret is set", webhook.ErrInvalidWebhookAuthenticationConfig)
 	}
 
 	return nil
@@ -94,6 +95,8 @@ func hmacSignatureHeaderValue(req webhook.ValidatingRequest, headerName, secret 
 		return "", nil
 	case len(headerValues) != 0 && len(secret) == 0:
 		return "", ErrSignatureHeaderButNoSecret
+	case len(headerValues) == 0 && len(secret) != 0:
+		return "", ErrSecretButNoSignatureHeader
 	case len(headerValues) > 1:
 		return "", ErrMultipleSignatureHeaders
 	}
