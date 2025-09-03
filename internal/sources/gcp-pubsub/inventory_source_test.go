@@ -27,7 +27,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	gcppubsubevents "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/events"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/gcpclient"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook/hmac"
 	"github.com/mia-platform/integration-connector-agent/internal/testutils"
 
 	swagger "github.com/davidebianchi/gswagger"
@@ -92,7 +92,7 @@ func TestImportWebhook(t *testing.T) {
 			app, router := testutils.GetTestRouter(t)
 			config := &InventorySourceConfig{
 				WebhookPath: "/gcppubsub/import",
-				Authentication: webhook.HMAC{
+				Authentication: hmac.Authentication{
 					HeaderName: "X-Hmac-Signature",
 					Secret:     "It's a Secret to Everybody",
 				},
@@ -118,7 +118,7 @@ func TestImportWebhook(t *testing.T) {
 			app, router := testutils.GetTestRouter(t)
 			config := &InventorySourceConfig{
 				WebhookPath: "/gcppubsub/import",
-				Authentication: webhook.HMAC{
+				Authentication: hmac.Authentication{
 					HeaderName: "X-Hmac-Signature",
 					Secret:     "It's a Secret to Everybody",
 				},

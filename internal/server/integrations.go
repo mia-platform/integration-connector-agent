@@ -31,6 +31,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
 	awssqs "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs"
 	azureactivitylogeventhub "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub"
+	azuredevops "github.com/mia-platform/integration-connector-agent/internal/sources/azure-devops"
 	gcppubsub "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/github"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
@@ -208,6 +209,10 @@ func runIntegration(ctx context.Context, log *logrus.Logger, pg pipeline.IPipeli
 		integration.appendCloseableSource(awsConsumer)
 	case sources.AzureActivityLogEventHub:
 		if err := azureactivitylogeventhub.AddSource(ctx, source, pg, log, oasRouter); err != nil {
+			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+		}
+	case sources.AzureDevOps:
+		if err := azuredevops.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
 			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
 		}
 	case sources.Github:

@@ -2,12 +2,7 @@
   "integrations": [
     {
       "source": {
-        "type": "jira",
-        "authentication": {
-          "secret": {
-            "fromFile": "testdata/secret"
-          }
-        }
+        "type": "jira"
       },
       "pipelines": [
         {

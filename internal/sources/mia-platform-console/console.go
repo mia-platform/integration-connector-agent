@@ -16,11 +16,16 @@
 package console
 
 import (
+	"cmp"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	webhookhmac "github.com/mia-platform/integration-connector-agent/internal/sources/webhook/hmac"
 
 	swagger "github.com/davidebianchi/gswagger"
 	"github.com/gofiber/fiber/v2"
@@ -34,37 +39,20 @@ const (
 )
 
 type Config struct {
-	Authentication ValidationConfig `json:"authentication"`
-	WebhookPath    string           `json:"webhookPath"`
-}
-
-func (c *Config) withDefault() *Config {
-	if c.WebhookPath == "" {
-		c.WebhookPath = defaultWebhookPath
-	}
-	if c.Authentication.HeaderName == "" {
-		c.Authentication.HeaderName = authHeaderName
-	}
-
-	return c
+	webhook.Configuration[webhookhmac.Authentication]
 }
 
 func (c *Config) Validate() error {
 	c.withDefault()
-
-	return nil
+	return c.Configuration.Validate()
 }
 
-func (c *Config) getWebhookConfig() (*webhook.Configuration, error) {
-	webhookConfig := &webhook.Configuration{
-		WebhookPath:    c.WebhookPath,
-		Authentication: c.Authentication,
-		Events:         &DefaultSupportedEvents,
-	}
-	if err := webhookConfig.Validate(); err != nil {
-		return nil, err
-	}
-	return webhookConfig, nil
+func (c *Config) withDefault() *Config {
+	c.WebhookPath = cmp.Or(c.WebhookPath, defaultWebhookPath)
+	c.Authentication.HeaderName = authHeaderName
+	c.Authentication.CustomValidator = validateBody
+	c.Events = cmp.Or(c.Events, SupportedEvents)
+	return c
 }
 
 func AddSourceToRouter(
@@ -78,10 +66,20 @@ func AddSourceToRouter(
 		return err
 	}
 
-	webhookConfig, err := consoleConfig.getWebhookConfig()
+	return webhook.SetupService(ctx, router, consoleConfig.Configuration, pg)
+}
+
+// validateBody will generate an hmac encoding of bodyData using secret, and than compare it with the expectedSignature
+func validateBody(bodyData []byte, secret, expectedSignature string) bool {
+	hasher := sha256.New()
+	hasher.Write(bodyData)
+	hasher.Write([]byte(secret))
+	generatedMAC := hasher.Sum(nil)
+
+	expectedMac, err := hex.DecodeString(expectedSignature)
 	if err != nil {
-		return err
+		return false
 	}
 
-	return webhook.SetupService(ctx, router, webhookConfig, pg)
+	return hmac.Equal(generatedMAC, expectedMac)
 }

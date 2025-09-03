@@ -40,7 +40,7 @@ const (
 	revisionNameKey = "revisionName"
 )
 
-var DefaultSupportedEvents = webhook.Events{
+var SupportedEvents = &webhook.Events{
 	Supported: map[string]webhook.Event{
 		projectCreatedEvent: {
 			Operation: entities.Write,
