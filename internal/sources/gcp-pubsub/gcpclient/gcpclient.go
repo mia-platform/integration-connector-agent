@@ -19,15 +19,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
-	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/pubsub/v2"
+	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	run "cloud.google.com/go/run/apiv2"
 	"cloud.google.com/go/run/apiv2/runpb"
 	"cloud.google.com/go/storage"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type concrete struct {
@@ -79,18 +81,37 @@ func New(ctx context.Context, log *logrus.Logger, config GCPConfig) (GCP, error)
 }
 
 func (p *concrete) Listen(ctx context.Context, handler ListenerFunc) error {
-	subscription, err := p.ensureSubscription(ctx, p.config.TopicName, p.config.SubscriptionID)
-	if err != nil {
-		return err
-	}
-
+	subscriber := p.p.Subscriber(p.config.SubscriptionID)
 	p.log.WithFields(logrus.Fields{
 		"projectId":      p.config.ProjectID,
 		"topicName":      p.config.TopicName,
 		"subscriptionId": p.config.SubscriptionID,
 	}).Debug("starting to listen to Pub/Sub messages")
 
-	return subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+	err := subscriber.Receive(ctx, handlerPubSubMessage(p, handler))
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			if st.Code() == codes.NotFound {
+				// If the subscription does not exist, then create the subscription.
+				subscription, err := p.p.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
+					Name:  p.config.SubscriptionID,
+					Topic: p.config.TopicName,
+				})
+				if err != nil {
+					return err
+				}
+
+				subscriber = p.p.Subscriber(subscription.GetName())
+				return subscriber.Receive(ctx, handlerPubSubMessage(p, handler))
+			}
+		}
+	}
+
+	return nil
+}
+
+func handlerPubSubMessage(p *concrete, handler ListenerFunc) func(ctx context.Context, msg *pubsub.Message) {
+	return func(ctx context.Context, msg *pubsub.Message) {
 		p.log.WithFields(logrus.Fields{
 			"projectId":      p.config.ProjectID,
 			"topicName":      p.config.TopicName,
@@ -120,7 +141,7 @@ func (p *concrete) Listen(ctx context.Context, handler ListenerFunc) error {
 		// - a way to be notified here if all the pipelins have processed the
 		//   message successfully in order to correctly ack/nack it.
 		msg.Ack()
-	})
+	}
 }
 
 func (p *concrete) Close() error {
@@ -132,31 +153,6 @@ func (p *concrete) Close() error {
 		return fmt.Errorf("failed to close storage client: %w", err)
 	}
 	return nil
-}
-
-func (p *concrete) ensureSubscription(ctx context.Context, topicName, subscriptionID string) (*pubsub.Subscription, error) {
-	subscription := p.p.Subscription(subscriptionID)
-	exists, err := subscription.Exists(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to check if subscription exists: %w", err)
-	}
-	if exists {
-		return subscription, nil
-	}
-
-	ackDeadline := 10 * time.Second
-	if p.config.AckDeadlineSeconds > 0 {
-		ackDeadline = time.Duration(p.config.AckDeadlineSeconds) * time.Second
-	}
-
-	subscription, err = p.p.CreateSubscription(ctx, subscriptionID, pubsub.SubscriptionConfig{
-		Topic:       p.p.Topic(topicName),
-		AckDeadline: ackDeadline,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create subscription: %w", err)
-	}
-	return subscription, nil
 }
 
 func (p *concrete) ListBuckets(ctx context.Context) ([]*Bucket, error) {
