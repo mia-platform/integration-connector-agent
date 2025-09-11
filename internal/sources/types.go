@@ -21,6 +21,7 @@ const (
 	Github                   = "github"
 	GCPInventoryPubSub       = "gcp-inventory-pubsub"
 	AzureActivityLogEventHub = "azure-activity-log-event-hub"
+	AzureDevOps              = "azure-devops"
 	AWSCloudTrailSQS         = "aws-cloudtrail-sqs"
 )
 

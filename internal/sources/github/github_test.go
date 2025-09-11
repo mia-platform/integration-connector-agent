@@ -36,41 +36,91 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/processors"
 	fakewriter "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	webhookhmac "github.com/mia-platform/integration-connector-agent/internal/sources/webhook/hmac"
 	"github.com/mia-platform/integration-connector-agent/internal/testutils"
 
 	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestValidateConfig(t *testing.T) {
-	testCases := map[string]struct {
-		config *Config
+	t.Parallel()
 
+	testCases := map[string]struct {
+		config         *Config
 		expectedConfig *Config
 		expectedError  error
 	}{
 		"with default": {
-			config: &Config{},
+			config: &Config{
+				Configuration: webhook.Configuration[webhookhmac.Authentication]{
+					Authentication: webhookhmac.Authentication{
+						Secret: "secret",
+					},
+				},
+			},
 			expectedConfig: &Config{
-				WebhookPath: defaultWebhookPath,
-				Authentication: webhook.HMAC{
-					HeaderName: authHeaderName,
+				Configuration: webhook.Configuration[webhookhmac.Authentication]{
+					WebhookPath: defaultWebhookPath,
+					Authentication: webhookhmac.Authentication{
+						HeaderName: authHeaderName,
+						Secret:     "secret",
+					},
+					Events: SupportedEvents,
 				},
 			},
 		},
 		"with custom values": {
 			config: &Config{
-				WebhookPath: "/custom/webhook",
-				Authentication: webhook.HMAC{
-					HeaderName: "X-Custom-Header",
-					Secret:     config.SecretSource("secret"),
+				Configuration: webhook.Configuration[webhookhmac.Authentication]{
+					WebhookPath: "/custom/webhook",
+					Authentication: webhookhmac.Authentication{
+						HeaderName: "X-Custom-Header",
+						Secret:     "secret",
+					},
 				},
 			},
 			expectedConfig: &Config{
-				WebhookPath: "/custom/webhook",
-				Authentication: webhook.HMAC{
-					HeaderName: "X-Custom-Header",
-					Secret:     config.SecretSource("secret"),
+				Configuration: webhook.Configuration[webhookhmac.Authentication]{
+					WebhookPath: "/custom/webhook",
+					Authentication: webhookhmac.Authentication{
+						HeaderName: "X-Custom-Header",
+						Secret:     "secret",
+					},
+					Events: SupportedEvents,
+				},
+			},
+		},
+		"unmarshal from file": {
+			config: func() *Config {
+				rawConfig, err := os.ReadFile("testdata/config.json")
+				require.NoError(t, err)
+
+				actual := &Config{}
+				require.NoError(t, json.Unmarshal(rawConfig, actual))
+				return actual
+			}(),
+			expectedConfig: &Config{
+				Configuration: webhook.Configuration[webhookhmac.Authentication]{
+					WebhookPath: "/webhook",
+					Authentication: webhookhmac.Authentication{
+						HeaderName: authHeaderName,
+						Secret:     "SECRET_VALUE",
+					},
+					Events: SupportedEvents,
+				},
+			},
+		},
+		"empty config return default": {
+			config: &Config{},
+			expectedConfig: &Config{
+				Configuration: webhook.Configuration[webhookhmac.Authentication]{
+					WebhookPath: defaultWebhookPath,
+					Authentication: webhookhmac.Authentication{
+						HeaderName: authHeaderName,
+					},
+					Events: SupportedEvents,
 				},
 			},
 		},
@@ -80,137 +130,119 @@ func TestValidateConfig(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			err := tc.config.Validate()
 			if tc.expectedError != nil {
-				require.EqualError(t, err, tc.expectedError.Error())
-				return
+				assert.ErrorIs(t, err, tc.expectedError)
+			} else {
+				require.NoError(t, err)
 			}
-			require.NoError(t, err)
-			require.Equal(t, tc.expectedConfig, tc.config)
+			assert.Equal(t, tc.expectedConfig, tc.config)
 		})
 	}
-
-	t.Run("unmarshal config", func(t *testing.T) {
-		rawConfig, err := os.ReadFile("testdata/config.json")
-		require.NoError(t, err)
-
-		actual := &Config{}
-		require.NoError(t, json.Unmarshal(rawConfig, actual))
-		require.NoError(t, actual.Validate())
-
-		require.Equal(t, &Config{
-			WebhookPath: "/webhook",
-			Authentication: webhook.HMAC{
-				HeaderName: authHeaderName,
-				Secret:     config.SecretSource("SECRET_VALUE"),
-			},
-		}, actual)
-	})
 }
 
 func TestAddSourceToRouter(t *testing.T) {
+	t.Parallel()
 	logger, _ := test.NewNullLogger()
 
-	t.Run("setup webhook", func(t *testing.T) {
-		ctx := t.Context()
+	ctx := t.Context()
 
-		rawConfig, err := os.ReadFile("testdata/config.json")
-		require.NoError(t, err)
-		cfg := config.GenericConfig{}
-		require.NoError(t, json.Unmarshal(rawConfig, &cfg))
+	rawConfig, err := os.ReadFile("testdata/config.json")
+	require.NoError(t, err)
+	cfg := config.GenericConfig{}
+	require.NoError(t, json.Unmarshal(rawConfig, &cfg))
 
-		app, router := testutils.GetTestRouter(t)
+	app, router := testutils.GetTestRouter(t)
 
-		proc := &processors.Processors{}
-		s := fakewriter.New(nil)
-		p1, err := pipeline.New(logger, proc, s)
-		require.NoError(t, err)
+	proc := &processors.Processors{}
+	s := fakewriter.New(nil)
+	p1, err := pipeline.New(logger, proc, s)
+	require.NoError(t, err)
 
-		pg := pipeline.NewGroup(logger, p1)
+	pg := pipeline.NewGroup(logger, p1)
 
-		id := "12345"
-		err = AddSourceToRouter(ctx, cfg, pg, router)
-		require.NoError(t, err)
+	id := "12345"
+	err = AddSourceToRouter(ctx, cfg, pg, router)
+	require.NoError(t, err)
 
-		testCases := []struct {
-			eventName   string
-			body        string
-			contentType string
+	testCases := []struct {
+		eventName   string
+		body        string
+		contentType string
 
-			expectedPk        entities.PkFields
-			expectedOperation entities.Operation
-		}{
-			{
-				eventName:   pullRequestEvent,
-				body:        getPullRequestPayload("opened", id),
-				contentType: "application/json",
+		expectedPk        entities.PkFields
+		expectedOperation entities.Operation
+	}{
+		{
+			eventName:   pullRequestEvent,
+			body:        getPullRequestPayload("opened", id),
+			contentType: "application/json",
 
-				expectedPk:        entities.PkFields{{Key: "pull_request.id", Value: id}},
-				expectedOperation: entities.Write,
-			},
-			{
-				eventName:   pullRequestEvent,
-				body:        getPullRequestPayload("closed", id),
-				contentType: "application/json",
+			expectedPk:        entities.PkFields{{Key: "pull_request.id", Value: id}},
+			expectedOperation: entities.Write,
+		},
+		{
+			eventName:   pullRequestEvent,
+			body:        getPullRequestPayload("closed", id),
+			contentType: "application/json",
 
-				expectedPk:        entities.PkFields{{Key: "pull_request.id", Value: id}},
-				expectedOperation: entities.Write,
-			},
-		}
+			expectedPk:        entities.PkFields{{Key: "pull_request.id", Value: id}},
+			expectedOperation: entities.Write,
+		},
+	}
 
-		for _, tc := range testCases {
-			t.Run(fmt.Sprintf("invoke webhook with %s event", tc.eventName), func(t *testing.T) {
-				defer s.ResetCalls()
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("invoke webhook with %s event", tc.eventName), func(t *testing.T) {
+			defer s.ResetCalls()
 
-				req := getWebhookRequest(bytes.NewBufferString(tc.body), tc.eventName)
+			req := getWebhookRequest(bytes.NewBufferString(tc.body), tc.eventName)
 
-				resp, err := app.Test(req)
-				require.NoError(t, err)
-				defer resp.Body.Close()
-				body, err := io.ReadAll(resp.Body)
-				require.NoError(t, err)
-				require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
-				require.Eventually(t, func() bool {
-					return len(s.Calls()) == 1
-				}, 1*time.Second, 10*time.Millisecond)
-				require.Equal(t, fakewriter.Call{
-					Operation: tc.expectedOperation,
-					Data: &entities.Event{
-						PrimaryKeys:   tc.expectedPk,
-						Type:          tc.eventName,
-						OperationType: tc.expectedOperation,
-						OriginalRaw:   []byte(tc.body),
-					},
-				}, s.Calls().LastCall())
-			})
+			resp, err := app.Test(req)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+			require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+			require.Eventually(t, func() bool {
+				return len(s.Calls()) == 1
+			}, 1*time.Second, 10*time.Millisecond)
+			require.Equal(t, fakewriter.Call{
+				Operation: tc.expectedOperation,
+				Data: &entities.Event{
+					PrimaryKeys:   tc.expectedPk,
+					Type:          tc.eventName,
+					OperationType: tc.expectedOperation,
+					OriginalRaw:   []byte(tc.body),
+				},
+			}, s.Calls().LastCall())
+		})
 
-			t.Run(fmt.Sprintf("invoke webhook with %s event with form body", tc.eventName), func(t *testing.T) {
-				defer s.ResetCalls()
+		t.Run(fmt.Sprintf("invoke webhook with %s event with form body", tc.eventName), func(t *testing.T) {
+			defer s.ResetCalls()
 
-				form := url.Values{}
-				form.Set("payload", tc.body)
-				req := getWebhookRequest(bytes.NewBufferString(form.Encode()), tc.eventName)
-				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			form := url.Values{}
+			form.Set("payload", tc.body)
+			req := getWebhookRequest(bytes.NewBufferString(form.Encode()), tc.eventName)
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-				resp, err := app.Test(req)
-				require.NoError(t, err)
-				defer resp.Body.Close()
-				body, err := io.ReadAll(resp.Body)
-				require.NoError(t, err)
-				require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
-				require.Eventually(t, func() bool {
-					return len(s.Calls()) == 1
-				}, 1*time.Second, 10*time.Millisecond)
-				require.Equal(t, fakewriter.Call{
-					Operation: tc.expectedOperation,
-					Data: &entities.Event{
-						PrimaryKeys:   tc.expectedPk,
-						Type:          tc.eventName,
-						OperationType: tc.expectedOperation,
-						OriginalRaw:   []byte(tc.body),
-					},
-				}, s.Calls().LastCall())
-			})
-		}
-	})
+			resp, err := app.Test(req)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+			require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+			require.Eventually(t, func() bool {
+				return len(s.Calls()) == 1
+			}, 1*time.Second, 10*time.Millisecond)
+			require.Equal(t, fakewriter.Call{
+				Operation: tc.expectedOperation,
+				Data: &entities.Event{
+					PrimaryKeys:   tc.expectedPk,
+					Type:          tc.eventName,
+					OperationType: tc.expectedOperation,
+					OriginalRaw:   []byte(tc.body),
+				},
+			}, s.Calls().LastCall())
+		})
+	}
 }
 
 func getWebhookRequest(body *bytes.Buffer, eventType string) *http.Request {

@@ -61,7 +61,7 @@ docker/%/multiarch:
 		$(IMAGE_TAGS) \
 		$(DOCKER_LABELS) \
 		$(DOCKER_ANNOTATIONS) \
-		--file ./Dockerfile $(OUTPUT_DIR) $(ADDITIONAL_PARAMETER)
+		--file ./Dockerfile . $(ADDITIONAL_PARAMETER)
 
 .PHONY: docker/build/%
 docker/build/%:
@@ -69,12 +69,13 @@ docker/build/%:
 	$(eval ARCH:= $(word 2,$(subst /, ,$*)))
 	$(eval ARM:= $(word 3,$(subst /, ,$*)))
 	$(info Building image for $(OS) $(ARCH) $(ARM))
-	$(DOCKER_CMD) build --platform $* \
+	$(DOCKER_CMD) buildx build --platform $* \
 		--build-arg CMD_NAME=$(CMDNAME) \
+		--provenance=false \
 		$(IMAGE_TAGS) \
 		$(DOCKER_LABELS) \
 		$(DOCKER_ANNOTATIONS) \
-		--file ./Dockerfile $(OUTPUT_DIR)
+		--file ./Dockerfile .
 
 .PHONY: docker/setup/multiarch
 docker/setup/multiarch:

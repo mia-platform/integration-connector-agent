@@ -27,6 +27,7 @@ import (
 	fakesink "github.com/mia-platform/integration-connector-agent/internal/sinks/fake"
 
 	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -77,19 +78,19 @@ func TestPipeline(t *testing.T) {
 
 				p.AddMessage(tc.event)
 
-				require.Eventually(t, func() bool {
-					data := &entities.Event{
-						PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
-						OperationType: tc.expectedOperation,
-						OriginalRaw:   []byte(`{}`),
-					}
-
-					require.Equal(t, fakesink.Call{
-						Operation: tc.expectedOperation,
-						Data:      data,
-					}, w.Calls().LastCall())
-					return true
+				assert.Eventually(t, func() bool {
+					return len(w.Calls()) == 1
 				}, 1*time.Second, 10*time.Millisecond)
+				data := &entities.Event{
+					PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
+					OperationType: tc.expectedOperation,
+					OriginalRaw:   []byte(`{}`),
+				}
+				assert.Equal(t, fakesink.Call{
+					Operation: tc.expectedOperation,
+					Data:      data,
+				}, w.Calls().LastCall())
+				w.ResetCalls()
 			})
 		}
 	})
@@ -108,7 +109,7 @@ func TestPipeline(t *testing.T) {
 		}(t)
 
 		err = p.Start(t.Context())
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("on context done, close channel", func(t *testing.T) {
@@ -124,7 +125,7 @@ func TestPipeline(t *testing.T) {
 		}(t, cancel)
 
 		err = p.Start(ctx)
-		require.EqualError(t, err, "context canceled")
+		assert.EqualError(t, err, "context canceled")
 	})
 
 	t.Run("on sink error, the pipeline skips the element and logs - write", func(t *testing.T) {
@@ -148,19 +149,20 @@ func TestPipeline(t *testing.T) {
 			OriginalRaw:   []byte(`{}`),
 		})
 
-		require.Eventually(t, func() bool {
-			event := &entities.Event{
-				PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
-				OperationType: entities.Write,
-				OriginalRaw:   []byte(`{}`),
-			}
-			require.Equal(t, fakesink.Call{
-				Operation: entities.Write,
-				Data:      event,
-			}, w.Calls().LastCall())
-			return true
+		assert.Eventually(t, func() bool {
+			return len(w.Calls()) == 1
 		}, 1*time.Second, 10*time.Millisecond)
-		require.Equal(t, "error writing data", hook.LastEntry().Message)
+		event := &entities.Event{
+			PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
+			OperationType: entities.Write,
+			OriginalRaw:   []byte(`{}`),
+		}
+		assert.Equal(t, fakesink.Call{
+			Operation: entities.Write,
+			Data:      event,
+		}, w.Calls().LastCall())
+
+		assert.Equal(t, "error writing data", hook.LastEntry().Message)
 	})
 
 	t.Run("on error, the pipeline skips the element and logs - delete", func(t *testing.T) {
@@ -183,17 +185,17 @@ func TestPipeline(t *testing.T) {
 			OperationType: entities.Delete,
 		})
 
-		require.Eventually(t, func() bool {
-			require.Equal(t, fakesink.Call{
-				Operation: entities.Delete,
-				Data: &entities.Event{
-					PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
-					OperationType: entities.Delete,
-				},
-			}, w.Calls().LastCall())
-			return true
+		assert.Eventually(t, func() bool {
+			return len(w.Calls()) == 1
 		}, 1*time.Second, 10*time.Millisecond)
-		require.Equal(t, "error writing data", hook.LastEntry().Message)
+		assert.Equal(t, fakesink.Call{
+			Operation: entities.Delete,
+			Data: &entities.Event{
+				PrimaryKeys:   entities.PkFields{{Key: "key", Value: id}},
+				OperationType: entities.Delete,
+			},
+		}, w.Calls().LastCall())
+		assert.Equal(t, "error writing data", hook.LastEntry().Message)
 	})
 
 	t.Run("filter event when filter returns false", func(t *testing.T) {
@@ -219,11 +221,11 @@ func TestPipeline(t *testing.T) {
 			OriginalRaw: []byte(`{"type":"event-type"}`),
 		})
 
-		require.Eventually(t, func() bool {
-			require.Equal(t, 0, len(w.Calls()))
-			return true
+		assert.Eventually(t, func() bool {
+			return len(w.Calls()) < 1
 		}, 1*time.Second, 100*time.Millisecond)
 
+		assert.Equal(t, 0, len(w.Calls()))
 		logErrorProcessingDataMessageCount := 0
 		for _, entry := range hook.AllEntries() {
 			if entry.Message == "error processing data" {
@@ -231,7 +233,7 @@ func TestPipeline(t *testing.T) {
 			}
 		}
 
-		require.Equal(t, 0, logErrorProcessingDataMessageCount)
+		assert.Equal(t, 0, logErrorProcessingDataMessageCount)
 	})
 }
 

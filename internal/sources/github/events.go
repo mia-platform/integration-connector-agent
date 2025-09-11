@@ -28,7 +28,7 @@ const (
 	pullRequestEvent = "pull_request"
 )
 
-var SupportedEvents = webhook.Events{
+var SupportedEvents = &webhook.Events{
 	Supported: map[string]webhook.Event{
 		pullRequestEvent: {
 			// All pull request actions are set as Write operations, also the close action.

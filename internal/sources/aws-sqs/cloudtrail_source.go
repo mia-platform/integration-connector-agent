@@ -26,7 +26,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/sources"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/awsclient"
 	awssqsevents "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs/events"
-	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook/hmac"
 	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	swagger "github.com/davidebianchi/gswagger"
@@ -41,8 +41,8 @@ type CloudTrailSourceConfig struct {
 	SecretAccessKey config.SecretSource `json:"secretAccessKey,omitempty"`
 	SessionToken    config.SecretSource `json:"sessionToken,omitempty"`
 
-	WebhookPath    string       `json:"webhookPath,omitempty"`
-	Authentication webhook.HMAC `json:"authentication"`
+	WebhookPath    string              `json:"webhookPath,omitempty"`
+	Authentication hmac.Authentication `json:"authentication,omitempty"`
 }
 
 func (c *CloudTrailSourceConfig) Validate() error {
@@ -50,7 +50,7 @@ func (c *CloudTrailSourceConfig) Validate() error {
 		return fmt.Errorf("queueId must be provided")
 	}
 
-	return nil
+	return c.Authentication.Validate()
 }
 
 type CloudTrailSource struct {

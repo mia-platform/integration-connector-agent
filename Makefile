@@ -74,7 +74,7 @@ SUPPORTED_PLATFORMS:= linux/amd64 linux/arm64
 # as SUPPORTED_PLATFORMS it highly depends on which platform are supported by the base image
 DEFAULT_DOCKER_PLATFORM:= linux/$(GOARCH)/$(GOARM)
 # List of one or more container registries for tagging the resulting docker images
-CONTAINER_REGISTRIES:= docker.io/miaplatform ghcr.io/mia-platform
+CONTAINER_REGISTRIES:= docker.io/miaplatform ghcr.io/mia-platform nexus.mia-platform.eu/plugins
 # The description used on the org.opencontainers.description label of the container
 DESCRIPTION:=
 # The vendor name used on the org.opencontainers.image.vendor label of the container

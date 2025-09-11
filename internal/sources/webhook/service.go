@@ -39,10 +39,10 @@ var (
 	ErrFailsToParseBody         = errors.New("failed to parse body")
 )
 
-func SetupService(
+func SetupService[T Authentication](
 	ctx context.Context,
 	router *swagger.Router[fiber.Handler, fiber.Router],
-	config *Configuration,
+	config Configuration[T],
 	p pipeline.IPipelineGroup,
 ) error {
 	if err := config.Validate(); err != nil {
@@ -84,7 +84,7 @@ func extractBodyFromContentType(c *fiber.Ctx, events *Events) ([]byte, error) {
 	}
 }
 
-func webhookHandler(config *Configuration, p pipeline.IPipelineGroup) fiber.Handler {
+func webhookHandler[T Authentication](config Configuration[T], p pipeline.IPipelineGroup) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		log := glogrus.FromContext(c.UserContext())
 
