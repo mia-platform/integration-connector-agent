@@ -63,9 +63,9 @@ func (pg *Group) AddMessage(event entities.PipelineEvent) {
 	}
 }
 
-func (pg *Group) Close() error {
+func (pg *Group) Close(ctx context.Context) error {
 	for _, p := range pg.pipelines {
-		if err := p.Close(); err != nil {
+		if err := p.Close(ctx); err != nil {
 			pg.errors = append(pg.errors, err)
 		}
 	}

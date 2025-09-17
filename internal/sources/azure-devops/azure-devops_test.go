@@ -276,7 +276,7 @@ func TestImportFunction(t *testing.T) {
 			defer server.Close()
 
 			app, sink, pg := setup(t, server.URL)
-			defer pg.Close()
+			defer pg.Close(t.Context())
 
 			response, err := app.Test(httptest.NewRequest(http.MethodPost, "/webhook", nil))
 			require.NoError(t, err)
@@ -556,7 +556,7 @@ func TestWebhookFunction(t *testing.T) {
 			defer server.Close()
 
 			app, sink, pg := setup(t, server.URL)
-			defer pg.Close()
+			defer pg.Close(t.Context())
 
 			bodyBuffer := bytes.NewBuffer(test.webhookData)
 			req := httptest.NewRequest(http.MethodPost, defaultAzureWebhookPath, bodyBuffer)

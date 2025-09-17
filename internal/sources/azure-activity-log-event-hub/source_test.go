@@ -41,8 +41,8 @@ func (t *testPipelineGroup) AddMessage(message entities.PipelineEvent) {
 		t.Messages = append(t.Messages, event)
 	}
 }
-func (t *testPipelineGroup) Start(_ context.Context) {}
-func (t *testPipelineGroup) Close() error            { return nil }
+func (t *testPipelineGroup) Start(_ context.Context)       {}
+func (t *testPipelineGroup) Close(_ context.Context) error { return nil }
 
 func TestConfig(t *testing.T) {
 	t.Parallel()

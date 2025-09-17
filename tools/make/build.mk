@@ -18,65 +18,17 @@
 .PHONY: build
 build:
 
-# if not already installed in the system install a pinned version in tools folder
-GORELEASER_PATH:= $(shell command -v goreleaser 2> /dev/null)
-ifndef GORELEASER_PATH
-GORELEASER_PATH:= $(TOOLS_BIN)/goreleaser
-endif
-
-ifeq ($(IS_LIBRARY), 1)
-
-BUILD_DATE:= $(shell date -u "+%Y-%m-%d")
 GO_LDFLAGS+= -s -w
 
-ifdef VERSION_MODULE_NAME
-GO_LDFLAGS+= -X $(VERSION_MODULE_NAME).Version=$(VERSION)
-GO_LDFLAGS+= -X $(VERSION_MODULE_NAME).BuildDate=$(BUILD_DATE)
-endif
-
 .PHONY: go/build/%
 go/build/%:
 	$(eval OS:= $(word 1,$(subst /, ,$*)))
 	$(eval ARCH:= $(word 2,$(subst /, ,$*)))
 	$(eval ARM:= $(word 3,$(subst /, ,$*)))
-	$(info Building image for $(OS) $(ARCH) $(ARM))
+	$(info Building binary for $(OS) $(ARCH) $(ARM))
 
-	GOOS=$(OS) GOARCH=$(ARCH) GOARM=$(ARM) CGO_ENABLED=0 go build -trimpath \
-		-ldflags "$(GO_LDFLAGS)" $(BUILD_PATH)
-
-else
-
-.PHONY: go/build/%
-go/build/%:
-	$(eval OS:= $(word 1,$(subst /, ,$*)))
-	$(eval ARCH:= $(word 2,$(subst /, ,$*)))
-	$(eval ARM:= $(word 3,$(subst /, ,$*)))
-	$(info Building image for $(OS) $(ARCH) $(ARM))
-
-	GOOS=$(OS) GOARCH=$(ARCH) GOARM=$(ARM) $(GORELEASER_PATH) build \
-		--single-target --snapshot --clean --config=.goreleaser.yaml
-
-.PHONY: go/build/multiarch
-go/build/multiarch:
-	$(GORELEASER_PATH) build --snapshot --clean --config=.goreleaser.yaml
-
-.PHONY: build-deps
-build-deps:
-
-build-deps: $(GORELEASER_PATH)
-
-build: build-deps
-
-.PHONY: build-multiarch
-build-multiarch: $(GORELEASER_PATH) go/build/multiarch
-
-endif
+	GOOS=$(OS) GOARCH=$(ARCH) GOARM=$(ARM) go build -C $(BUILD_PATH) -trimpath \
+		-ldflags "$(GO_LDFLAGS)" -o bin/$(OS)/$(ARCH)/$(ARM)/$(CMDNAME)
 
 .PHONY: build
 build: go/build/$(GOOS)/$(GOARCH)/$(GOARM)
-
-$(TOOLS_BIN)/goreleaser: $(TOOLS_DIR)/GORELEASER_VERSION
-	$(eval GORELEASER_VERSION:= $(shell cat $<))
-	mkdir -p $(TOOLS_BIN)
-	$(info Installing goreleaser $(GORELEASER_VERSION) bin in $(TOOLS_BIN))
-	GOBIN=$(TOOLS_BIN) go install github.com/goreleaser/goreleaser/v2@$(GORELEASER_VERSION)
