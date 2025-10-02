@@ -35,6 +35,7 @@ import (
 	azuredevops "github.com/mia-platform/integration-connector-agent/internal/sources/azure-devops"
 	gcppubsub "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/github"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/jboss"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
 	console "github.com/mia-platform/integration-connector-agent/internal/sources/mia-platform-console"
 
@@ -230,6 +231,12 @@ func runIntegration(ctx context.Context, log *logrus.Logger, pg pipeline.IPipeli
 		if err := github.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
 			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
 		}
+	case sources.JBoss:
+		jbossSource, err := jboss.NewJBossSource(ctx, log, source, pg, oasRouter)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+		}
+		integration.appendCloseableSource(jbossSource)
 	default:
 		return nil, fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)
 	}
