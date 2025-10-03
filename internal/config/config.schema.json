@@ -193,7 +193,14 @@
                             "const": "console-catalog"
                           },
                           "url": {"type": "string"},
-                          "itemType": {"type": "string"},
+                          "itemTypeDefinitionRef": {
+                            "type": "object",
+                            "properties": {
+                              "name": {"type": "string"},
+                              "namespace": {"type": "string"}
+                            },
+                            "required": ["name", "namespace"]
+                          },
                           "tenantId": {"type": "string"},
                           "clientId": {"type": "string"},
                           "clientSecret": {"$ref": "#/definitions/secret"},
@@ -203,7 +210,6 @@
                         "required": [
                           "type",
                           "url",
-                          "itemType",
                           "tenantId",
                           "clientId",
                           "clientSecret",

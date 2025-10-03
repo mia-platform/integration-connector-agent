@@ -31,9 +31,9 @@ import (
 )
 
 const (
-	defaultWildFlyURL       = "http://localhost:9990/management"
-	defaultPollingInterval  = time.Second
-	defaultUsername         = "admin"
+	defaultWildFlyURL      = "http://localhost:9990/management"
+	defaultPollingInterval = time.Second
+	defaultUsername        = "admin"
 )
 
 // Duration is a custom type that can unmarshal from JSON strings
@@ -59,10 +59,10 @@ func (d Duration) Duration() time.Duration {
 }
 
 type Config struct {
-	WildFlyURL       string        `json:"wildflyUrl,omitempty"`
-	Username         string        `json:"username,omitempty"`
-	Password         config.SecretSource `json:"password"`
-	PollingInterval  Duration      `json:"pollingInterval,omitempty"`
+	WildFlyURL      string              `json:"wildflyUrl,omitempty"`
+	Username        string              `json:"username,omitempty"`
+	Password        config.SecretSource `json:"password"`
+	PollingInterval Duration            `json:"pollingInterval,omitempty"`
 }
 
 func (c *Config) Validate() error {
@@ -145,7 +145,7 @@ func (s *JBossSource) pollWildFly() {
 	defer ticker.Stop()
 
 	s.log.WithFields(logrus.Fields{
-		"wildflyUrl":       s.config.WildFlyURL,
+		"wildflyUrl":      s.config.WildFlyURL,
 		"pollingInterval": s.config.PollingInterval.Duration().String(),
 	}).Info("Starting JBoss/WildFly polling")
 
@@ -177,17 +177,17 @@ func (s *JBossSource) performPoll() {
 		"timestamp":  timestamp,
 	}).Debug("Making request to JBoss/WildFly management API")
 
-	deployments, err := s.client.GetDeployments(s.ctx)
+	deployments, err := s.client.GetDeployments(s)
 	if err != nil {
 		s.log.WithError(err).Error("Failed to get deployments from WildFly")
 		s.log.Debug("JBoss/WildFly request failed - creating test deployment event for demonstration")
 
 		// For testing purposes, create a fake deployment event when WildFly is not available
 		testDeployment := Deployment{
-			Name:        "test-deployment.war",
-			RuntimeName: "test-deployment.war",
-			Status:      "UNAVAILABLE",
-			Enabled:     false,
+			Name:               "test-deployment.war",
+			RuntimeName:        "test-deployment.war",
+			Status:             "UNAVAILABLE",
+			Enabled:            false,
 			PersistentDeployed: false,
 		}
 

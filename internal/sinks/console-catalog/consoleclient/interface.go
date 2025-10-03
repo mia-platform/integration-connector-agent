@@ -55,15 +55,20 @@ type CatalogClient[T Resource] interface {
 	Delete(ctx context.Context, tenantID string, itemID string) error
 }
 
+type ItemTypeDefinitionRef struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+}
+
 type MarketplaceResource[T Resource] struct {
-	ID              string          `json:"_id,omitempty"` //nolint:tagliatelle
-	ItemID          string          `json:"itemId"`
-	Name            string          `json:"name"`
-	Type            string          `json:"type"`
-	Description     string          `json:"description"`
-	TenantID        string          `json:"tenantId"`
-	LifecycleStatus LifecycleStatus `json:"lifecycleStatus"`
-	Resources       T               `json:"resources"`
+	ID                    string                `json:"_id,omitempty"` //nolint:tagliatelle
+	ItemID                string                `json:"itemId"`
+	Name                  string                `json:"name"`
+	ItemTypeDefinitionRef ItemTypeDefinitionRef `json:"itemTypeDefinitionRef"`
+	Description           string                `json:"description"`
+	TenantID              string                `json:"tenantId"`
+	LifecycleStatus       LifecycleStatus       `json:"lifecycleStatus"`
+	Resources             T                     `json:"resources"`
 }
 
 type ValidationError struct {

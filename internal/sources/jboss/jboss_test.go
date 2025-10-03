@@ -31,7 +31,7 @@ func TestConfig_Validate(t *testing.T) {
 			WildFlyURL:      "http://localhost:9990/management",
 			Username:        "admin",
 			Password:        "password",
-			PollingInterval: 30 * time.Second,
+			PollingInterval: Duration(30 * time.Second),
 		}
 
 		err := cfg.Validate()

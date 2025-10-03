@@ -58,9 +58,9 @@ func NewJBossClient(baseURL, username, password string) (*JBossClient, error) {
 
 // WildFlyPayload represents the management API request payload
 type WildFlyPayload struct {
-	Operation   string      `json:"operation"`
-	Address     interface{} `json:"address"`
-	JSONPretty  int         `json:"json.pretty"`
+	Operation  string      `json:"operation"`
+	Address    interface{} `json:"address"`
+	JSONPretty int         `json:"json.pretty"`
 }
 
 // WildFlyResponse represents the management API response
@@ -80,8 +80,7 @@ type Deployment struct {
 }
 
 // GetDeployments retrieves all deployments from WildFly
-func (c *JBossClient) GetDeployments(ctx context.Context) ([]Deployment, error) {
-	log := glogrus.FromContext(ctx)
+func (c *JBossClient) GetDeployments(s *JBossSource) ([]Deployment, error) {
 
 	payload := WildFlyPayload{
 		Operation:  "read-resource",
@@ -89,69 +88,96 @@ func (c *JBossClient) GetDeployments(ctx context.Context) ([]Deployment, error) 
 		JSONPretty: 1,
 	}
 
-	log.WithFields(map[string]interface{}{
+	s.log.WithFields(map[string]interface{}{
 		"baseURL":   c.baseURL,
 		"username":  c.username,
 		"operation": payload.Operation,
 		"address":   payload.Address,
 	}).Debug("JBoss client: preparing to make management API request")
 
-	response, err := c.makeRequest(ctx, payload)
+	response, err := c.makeRequest(s.ctx, payload)
 	if err != nil {
-		log.WithError(err).Debug("JBoss client: management API request failed")
+		s.log.WithError(err).Debug("JBoss client: management API request failed")
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
 
-	log.WithFields(map[string]interface{}{
-		"outcome": response.Outcome,
+	s.log.WithFields(map[string]interface{}{
+		"response": response.Result,
 	}).Debug("JBoss client: received response from management API")
 
 	if response.Outcome != "success" {
-		log.WithField("failureDescription", response.FailureDescription).Debug("JBoss client: management API returned failure")
+		s.log.WithField("failureDescription", response.FailureDescription).Debug("JBoss client: management API returned failure")
 		return nil, fmt.Errorf("WildFly request failed: %s", response.FailureDescription)
 	}
 
 	var deployments []Deployment
 
-	// Handle both array (empty deployments) and object (deployments present) results
+	// Handle array of deployment results
 	switch result := response.Result.(type) {
 	case []interface{}:
-		// Empty array means no deployments
-		log.Debug("JBoss client: received empty deployment list")
-		return deployments, nil
-	case map[string]interface{}:
-		// Object with deployment data
-		log.WithField("deploymentCount", len(result)).Debug("JBoss client: processing deployment data")
+		s.log.WithField("deploymentCount", len(result)).Debug("JBoss client: processing deployment array")
 
-		for name, data := range result {
-			deploymentData, ok := data.(map[string]interface{})
+		for i, item := range result {
+			itemData, ok := item.(map[string]interface{})
 			if !ok {
-				log.WithField("deploymentName", name).Debug("JBoss client: skipping invalid deployment data")
+				s.log.WithField("itemIndex", i).Debug("JBoss client: skipping invalid item data")
+				continue
+			}
+
+			// Extract address array
+			addressData, ok := itemData["address"].([]interface{})
+			if !ok || len(addressData) == 0 {
+				s.log.WithField("itemIndex", i).Debug("JBoss client: no address data found")
+				continue
+			}
+
+			// Extract deployment name from address
+			var deploymentName string
+			for _, addr := range addressData {
+				if addrMap, ok := addr.(map[string]interface{}); ok {
+					if deployment, exists := addrMap["deployment"]; exists {
+						if name, ok := deployment.(string); ok {
+							deploymentName = name
+							break
+						}
+					}
+				}
+			}
+
+			if deploymentName == "" {
+				s.log.WithField("itemIndex", i).Debug("JBoss client: no deployment name found in address")
+				continue
+			}
+
+			// Extract deployment details from result
+			resultData, ok := itemData["result"].(map[string]interface{})
+			if !ok {
+				s.log.WithField("deploymentName", deploymentName).Debug("JBoss client: no result data found")
 				continue
 			}
 
 			deployment := Deployment{
-				Name:        name,
-				RuntimeName: getStringValue(deploymentData, "runtime-name"),
-				Status:      getStringValue(deploymentData, "status"),
-				Enabled:     getBoolValue(deploymentData, "enabled"),
-				PersistentDeployed: getBoolValue(deploymentData, "persistent"),
+				Name:               deploymentName,
+				RuntimeName:        getStringValue(resultData, "runtime-name"),
+				Status:             "UNKNOWN", // Status not provided in this format
+				Enabled:            getBoolValue(resultData, "enabled"),
+				PersistentDeployed: getBoolValue(resultData, "persistent"),
 			}
 
-			log.WithFields(map[string]interface{}{
-				"deploymentName":   deployment.Name,
-				"deploymentStatus": deployment.Status,
-				"deploymentEnabled": deployment.Enabled,
+			s.log.WithFields(map[string]interface{}{
+				"deploymentName":       deployment.Name,
+				"deploymentEnabled":    deployment.Enabled,
+				"deploymentPersistent": deployment.PersistentDeployed,
 			}).Debug("JBoss client: parsed deployment")
 
 			deployments = append(deployments, deployment)
 		}
 	default:
-		log.WithField("resultType", fmt.Sprintf("%T", response.Result)).Debug("JBoss client: unexpected result type")
+		s.log.WithField("resultType", fmt.Sprintf("%T", response.Result)).Debug("JBoss client: unexpected result type")
 		return nil, fmt.Errorf("unexpected result type: %T", response.Result)
 	}
 
-	log.WithField("totalDeployments", len(deployments)).Debug("JBoss client: successfully retrieved deployments")
+	s.log.WithField("totalDeployments", len(deployments)).Debug("JBoss client: successfully retrieved deployments")
 	return deployments, nil
 }
 
@@ -198,10 +224,10 @@ func (c *JBossClient) makeRequest(ctx context.Context, payload WildFlyPayload) (
 
 	// Log the raw response details
 	log.WithFields(map[string]interface{}{
-		"statusCode":     resp.StatusCode,
-		"status":         resp.Status,
+		"statusCode":      resp.StatusCode,
+		"status":          resp.Status,
 		"responseHeaders": resp.Header,
-		"proto":          resp.Proto,
+		"proto":           resp.Proto,
 	}).Debug("JBoss client: raw initial HTTP response details")
 
 	if resp.StatusCode != http.StatusUnauthorized {
@@ -243,14 +269,14 @@ func (c *JBossClient) makeRequest(ctx context.Context, payload WildFlyPayload) (
 
 	// Log the raw authenticated request details
 	log.WithFields(map[string]interface{}{
-		"method":            req.Method,
-		"url":               req.URL.String(),
-		"headers":           req.Header,
-		"bodySize":          len(payloadBytes),
-		"requestBody":       string(payloadBytes),
-		"authHeaderLength":  len(authHeaderValue),
-		"digestAuthRealm":   digestAuth.realm,
-		"digestAuthNonce":   digestAuth.nonce,
+		"method":           req.Method,
+		"url":              req.URL.String(),
+		"headers":          req.Header,
+		"bodySize":         len(payloadBytes),
+		"requestBody":      string(payloadBytes),
+		"authHeaderLength": len(authHeaderValue),
+		"digestAuthRealm":  digestAuth.realm,
+		"digestAuthNonce":  digestAuth.nonce,
 	}).Debug("JBoss client: raw authenticated HTTP request details")
 
 	log.Debug("JBoss client: making authenticated HTTP request")
@@ -268,7 +294,7 @@ func (c *JBossClient) makeRequest(ctx context.Context, payload WildFlyPayload) (
 	for key, values := range resp.Header {
 		responseHeaders[key] = strings.Join(values, ", ")
 	}
-	
+
 	log.WithFields(map[string]interface{}{
 		"statusCode":      resp.StatusCode,
 		"status":          resp.Status,
@@ -398,19 +424,6 @@ func (c *JBossClient) createDigestAuthHeader(auth *digestAuth, method, uri strin
 	}
 
 	authHeaderValue := "Digest " + strings.Join(authParts, ", ")
-	
-	log.WithFields(map[string]interface{}{
-		"username":          c.username,
-		"realm":             auth.realm,
-		"nonce":             auth.nonce,
-		"uri":               uri,
-		"cnonce":            cnonce,
-		"nc":                nc,
-		"qop":               auth.qop,
-		"opaque":            auth.opaque,
-		"authHeaderValue":   authHeaderValue,
-	}).Debug("JBoss client: created digest authentication header")
-	
 	return authHeaderValue, nil
 }
 

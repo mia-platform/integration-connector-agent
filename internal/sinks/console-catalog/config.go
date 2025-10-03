@@ -32,14 +32,14 @@ var (
 )
 
 type Config struct {
-	URL                 string                        `json:"url"`
-	TenantID            string                        `json:"tenantId"`
-	ClientID            string                        `json:"clientId"`
-	ClientSecret        config.SecretSource           `json:"clientSecret"`
-	ItemType            string                        `json:"itemType"`
-	ItemLifecycleStatus consoleclient.LifecycleStatus `json:"itemLifecycleStatus"`
-	ItemIDTemplate      string                        `json:"itemIdTemplate"`
-	ItemNameTemplate    string                        `json:"itemNameTemplate"`
+	URL                   string                              `json:"url"`
+	TenantID              string                              `json:"tenantId"`
+	ClientID              string                              `json:"clientId"`
+	ClientSecret          config.SecretSource                 `json:"clientSecret"`
+	ItemTypeDefinitionRef consoleclient.ItemTypeDefinitionRef `json:"itemTypeDefinitionRef"`
+	ItemLifecycleStatus   consoleclient.LifecycleStatus       `json:"itemLifecycleStatus"`
+	ItemIDTemplate        string                              `json:"itemIdTemplate"`
+	ItemNameTemplate      string                              `json:"itemNameTemplate"`
 }
 
 func (c *Config) Validate() error {
@@ -53,10 +53,6 @@ func (c *Config) Validate() error {
 
 	if c.TenantID == "" {
 		return fmt.Errorf("%w: tenantId", ErrMissingField)
-	}
-
-	if c.ItemType == "" {
-		return fmt.Errorf("%w: itemType", ErrMissingField)
 	}
 
 	if c.ClientID == "" {
