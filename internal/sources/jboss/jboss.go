@@ -180,37 +180,6 @@ func (s *JBossSource) performPoll() {
 	deployments, err := s.client.GetDeployments(s)
 	if err != nil {
 		s.log.WithError(err).Error("Failed to get deployments from WildFly")
-		s.log.Debug("JBoss/WildFly request failed - creating test deployment event for demonstration")
-
-		// For testing purposes, create a fake deployment event when WildFly is not available
-		testDeployment := Deployment{
-			Name:               "test-deployment.war",
-			RuntimeName:        "test-deployment.war",
-			Status:             "UNAVAILABLE",
-			Enabled:            false,
-			PersistentDeployed: false,
-		}
-
-		s.log.WithFields(logrus.Fields{
-			"testDeployment": testDeployment,
-		}).Debug("Created test deployment for processing")
-
-		event, eventErr := CreateDeploymentEvent(testDeployment, timestamp)
-		if eventErr == nil {
-			s.log.WithFields(logrus.Fields{
-				"deploymentName":   testDeployment.Name,
-				"deploymentStatus": testDeployment.Status,
-				"eventPrimaryKeys": event.GetPrimaryKeys(),
-				"eventType":        event.GetType(),
-				"operation":        event.Operation().String(),
-			}).Info("Adding test deployment event to pipeline (WildFly unavailable)")
-
-			s.log.Debug("Sending test event to pipeline/sink")
-			s.pipeline.AddMessage(event)
-			s.log.Debug("Test event sent to pipeline/sink successfully")
-		} else {
-			s.log.WithError(eventErr).Error("Failed to create test deployment event")
-		}
 		return
 	}
 

@@ -58,9 +58,11 @@ func NewJBossClient(baseURL, username, password string) (*JBossClient, error) {
 
 // WildFlyPayload represents the management API request payload
 type WildFlyPayload struct {
-	Operation  string      `json:"operation"`
-	Address    interface{} `json:"address"`
-	JSONPretty int         `json:"json.pretty"`
+	Operation      string      `json:"operation"`
+	Address        interface{} `json:"address"`
+	Recursive      bool        `json:"recursive,omitempty"`
+	IncludeRuntime bool        `json:"include-runtime,omitempty"`
+	JSONPretty     int         `json:"json.pretty"`
 }
 
 // WildFlyResponse represents the management API response
@@ -70,22 +72,52 @@ type WildFlyResponse struct {
 	FailureDescription string      `json:"failure-description,omitempty"`
 }
 
-// Deployment represents a JBoss/WildFly deployment
+// Deployment represents a JBoss/WildFly deployment with all available information
 type Deployment struct {
-	Name               string `json:"name"`
-	RuntimeName        string `json:"runtimeName"`
-	Status             string `json:"status"`
-	Enabled            bool   `json:"enabled"`
-	PersistentDeployed bool   `json:"persistentDeployed"`
+	Name          string                 `json:"name"`
+	RuntimeName   string                 `json:"runtimeName"`
+	Status        string                 `json:"status"`
+	Enabled       bool                   `json:"enabled"`
+	Persistent    bool                   `json:"persistent"`
+	Content       []DeploymentContent    `json:"content,omitempty"`
+	Subdeployment interface{}            `json:"subdeployment,omitempty"`
+	Subsystem     map[string]interface{} `json:"subsystem,omitempty"`
+}
+
+// DeploymentContent represents the content hash information
+type DeploymentContent struct {
+	Hash map[string]string `json:"hash,omitempty"`
+}
+
+// UndertowSubsystem represents Undertow web server subsystem information
+type UndertowSubsystem struct {
+	ActiveSessions  int                    `json:"active-sessions"`
+	ContextRoot     string                 `json:"context-root"`
+	Server          string                 `json:"server"`
+	SessionsCreated int                    `json:"sessions-created"`
+	VirtualHost     string                 `json:"virtual-host"`
+	Servlet         map[string]ServletInfo `json:"servlet,omitempty"`
+}
+
+// ServletInfo represents servlet information
+type ServletInfo struct {
+	MaxRequestTime   int    `json:"max-request-time"`
+	MinRequestTime   int    `json:"min-request-time"`
+	RequestCount     int    `json:"request-count"`
+	ServletClass     string `json:"servlet-class"`
+	ServletName      string `json:"servlet-name"`
+	TotalRequestTime int    `json:"total-request-time"`
 }
 
 // GetDeployments retrieves all deployments from WildFly
 func (c *JBossClient) GetDeployments(s *JBossSource) ([]Deployment, error) {
 
 	payload := WildFlyPayload{
-		Operation:  "read-resource",
-		Address:    []string{"deployment", "*"},
-		JSONPretty: 1,
+		Operation:      "read-resource",
+		Address:        []string{"deployment", "*"}, // use [] for all or you can specify ["subsystem", "datasources", "data-source", "*"]
+		Recursive:      true,
+		IncludeRuntime: true,
+		JSONPretty:     1,
 	}
 
 	s.log.WithFields(map[string]interface{}{
@@ -157,18 +189,65 @@ func (c *JBossClient) GetDeployments(s *JBossSource) ([]Deployment, error) {
 			}
 
 			deployment := Deployment{
-				Name:               deploymentName,
-				RuntimeName:        getStringValue(resultData, "runtime-name"),
-				Status:             "UNKNOWN", // Status not provided in this format
-				Enabled:            getBoolValue(resultData, "enabled"),
-				PersistentDeployed: getBoolValue(resultData, "persistent"),
+				Name:        deploymentName,
+				RuntimeName: getStringValue(resultData, "runtime-name"),
+				Status:      getStringValue(resultData, "status"),
+				Enabled:     getBoolValue(resultData, "enabled"),
+				Persistent:  getBoolValue(resultData, "persistent"),
+			}
+
+			// Parse content array if available
+			if contentData, ok := resultData["content"].([]interface{}); ok {
+				deployment.Content = parseContentArray(contentData)
+			}
+
+			// Parse subdeployment if available
+			if subdeployment, ok := resultData["subdeployment"]; ok {
+				deployment.Subdeployment = subdeployment
+			}
+
+			// Parse subsystem information if available
+			if subsystemData, ok := resultData["subsystem"].(map[string]interface{}); ok {
+				deployment.Subsystem = subsystemData
+
+				// Log specific subsystem information for debugging
+				if undertowData, ok := subsystemData["undertow"].(map[string]interface{}); ok {
+					s.log.WithFields(map[string]interface{}{
+						"deploymentName":  deploymentName,
+						"contextRoot":     getStringValue(undertowData, "context-root"),
+						"activeSessions":  getIntValue(undertowData, "active-sessions"),
+						"sessionsCreated": getIntValue(undertowData, "sessions-created"),
+						"server":          getStringValue(undertowData, "server"),
+						"virtualHost":     getStringValue(undertowData, "virtual-host"),
+					}).Debug("JBoss client: parsed Undertow subsystem information")
+
+					// Log servlet information if available
+					if servletData, ok := undertowData["servlet"].(map[string]interface{}); ok {
+						for servletName, servletInfo := range servletData {
+							if servletMap, ok := servletInfo.(map[string]interface{}); ok {
+								s.log.WithFields(map[string]interface{}{
+									"deploymentName":   deploymentName,
+									"servletName":      servletName,
+									"servletClass":     getStringValue(servletMap, "servlet-class"),
+									"requestCount":     getIntValue(servletMap, "request-count"),
+									"maxRequestTime":   getIntValue(servletMap, "max-request-time"),
+									"minRequestTime":   getIntValue(servletMap, "min-request-time"),
+									"totalRequestTime": getIntValue(servletMap, "total-request-time"),
+								}).Debug("JBoss client: parsed servlet information")
+							}
+						}
+					}
+				}
 			}
 
 			s.log.WithFields(map[string]interface{}{
 				"deploymentName":       deployment.Name,
+				"deploymentStatus":     deployment.Status,
 				"deploymentEnabled":    deployment.Enabled,
-				"deploymentPersistent": deployment.PersistentDeployed,
-			}).Debug("JBoss client: parsed deployment")
+				"deploymentPersistent": deployment.Persistent,
+				"deploymentSubsystem":  deployment.Subsystem != nil,
+				"deploymentContent":    len(deployment.Content),
+			}).Debug("JBoss client: parsed deployment with enhanced mapping")
 
 			deployments = append(deployments, deployment)
 		}
@@ -450,4 +529,72 @@ func getBoolValue(data map[string]interface{}, key string) bool {
 		}
 	}
 	return false
+}
+
+func getIntValue(data map[string]interface{}, key string) int {
+	if val, ok := data[key]; ok {
+		if i, ok := val.(float64); ok {
+			return int(i)
+		}
+		if i, ok := val.(int); ok {
+			return i
+		}
+	}
+	return 0
+}
+
+// parseContentArray parses the content array from deployment result
+func parseContentArray(contentData []interface{}) []DeploymentContent {
+	var content []DeploymentContent
+	for _, item := range contentData {
+		if itemMap, ok := item.(map[string]interface{}); ok {
+			if hashData, ok := itemMap["hash"].(map[string]interface{}); ok {
+				deploymentContent := DeploymentContent{
+					Hash: make(map[string]string),
+				}
+				for key, val := range hashData {
+					if strVal, ok := val.(string); ok {
+						deploymentContent.Hash[key] = strVal
+					}
+				}
+				content = append(content, deploymentContent)
+			}
+		}
+	}
+	return content
+}
+
+// parseUndertowSubsystem parses Undertow subsystem information
+func parseUndertowSubsystem(data map[string]interface{}) *UndertowSubsystem {
+	if data == nil {
+		return nil
+	}
+
+	undertow := &UndertowSubsystem{
+		ActiveSessions:  getIntValue(data, "active-sessions"),
+		ContextRoot:     getStringValue(data, "context-root"),
+		Server:          getStringValue(data, "server"),
+		SessionsCreated: getIntValue(data, "sessions-created"),
+		VirtualHost:     getStringValue(data, "virtual-host"),
+		Servlet:         make(map[string]ServletInfo),
+	}
+
+	// Parse servlet information
+	if servletData, ok := data["servlet"].(map[string]interface{}); ok {
+		for servletName, servletInfo := range servletData {
+			if servletMap, ok := servletInfo.(map[string]interface{}); ok {
+				servlet := ServletInfo{
+					MaxRequestTime:   getIntValue(servletMap, "max-request-time"),
+					MinRequestTime:   getIntValue(servletMap, "min-request-time"),
+					RequestCount:     getIntValue(servletMap, "request-count"),
+					ServletClass:     getStringValue(servletMap, "servlet-class"),
+					ServletName:      getStringValue(servletMap, "servlet-name"),
+					TotalRequestTime: getIntValue(servletMap, "total-request-time"),
+				}
+				undertow.Servlet[servletName] = servlet
+			}
+		}
+	}
+
+	return undertow
 }
