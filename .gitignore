@@ -2,7 +2,7 @@
 
 bin/
 coverage.txt
-
+config.json
 local/
 
 # End of Custom gitignore rules

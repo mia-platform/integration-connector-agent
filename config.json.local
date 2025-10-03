@@ -1,0 +1,53 @@
+{
+  "integrations": [
+    {
+      "source": {
+        "type": "jboss",
+        "wildflyUrl": "http://localhost:9990/management",
+        "username": "admin",
+        "password": {
+          "fromEnv": "JBOSS_PASSWORD"
+        },
+        "pollingInterval": "3s"
+      },
+      "pipelines": [
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "eventType == 'jboss:deployment_status'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "deploymentName": "{{ deployment.name }}",
+                "status": "{{ deployment.status }}",
+                "enabled": "{{ deployment.enabled }}",
+                "runtimeName": "{{ deployment.runtimeName }}",
+                "persistent": "{{ deployment.persistent }}",
+                "content": "{{ deployment.content }}",
+                "subsystem": "{{ deployment.subsystem }}",
+                "timestamp": "{{ timestamp }}",
+                "source": "jboss"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://your-console-url.com",
+              "tenantId": "your-tenant-id",
+              "clientId": "your-client-id",
+              "clientSecret": { "fromEnv": "CONSOLE_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "jboss-application",
+                "namespace": "your-tenant-id"
+              },
+              "itemNameTemplate": "{{deploymentName}} - {{runtimeName}}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
