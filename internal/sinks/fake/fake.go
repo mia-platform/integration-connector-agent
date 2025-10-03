@@ -20,6 +20,7 @@ import (
 	"sync"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
+	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
 )
 
 type Config struct {
@@ -102,7 +103,9 @@ func (f *Writer) AddMock(mock Mock) {
 	f.mocks = append(f.mocks, mock)
 }
 
-func (f *Writer) WriteData(_ context.Context, data entities.PipelineEvent) error {
+func (f *Writer) WriteData(ctx context.Context, data entities.PipelineEvent) error {
+	log := glogrus.FromContext(ctx)
+
 	f.mtx.Lock()
 	defer f.mtx.Unlock()
 
@@ -110,6 +113,19 @@ func (f *Writer) WriteData(_ context.Context, data entities.PipelineEvent) error
 		Data:      data,
 		Operation: data.Operation(),
 	})
+
+	// Log the data being written to fake sink
+	log.WithFields(map[string]interface{}{
+		"operation":    data.Operation().String(),
+		"primaryKeys":  data.GetPrimaryKeys(),
+		"eventType":    data.GetType(),
+		"dataSize":     len(data.Data()),
+	}).Info("Fake sink received data")
+
+	// Log the actual data content for debugging
+	if jsonData, err := data.JSON(); err == nil {
+		log.WithField("eventData", jsonData).Debug("Fake sink event data details")
+	}
 
 	if len(f.mocks) > 0 {
 		mock := f.mocks.ReadAndPop()
