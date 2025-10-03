@@ -18,7 +18,6 @@ package consoleclient
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -75,5 +74,5 @@ type MarketplaceValidationError struct {
 }
 
 func (e *MarketplaceValidationError) Error() string {
-	return fmt.Sprintf("invalid catalog item, validation errors: %s", strings.Join(e.Errors, ", "))
+	return "invalid catalog item, validation errors: " + strings.Join(e.Errors, ", ")
 }

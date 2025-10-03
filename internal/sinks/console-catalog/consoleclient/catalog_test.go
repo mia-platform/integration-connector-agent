@@ -17,7 +17,6 @@ package consoleclient
 
 import (
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -46,8 +45,8 @@ func TestCatalogApply(t *testing.T) {
 
 	t.Run("returns error if the execution of request fails", func(t *testing.T) {
 		itemID, err := client.Apply(t.Context(), &item)
-		require.Equal(t, "", itemID)
-		require.True(t, errors.Is(err, ErrMarketplaceRequestExecution))
+		require.Empty(t, itemID)
+		require.ErrorIs(t, err, ErrMarketplaceRequestExecution)
 	})
 
 	t.Run("returns error if the response is not 200", func(t *testing.T) {
@@ -67,7 +66,7 @@ func TestCatalogApply(t *testing.T) {
 		)
 
 		itemID, err := client.Apply(t.Context(), &item)
-		require.Equal(t, "", itemID)
+		require.Empty(t, itemID)
 		require.Equal(t, "failed to apply resource, status code: 500", err.Error())
 		m.AssertCalled(t)
 	})
@@ -87,8 +86,8 @@ func TestCatalogApply(t *testing.T) {
 		)
 
 		itemID, err := client.Apply(t.Context(), &item)
-		require.Equal(t, "", itemID)
-		require.True(t, errors.Is(err, ErrMarketplaceResponseParse))
+		require.Empty(t, itemID)
+		require.ErrorIs(t, err, ErrMarketplaceResponseParse)
 		m.AssertCalled(t)
 	})
 
@@ -122,10 +121,10 @@ func TestCatalogApply(t *testing.T) {
 		)
 
 		itemID, err := client.Apply(t.Context(), &item)
-		require.Equal(t, "", itemID)
+		require.Empty(t, itemID)
 		var parsedErr *MarketplaceValidationError
-		require.True(t, errors.As(err, &parsedErr))
-		require.Equal(t, 2, len(parsedErr.Errors))
+		require.ErrorAs(t, err, &parsedErr)
+		require.Len(t, parsedErr.Errors, 2)
 		require.Equal(t, mockedValidationError1.Message, parsedErr.Errors[0])
 		require.Equal(t, mockedValidationError2.Message, parsedErr.Errors[1])
 		m.AssertCalled(t)
@@ -151,7 +150,7 @@ func TestCatalogApply(t *testing.T) {
 		)
 
 		itemID, err := client.Apply(t.Context(), &item)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.Equal(t, mockedItemID, itemID)
 		m.AssertCalled(t)
 	})
@@ -191,7 +190,7 @@ func TestCatalogApply(t *testing.T) {
 		)
 
 		itemID, err := client.Apply(t.Context(), &item)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.Equal(t, mockedItemID, itemID)
 		m.AssertCalled(t)
 	})
@@ -238,7 +237,7 @@ func TestCatalogApply(t *testing.T) {
 				path: "/api/m2m/oauth/token",
 				verb: http.MethodPost,
 				headers: map[string]string{
-					"Authorization": fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("myClientId:myClientSecret"))),
+					"Authorization": "Basic " + base64.StdEncoding.EncodeToString([]byte("myClientId:myClientSecret")),
 					"Content-Type":  "application/x-www-form-urlencoded",
 				},
 			},
@@ -253,7 +252,7 @@ func TestCatalogApply(t *testing.T) {
 		)
 
 		itemID, err := client.Apply(t.Context(), &item)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.Equal(t, mockedItemID, itemID)
 		m.AssertCalled(t)
 	})
@@ -289,7 +288,7 @@ func TestCatalogApply(t *testing.T) {
 				path: "/api/m2m/oauth/token",
 				verb: http.MethodPost,
 				headers: map[string]string{
-					"Authorization": fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("myClientId:myClientSecret"))),
+					"Authorization": "Basic " + base64.StdEncoding.EncodeToString([]byte("myClientId:myClientSecret")),
 					"Content-Type":  "application/x-www-form-urlencoded",
 				},
 			},
@@ -325,12 +324,12 @@ func TestCatalogApply(t *testing.T) {
 		)
 
 		itemID, err := client.Apply(t.Context(), &item1)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.Equal(t, mockedItemID, itemID)
 		m.AssertCalled(t)
 
 		itemID, err = client.Apply(t.Context(), &item1)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.Equal(t, mockedItemID, itemID)
 		m.AssertCalled(t)
 	})
@@ -347,7 +346,7 @@ func TestCatalogDelete(t *testing.T) {
 
 	t.Run("returns error if the execution of request fails", func(t *testing.T) {
 		err := client.Delete(t.Context(), tenantID, itemID)
-		require.True(t, errors.Is(err, ErrMarketplaceRequestExecution))
+		require.ErrorIs(t, err, ErrMarketplaceRequestExecution)
 	})
 
 	t.Run("returns error if the response is not 200", func(t *testing.T) {

@@ -16,7 +16,7 @@
 package webhook
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -65,6 +65,8 @@ func TestValidateConfiguration(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.config.Validate()
 			if tc.expectedErr != nil {
 				assert.ErrorIs(t, err, tc.expectedErr)
@@ -79,7 +81,7 @@ func TestValidateConfiguration(t *testing.T) {
 func TestCheckSignature(t *testing.T) {
 	t.Parallel()
 
-	invalidAuhtErr := fmt.Errorf("invalid authentication")
+	invalidAuhtErr := errors.New("invalid authentication")
 	testCases := map[string]struct {
 		config      Configuration[*fakeAuthentication]
 		req         ValidatingRequest
@@ -111,6 +113,8 @@ func TestCheckSignature(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.config.CheckSignature(tc.req)
 			if tc.expectedErr != nil {
 				assert.ErrorIs(t, err, tc.expectedErr)

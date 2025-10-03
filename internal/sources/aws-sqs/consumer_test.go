@@ -17,7 +17,7 @@ package awssqs
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -90,7 +90,7 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 			AssertData: func(data []byte) {
 				require.Equal(t, dataFromPubSub, data)
 			},
-			ReturnedErr: fmt.Errorf("some error from event builder"),
+			ReturnedErr: errors.New("some error from event builder"),
 		}
 
 		client := &awsclient.AWSMock{
@@ -132,7 +132,7 @@ func TestClientIntegrationWithEventBuilder(t *testing.T) {
 				require.NotNil(t, ctx)
 				require.NotNil(t, data)
 				if string(data) == "failing payload" {
-					return nil, fmt.Errorf("failed to process payload")
+					return nil, errors.New("failed to process payload")
 				}
 
 				require.Equal(t, dataFromPubSub, data)

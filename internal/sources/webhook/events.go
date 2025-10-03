@@ -16,6 +16,7 @@
 package webhook
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -26,7 +27,7 @@ import (
 )
 
 var (
-	ErrMissingFieldID = fmt.Errorf("missing id field in event")
+	ErrMissingFieldID = errors.New("missing id field in event")
 )
 
 type EventTypeParam struct {

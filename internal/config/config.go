@@ -18,13 +18,14 @@ package config
 import (
 	"embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/xeipuuv/gojsonschema"
 )
 
 var (
-	ErrConfigNotValid = fmt.Errorf("configuration not valid")
+	ErrConfigNotValid = errors.New("configuration not valid")
 )
 
 //go:embed config.schema.json
@@ -55,21 +56,21 @@ type Configuration struct {
 func LoadServiceConfiguration(filePath string) (*Configuration, error) {
 	jsonSchema, err := jsonSchemaFile.ReadFile("config.schema.json")
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrConfigNotValid, err)
+		return nil, fmt.Errorf("%w: %w", ErrConfigNotValid, err)
 	}
 
 	jsonConfig, err := readFile(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrConfigNotValid, err)
+		return nil, fmt.Errorf("%w: %w", ErrConfigNotValid, err)
 	}
 
 	if err = validateJSONConfig(jsonSchema, jsonConfig); err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrConfigNotValid, err)
+		return nil, fmt.Errorf("%w: %w", ErrConfigNotValid, err)
 	}
 
 	var config *Configuration
 	if err := json.Unmarshal(jsonConfig, &config); err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrConfigNotValid, err)
+		return nil, fmt.Errorf("%w: %w", ErrConfigNotValid, err)
 	}
 
 	return config, nil

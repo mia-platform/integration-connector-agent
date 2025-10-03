@@ -56,7 +56,7 @@ func (c *consoleClient[T]) Apply(ctx context.Context, item *MarketplaceResource[
 
 	var responseBody marketplacePostExtensionResponse
 	if err := json.NewDecoder(resp.Body).Decode(&responseBody); err != nil {
-		return "", fmt.Errorf("%w: %s", ErrMarketplaceResponseParse, err)
+		return "", fmt.Errorf("%w: %w", ErrMarketplaceResponseParse, err)
 	}
 
 	if !responseBody.Done {

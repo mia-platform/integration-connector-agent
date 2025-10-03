@@ -55,6 +55,7 @@ func TestValidation(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
 			err := test.authentication.Validate()
 			assert.ErrorIs(t, err, test.expectedErr)
 		})
@@ -130,6 +131,7 @@ func TestChekBasicAuth(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
 			err := test.authentication.CheckSignature(test.request)
 			assert.ErrorIs(t, err, test.expectedErr)
 		})

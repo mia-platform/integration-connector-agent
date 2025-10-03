@@ -57,6 +57,7 @@ func TestEntityOperationType(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
 			assert.Equal(t, test.expectedType, test.record.entityOperationType())
 		})
 	}

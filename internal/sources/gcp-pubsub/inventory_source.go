@@ -18,6 +18,7 @@ package gcppubsub
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -47,13 +48,13 @@ type InventorySourceConfig struct {
 
 func (c *InventorySourceConfig) Validate() error {
 	if c.ProjectID == "" {
-		return fmt.Errorf("projectId must be provided")
+		return errors.New("projectId must be provided")
 	}
 	if c.TopicName == "" {
-		return fmt.Errorf("topicName must be provided")
+		return errors.New("topicName must be provided")
 	}
 	if c.SubscriptionID == "" {
-		return fmt.Errorf("subscriptionId must be provided")
+		return errors.New("subscriptionId must be provided")
 	}
 
 	return c.Authentication.Validate()

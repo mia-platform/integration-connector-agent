@@ -18,6 +18,7 @@ package azure
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -30,7 +31,7 @@ import (
 )
 
 var (
-	ErrUnsupportedEventSource = fmt.Errorf("unsupported event source")
+	ErrUnsupportedEventSource = errors.New("unsupported event source")
 )
 
 type Processor struct {

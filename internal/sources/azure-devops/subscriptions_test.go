@@ -172,6 +172,8 @@ func TestAlreadyExists(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
 			existingSubscription := subscriptionAlreadyExists(test.subscription, testSubscriptions)
 			assert.Equal(t, test.expectedResult, existingSubscription)
 		})
@@ -251,6 +253,8 @@ func TestSetupSubscriptions(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
 			subscriptionsCreated := 0
 			subscriptionsDeleted := 0
 			server := setupSubscriptionTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

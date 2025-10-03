@@ -140,47 +140,47 @@ func setupSinks(ctx context.Context, log *logrus.Logger, writers config.Sinks) (
 		case sinks.Mongo:
 			config, err := config.GetConfig[*mongo.Config](configuredWriter)
 			if err != nil {
-				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+				return nil, fmt.Errorf("%w: %w", errSetupWriter, err)
 			}
 			mongoWriter, err := mongo.NewMongoDBWriter[entities.PipelineEvent](ctx, config)
 			if err != nil {
-				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+				return nil, fmt.Errorf("%w: %w", errSetupWriter, err)
 			}
 			w = append(w, mongoWriter)
 		case sinks.CRUDService:
 			config, err := config.GetConfig[*crudservice.Config](configuredWriter)
 			if err != nil {
-				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+				return nil, fmt.Errorf("%w: %w", errSetupWriter, err)
 			}
 			crudServiceWriter, err := crudservice.NewWriter[entities.PipelineEvent](config)
 			if err != nil {
-				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+				return nil, fmt.Errorf("%w: %w", errSetupWriter, err)
 			}
 			w = append(w, crudServiceWriter)
 		case sinks.ConsoleCatalog:
 			config, err := config.GetConfig[*consolecatalog.Config](configuredWriter)
 			if err != nil {
-				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+				return nil, fmt.Errorf("%w: %w", errSetupWriter, err)
 			}
 			consoleCatalogWriter, err := consolecatalog.NewWriter[entities.PipelineEvent](config, log)
 			if err != nil {
-				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+				return nil, fmt.Errorf("%w: %w", errSetupWriter, err)
 			}
 			w = append(w, consoleCatalogWriter)
 		case sinks.Kafka:
 			config, err := config.GetConfig[*kafka.Config](configuredWriter)
 			if err != nil {
-				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+				return nil, fmt.Errorf("%w: %w", errSetupWriter, err)
 			}
 			kafkaSink, err := kafka.New[entities.PipelineEvent](config)
 			if err != nil {
-				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+				return nil, fmt.Errorf("%w: %w", errSetupWriter, err)
 			}
 			w = append(w, kafkaSink)
 		case sinks.Fake:
 			config, err := config.GetConfig[*fakewriter.Config](configuredWriter)
 			if err != nil {
-				return nil, fmt.Errorf("%w: %s", errSetupWriter, err)
+				return nil, fmt.Errorf("%w: %w", errSetupWriter, err)
 			}
 			w = append(w, fakewriter.New(config))
 		default:
@@ -199,36 +199,36 @@ func runIntegration(ctx context.Context, log *logrus.Logger, pg pipeline.IPipeli
 	switch source.Type {
 	case sources.Jira:
 		if err := jira.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
-			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+			return nil, fmt.Errorf("%w: %w", errSetupSource, err)
 		}
 	case sources.Console:
 		if err := console.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
-			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+			return nil, fmt.Errorf("%w: %w", errSetupSource, err)
 		}
 	case sources.GCPInventoryPubSub:
 		source, err := gcppubsub.NewInventorySource(ctx, log, source, pg, oasRouter)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+			return nil, fmt.Errorf("%w: %w", errSetupSource, err)
 		}
 
 		integration.appendCloseableSource(source)
 	case sources.AWSCloudTrailSQS:
 		awsConsumer, err := awssqs.NewCloudTrailSource(ctx, log, source, pg, oasRouter)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+			return nil, fmt.Errorf("%w: %w", errSetupSource, err)
 		}
 		integration.appendCloseableSource(awsConsumer)
 	case sources.AzureActivityLogEventHub:
 		if err := azureactivitylogeventhub.AddSource(ctx, source, pg, log, oasRouter); err != nil {
-			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+			return nil, fmt.Errorf("%w: %w", errSetupSource, err)
 		}
 	case sources.AzureDevOps:
 		if err := azuredevops.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
-			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+			return nil, fmt.Errorf("%w: %w", errSetupSource, err)
 		}
 	case sources.Github:
 		if err := github.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
-			return nil, fmt.Errorf("%w: %s", errSetupSource, err)
+			return nil, fmt.Errorf("%w: %w", errSetupSource, err)
 		}
 	default:
 		return nil, fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)

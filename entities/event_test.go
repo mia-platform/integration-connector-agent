@@ -32,10 +32,10 @@ func TestEvent(t *testing.T) {
 
 	require.Implements(t, (*PipelineEvent)(nil), e)
 	require.Equal(t, e.PrimaryKeys, e.GetPrimaryKeys())
-	require.Equal(t, []byte(`{"test": "test"}`), e.Data())
+	require.JSONEq(t, `{"test": "test"}`, string(e.Data()))
 	require.Equal(t, Write, e.Operation())
 	e.WithData([]byte(`{"test": "test2"}`))
-	require.Equal(t, []byte(`{"test": "test2"}`), e.Data())
+	require.JSONEq(t, `{"test": "test2"}`, string(e.Data()))
 	parsed, err := e.JSON()
 	require.Equal(t, map[string]any{"test": "test2"}, parsed)
 	require.NoError(t, err)

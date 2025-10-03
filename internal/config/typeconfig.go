@@ -52,7 +52,7 @@ func GetConfig[T Validator](config GenericConfig) (T, error) {
 	}
 
 	if err := cfg.Validate(); err != nil {
-		return cfg, fmt.Errorf("%w: %s", ErrConfigNotValid, err)
+		return cfg, fmt.Errorf("%w: %w", ErrConfigNotValid, err)
 	}
 
 	return cfg, nil

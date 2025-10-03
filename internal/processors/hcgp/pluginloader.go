@@ -16,6 +16,7 @@
 package hcgp
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
 
@@ -28,8 +29,8 @@ import (
 const PluginProcessorKey = "processor"
 
 var (
-	ErrPluginDispense       = fmt.Errorf("plugin dispense error")
-	ErrPluginInitialization = fmt.Errorf("plugin initialization error")
+	ErrPluginDispense       = errors.New("plugin dispense error")
+	ErrPluginInitialization = errors.New("plugin initialization error")
 )
 
 type Plugin struct {
@@ -66,7 +67,7 @@ func New(log *logrus.Logger, cfg Config) (entities.Processor, error) {
 
 	rpcClient, err := client.Client()
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrPluginInitialization, err)
+		return nil, fmt.Errorf("%w: %w", ErrPluginInitialization, err)
 	}
 
 	p := &Plugin{
@@ -84,15 +85,15 @@ func (p *Plugin) Init(initOptions []byte) (entities.Processor, error) {
 
 	raw, err := p.rpcClient.Dispense(PluginProcessorKey)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrPluginDispense, err)
+		return nil, fmt.Errorf("%w: %w", ErrPluginDispense, err)
 	}
 	processorAdapter, ok := raw.(entities.Initializable)
 	if !ok {
-		return nil, fmt.Errorf("invalid interface type, expected entities.Initializable")
+		return nil, errors.New("invalid interface type, expected entities.Initializable")
 	}
 
 	if err := processorAdapter.Init(initOptions); err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrPluginInitialization, err)
+		return nil, fmt.Errorf("%w: %w", ErrPluginInitialization, err)
 	}
 	return p, nil
 }
@@ -100,12 +101,12 @@ func (p *Plugin) Init(initOptions []byte) (entities.Processor, error) {
 func (p *Plugin) Process(event entities.PipelineEvent) (entities.PipelineEvent, error) {
 	raw, err := p.rpcClient.Dispense(PluginProcessorKey)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrPluginDispense, err)
+		return nil, fmt.Errorf("%w: %w", ErrPluginDispense, err)
 	}
 
 	processorAdapter, ok := raw.(entities.Processor)
 	if !ok {
-		return nil, fmt.Errorf("invalid interface type, expected entities.Processor")
+		return nil, errors.New("invalid interface type, expected entities.Processor")
 	}
 
 	return processorAdapter.Process(event)

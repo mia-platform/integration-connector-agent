@@ -191,7 +191,7 @@ func (p *concrete) ListFunctions(ctx context.Context) ([]*Function, error) {
 		}
 
 		functions = append(functions, &Function{
-			Name: function.Name,
+			Name: function.GetName(),
 		})
 	}
 	return functions, nil

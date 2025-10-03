@@ -65,11 +65,11 @@ func newMongoDBWriter[T entities.PipelineEvent](ctx context.Context, config *Con
 
 	client, err := mongo.Connect(ctxWithCancel, options)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrMongoInitialization, err)
+		return nil, fmt.Errorf("%w: %w", ErrMongoInitialization, err)
 	}
 
 	if err := validate(ctxWithCancel, client); err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrMongoInitialization, err)
+		return nil, fmt.Errorf("%w: %w", ErrMongoInitialization, err)
 	}
 
 	return &Writer[T]{
@@ -213,7 +213,7 @@ func (w Writer[T]) idFilter(event T) (bson.D, error) {
 	pk := event.GetPrimaryKeys()
 
 	if len(pk) == 0 {
-		return bson.D{}, fmt.Errorf("missing primary key")
+		return bson.D{}, errors.New("missing primary key")
 	}
 
 	if len(pk) == 1 {

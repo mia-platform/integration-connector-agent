@@ -250,6 +250,8 @@ func TestProcessor(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
 			processor, err := New(l, config.AuthOptions{})
 			require.NoError(t, err)
 			processor.client = test.client

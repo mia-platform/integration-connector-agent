@@ -41,7 +41,7 @@ func (c *consoleClient[T]) fireRequest(_ context.Context, verb, targetURL string
 
 	req, err := http.NewRequest(verb, targetURL, bodyReader)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrMarketplaceRequestCreation, err)
+		return nil, fmt.Errorf("%w: %w", ErrMarketplaceRequestCreation, err)
 	}
 
 	if err := c.tm.SetAuthHeader(req); err != nil {
@@ -49,13 +49,13 @@ func (c *consoleClient[T]) fireRequest(_ context.Context, verb, targetURL string
 	}
 
 	if bodyReader != nil {
-		req.Header.Set("content-type", "application/json")
+		req.Header.Set("Content-Type", "application/json")
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrMarketplaceRequestExecution, err)
+		return nil, fmt.Errorf("%w: %w", ErrMarketplaceRequestExecution, err)
 	}
 
 	return resp, nil
@@ -67,7 +67,7 @@ func prepareBody(requestBody any) (io.Reader, error) {
 	}
 	reqBodyBytes, err := json.Marshal(requestBody)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrMarketplaceRequestBodyParse, err)
+		return nil, fmt.Errorf("%w: %w", ErrMarketplaceRequestBodyParse, err)
 	}
 
 	return bytes.NewReader(reqBodyBytes), nil

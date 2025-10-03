@@ -48,12 +48,12 @@ const (
 )
 
 type Config struct {
+	webhook.Configuration[*basic.Authentication]
+
 	AzureDevOpsOrganizationURL     string              `json:"azureDevOpsOrganizationUrl"`
 	AzureDevOpsPersonalAccessToken config.SecretSource `json:"azureDevOpsPersonalAccessToken"`
 	ImportWebhookPath              string              `json:"importWebhookPath"`
 	WebhookHost                    string              `json:"webhookHost"`
-
-	webhook.Configuration[*basic.Authentication]
 }
 
 func (c *Config) Validate() error {
@@ -67,7 +67,7 @@ func (c *Config) Validate() error {
 	if c.WebhookHost == "" {
 		return fmt.Errorf("%w: %s", ErrMissingRequiredField, "webhookHost")
 	} else if _, err := url.Parse(c.WebhookHost); err != nil {
-		return fmt.Errorf("%w: %s", ErrInvalidHost, err)
+		return fmt.Errorf("%w: %w", ErrInvalidHost, err)
 	}
 
 	c.WebhookPath = cmp.Or(c.WebhookPath, defaultAzureWebhookPath)
@@ -93,7 +93,7 @@ func AddSourceToRouter(ctx context.Context, cfg config.GenericConfig, pg pipelin
 	}
 
 	if devopsConfig.ImportWebhookPath != "" {
-		_, err = router.AddRoute(http.MethodPost, devopsConfig.ImportWebhookPath, importWebhookHandler(connection, pg), swagger.Definitions{})
+		_, err = router.AddRoute(http.MethodPost, devopsConfig.ImportWebhookPath, importWebhookHandler(connection, pg), swagger.Definitions{}) //nolint: contextcheck
 		if err != nil {
 			return fmt.Errorf("failed to add route: %w", err)
 		}

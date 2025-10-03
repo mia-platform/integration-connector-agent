@@ -82,7 +82,7 @@ func TestGetPipelineEvent(t *testing.T) {
 			event, err := builder.GetPipelineEvent(t.Context(), tc.data)
 
 			if tc.expectedErr != nil {
-				require.Error(t, err, tc.expectedErr)
+				require.ErrorIs(t, err, tc.expectedErr)
 			} else {
 				require.NoError(t, err)
 			}

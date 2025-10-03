@@ -81,6 +81,8 @@ func TestTokenManager(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
 			server := testServer(t, test.handler)
 			defer server.Close()
 

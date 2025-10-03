@@ -47,14 +47,14 @@ type Authentication struct {
 func (a Authentication) CheckSignature(req webhook.ValidatingRequest) error {
 	authHeader, found := req.GetReqHeaders()["Authorization"]
 	if !found {
-		return fmt.Errorf("%w: %s", ErrNoAuthenticationHeaderFound, ErrUnauthorized)
+		return fmt.Errorf("%w: %w", ErrNoAuthenticationHeaderFound, ErrUnauthorized)
 	}
 	if len(authHeader) > 1 {
-		return fmt.Errorf("%w: %s", ErrMultipleAuthenticationHeadersFound, ErrUnauthorized)
+		return fmt.Errorf("%w: %w", ErrMultipleAuthenticationHeadersFound, ErrUnauthorized)
 	}
 	parts := strings.Fields(authHeader[0])
 	if len(parts) != 2 || strings.ToLower(parts[0]) != "basic" {
-		return fmt.Errorf("%w: %s", ErrInvalidAuthenticationType, ErrUnauthorized)
+		return fmt.Errorf("%w: %w", ErrInvalidAuthenticationType, ErrUnauthorized)
 	}
 
 	buffer := new(bytes.Buffer)

@@ -60,6 +60,7 @@ func TestReadSecret(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
 			secret := readSecret(&test.source)
 			require.Equal(t, test.expectedSecret, secret)
 		})
@@ -67,6 +68,8 @@ func TestReadSecret(t *testing.T) {
 }
 
 func TestSecretSource(t *testing.T) {
+	t.Parallel()
+
 	tests := map[string]struct {
 		source         string
 		expectedSecret string
@@ -92,6 +95,7 @@ func TestSecretSource(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
 			var actual SecretSource
 			err := json.Unmarshal([]byte(test.source), &actual)
 			require.NoError(t, err)

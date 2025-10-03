@@ -16,7 +16,7 @@
 package mongo
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 )
@@ -32,10 +32,10 @@ type Config struct {
 
 func (c *Config) Validate() error {
 	if c.URL == "" {
-		return fmt.Errorf("url is required")
+		return errors.New("url is required")
 	}
 	if c.Collection == "" {
-		return fmt.Errorf("collection is required")
+		return errors.New("collection is required")
 	}
 
 	return nil

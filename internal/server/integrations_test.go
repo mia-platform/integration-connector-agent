@@ -83,7 +83,7 @@ func TestSetupWriters(t *testing.T) {
 				require.EqualError(t, err, tc.expectError)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, len(tc.writers), len(w))
+				require.Len(t, w, len(tc.writers))
 			}
 		})
 	}
@@ -209,7 +209,7 @@ func TestSetupIntegrations(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, integrations)
-				require.Equal(t, tc.expectedIntegrations, len(integrations))
+				require.Len(t, integrations, tc.expectedIntegrations)
 			}
 		})
 	}

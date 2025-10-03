@@ -142,6 +142,8 @@ func TestGraphClient(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
 			client := &GraphClient{
 				client: testGraphClient(t, test.responder, test.errorResponder),
 			}
@@ -213,6 +215,7 @@ func TestTypeQueryFilter(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
 			result := typeQueryFilter(test.types)
 			assert.Equal(t, test.expectedString, result)
 		})

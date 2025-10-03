@@ -29,9 +29,9 @@ type EventBuilderMock struct {
 	ReturnedErr   error
 }
 
-func (e EventBuilderMock) GetPipelineEvent(_ context.Context, data []byte) (entities.PipelineEvent, error) {
+func (e EventBuilderMock) GetPipelineEvent(ctx context.Context, data []byte) (entities.PipelineEvent, error) {
 	if e.GetPipelineEventFunc != nil {
-		return e.GetPipelineEventFunc(context.Background(), data)
+		return e.GetPipelineEventFunc(ctx, data)
 	}
 
 	if e.AssertData != nil {
