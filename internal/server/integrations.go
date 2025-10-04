@@ -227,7 +227,7 @@ func setupSource(ctx context.Context, log *logrus.Logger, source config.GenericC
 
 func wrapSetupError(err error) error {
 	if err != nil {
-		return fmt.Errorf("%w: %s", errSetupSource, err)
+		return fmt.Errorf("%w: %w", errSetupSource, err)
 	}
 	return nil
 }
@@ -235,7 +235,7 @@ func wrapSetupError(err error) error {
 func setupGCPInventorySource(ctx context.Context, log *logrus.Logger, source config.GenericConfig, pg pipeline.IPipelineGroup, oasRouter *swagger.Router[fiber.Handler, fiber.Router], integration *Integration) error {
 	gcpSource, err := gcppubsub.NewInventorySource(ctx, log, source, pg, oasRouter)
 	if err != nil {
-		return fmt.Errorf("%w: %s", errSetupSource, err)
+		return fmt.Errorf("%w: %w", errSetupSource, err)
 	}
 	integration.appendCloseableSource(gcpSource)
 	return nil
@@ -244,7 +244,7 @@ func setupGCPInventorySource(ctx context.Context, log *logrus.Logger, source con
 func setupAWSCloudTrailSource(ctx context.Context, log *logrus.Logger, source config.GenericConfig, pg pipeline.IPipelineGroup, oasRouter *swagger.Router[fiber.Handler, fiber.Router], integration *Integration) error {
 	awsConsumer, err := awssqs.NewCloudTrailSource(ctx, log, source, pg, oasRouter)
 	if err != nil {
-		return fmt.Errorf("%w: %s", errSetupSource, err)
+		return fmt.Errorf("%w: %w", errSetupSource, err)
 	}
 	integration.appendCloseableSource(awsConsumer)
 	return nil
@@ -253,7 +253,7 @@ func setupAWSCloudTrailSource(ctx context.Context, log *logrus.Logger, source co
 func setupJBossSource(ctx context.Context, log *logrus.Logger, source config.GenericConfig, pg pipeline.IPipelineGroup, oasRouter *swagger.Router[fiber.Handler, fiber.Router], integration *Integration) error {
 	jbossSource, err := jboss.NewJBossSource(ctx, log, source, pg, oasRouter)
 	if err != nil {
-		return fmt.Errorf("%w: %s", errSetupSource, err)
+		return fmt.Errorf("%w: %w", errSetupSource, err)
 	}
 	integration.appendCloseableSource(jbossSource)
 	return nil
