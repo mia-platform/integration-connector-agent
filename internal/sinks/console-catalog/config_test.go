@@ -18,6 +18,7 @@ package consolecatalog
 import (
 	"testing"
 
+	"github.com/mia-platform/integration-connector-agent/internal/sinks/console-catalog/consoleclient"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,9 +32,12 @@ func TestConfigValidate(t *testing.T) {
 		{
 			name: "valid config",
 			config: &Config{
-				URL:              "http://example.com",
-				TenantID:         "tenant-id",
-				ItemType:         "item-type",
+				URL:      "http://example.com",
+				TenantID: "tenant-id",
+				ItemTypeDefinitionRef: consoleclient.ItemTypeDefinitionRef{
+					Name:      "item-type",
+					Namespace: "default",
+				},
 				ClientID:         "client-id",
 				ClientSecret:     "client-secret",
 				ItemIDTemplate:   "item-id-template",
@@ -54,29 +58,53 @@ func TestConfigValidate(t *testing.T) {
 		{
 			name: "missing tenant ID",
 			config: &Config{
-				URL:      "http://example.com",
-				ItemType: "item-type",
+				URL: "http://example.com",
+				ItemTypeDefinitionRef: consoleclient.ItemTypeDefinitionRef{
+					Name:      "item-type",
+					Namespace: "default",
+				},
 				ClientID: "client-id",
 			},
 			expectedErr:          ErrMissingField,
 			expectedMissingField: "tenantId",
 		},
 		{
-			name: "missing item type",
+			name: "missing item type name",
 			config: &Config{
 				URL:      "http://example.com",
 				TenantID: "tenant-id",
+				ItemTypeDefinitionRef: consoleclient.ItemTypeDefinitionRef{
+					Name:      "",
+					Namespace: "default",
+				},
 				ClientID: "client-id",
 			},
 			expectedErr:          ErrMissingField,
-			expectedMissingField: "itemType",
+			expectedMissingField: "itemTypeDefinitionRef.name",
+		},
+		{
+			name: "missing item type namespace",
+			config: &Config{
+				URL:      "http://example.com",
+				TenantID: "tenant-id",
+				ItemTypeDefinitionRef: consoleclient.ItemTypeDefinitionRef{
+					Name:      "item-type",
+					Namespace: "",
+				},
+				ClientID: "client-id",
+			},
+			expectedErr:          ErrMissingField,
+			expectedMissingField: "itemTypeDefinitionRef.namespace",
 		},
 		{
 			name: "missing client ID",
 			config: &Config{
 				URL:      "http://example.com",
 				TenantID: "tenant-id",
-				ItemType: "item-type",
+				ItemTypeDefinitionRef: consoleclient.ItemTypeDefinitionRef{
+					Name:      "item-type",
+					Namespace: "default",
+				},
 			},
 			expectedErr:          ErrMissingField,
 			expectedMissingField: "clientId",
@@ -86,7 +114,10 @@ func TestConfigValidate(t *testing.T) {
 			config: &Config{
 				URL:      "http://example.com",
 				TenantID: "tenant-id",
-				ItemType: "item-type",
+				ItemTypeDefinitionRef: consoleclient.ItemTypeDefinitionRef{
+					Name:      "item-type",
+					Namespace: "default",
+				},
 				ClientID: "client-id",
 			},
 			expectedErr:          ErrMissingField,
@@ -95,9 +126,12 @@ func TestConfigValidate(t *testing.T) {
 		{
 			name: "configuration is valid even when missing item ID template",
 			config: &Config{
-				URL:              "http://example.com",
-				TenantID:         "tenant-id",
-				ItemType:         "item-type",
+				URL:      "http://example.com",
+				TenantID: "tenant-id",
+				ItemTypeDefinitionRef: consoleclient.ItemTypeDefinitionRef{
+					Name:      "item-type",
+					Namespace: "default",
+				},
 				ClientID:         "client-id",
 				ClientSecret:     "client-secret",
 				ItemNameTemplate: "item-name-template",
@@ -106,9 +140,12 @@ func TestConfigValidate(t *testing.T) {
 		{
 			name: "missing item name template",
 			config: &Config{
-				URL:            "http://example.com",
-				TenantID:       "tenant-id",
-				ItemType:       "item-type",
+				URL:      "http://example.com",
+				TenantID: "tenant-id",
+				ItemTypeDefinitionRef: consoleclient.ItemTypeDefinitionRef{
+					Name:      "item-type",
+					Namespace: "default",
+				},
 				ClientID:       "client-id",
 				ClientSecret:   "client-secret",
 				ItemIDTemplate: "item-id-template",
@@ -119,9 +156,12 @@ func TestConfigValidate(t *testing.T) {
 		{
 			name: "invalid lifecycle status",
 			config: &Config{
-				URL:                 "http://example.com",
-				TenantID:            "tenant-id",
-				ItemType:            "item-type",
+				URL:      "http://example.com",
+				TenantID: "tenant-id",
+				ItemTypeDefinitionRef: consoleclient.ItemTypeDefinitionRef{
+					Name:      "item-type",
+					Namespace: "default",
+				},
 				ClientID:            "client-id",
 				ClientSecret:        "client-secret",
 				ItemIDTemplate:      "item-id-template",

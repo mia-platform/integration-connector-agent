@@ -1,4 +1,12 @@
 {
   "go.buildTags": "integration",
-  "go.lintTool": "golangci-lint"
+  "go.lintTool": "golangci-lint",
+  "cSpell.words": [
+    "bson",
+    "glogrus",
+    "mtest",
+    "testcoll",
+    "testdb",
+    "upserted"
+  ]
 }

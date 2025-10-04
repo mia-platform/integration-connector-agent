@@ -23,6 +23,7 @@ const (
 	AzureActivityLogEventHub = "azure-activity-log-event-hub"
 	AzureDevOps              = "azure-devops"
 	AWSCloudTrailSQS         = "aws-cloudtrail-sqs"
+	JBoss                    = "jboss"
 )
 
 type CloseableSource interface {

@@ -1,4 +1,15 @@
-# Mia-Platform Console Catalog Sink
+# Mia-PlatfoTo configure the Console Catalog sink, you need to provide the following parameters in your configuration file:
+
+- `type` (*string*): The type of the sink, which should be set to `console-catalog`.
+- `url` (*string*): The base URL of the Console installation you want to connect to.
+- `tenantID` (*string*): The tenant ID where the catalog items will be saved.
+- `itemTypeDefinitionRef` (*object*): The reference to an Item Type Definition in the form of its composite primary key.
+  - `name` (*string*): The name of the Item Type Definition (references its `.metadata.name`).
+  - `namespace` (*string*): The identifier of the Item Type Definition namespace (references its `.metadata.namespace.id`).
+- `clientId` (*string*): The client ID to use for authentication with the Console Catalog API.
+- `clientSecret` ([*SecretSource*](../20_install.md#secretsource)): The client secret to use for authentication with the Console Catalog API.
+- `itemIDTemplate` (*string*, optional): A [template](#template-processing) used to generate the item ID for the catalog item. When not provided the itemId is derived from the event Primary Keys.
+- `itemNameTemplate` (*string*): A [template](#template-processing) used to generate the name for the catalog item. Catalog Sink
 
 The Console Catalog sink allows you to save data into the [Mia-Platform Console Catalog](https://docs.mia-platform.eu/docs/software-catalog/overview).
 

@@ -35,6 +35,7 @@ import (
 	azuredevops "github.com/mia-platform/integration-connector-agent/internal/sources/azure-devops"
 	gcppubsub "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/github"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/jboss"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
 	console "github.com/mia-platform/integration-connector-agent/internal/sources/mia-platform-console"
 
@@ -195,44 +196,65 @@ func runIntegration(ctx context.Context, log *logrus.Logger, pg pipeline.IPipeli
 	integration := &Integration{
 		PipelineGroup: pg,
 	}
-	source := cfgIntegration.Source
-	switch source.Type {
-	case sources.Jira:
-		if err := jira.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
-			return nil, fmt.Errorf("%w: %w", errSetupSource, err)
-		}
-	case sources.Console:
-		if err := console.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
-			return nil, fmt.Errorf("%w: %w", errSetupSource, err)
-		}
-	case sources.GCPInventoryPubSub:
-		source, err := gcppubsub.NewInventorySource(ctx, log, source, pg, oasRouter)
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", errSetupSource, err)
-		}
 
-		integration.appendCloseableSource(source)
-	case sources.AWSCloudTrailSQS:
-		awsConsumer, err := awssqs.NewCloudTrailSource(ctx, log, source, pg, oasRouter)
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", errSetupSource, err)
-		}
-		integration.appendCloseableSource(awsConsumer)
-	case sources.AzureActivityLogEventHub:
-		if err := azureactivitylogeventhub.AddSource(ctx, source, pg, log, oasRouter); err != nil {
-			return nil, fmt.Errorf("%w: %w", errSetupSource, err)
-		}
-	case sources.AzureDevOps:
-		if err := azuredevops.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
-			return nil, fmt.Errorf("%w: %w", errSetupSource, err)
-		}
-	case sources.Github:
-		if err := github.AddSourceToRouter(ctx, source, pg, oasRouter); err != nil {
-			return nil, fmt.Errorf("%w: %w", errSetupSource, err)
-		}
-	default:
-		return nil, fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)
+	if err := setupSource(ctx, log, cfgIntegration.Source, pg, oasRouter, integration); err != nil {
+		return nil, err
 	}
 
 	return integration, nil
+}
+
+func setupSource(ctx context.Context, log *logrus.Logger, source config.GenericConfig, pg pipeline.IPipelineGroup, oasRouter *swagger.Router[fiber.Handler, fiber.Router], integration *Integration) error {
+	handlers := map[string]func() error{
+		sources.Jira:               func() error { return wrapSetupError(jira.AddSourceToRouter(ctx, source, pg, oasRouter)) },
+		sources.Console:            func() error { return wrapSetupError(console.AddSourceToRouter(ctx, source, pg, oasRouter)) },
+		sources.GCPInventoryPubSub: func() error { return setupGCPInventorySource(ctx, log, source, pg, oasRouter, integration) },
+		sources.AWSCloudTrailSQS:   func() error { return setupAWSCloudTrailSource(ctx, log, source, pg, oasRouter, integration) },
+		sources.AzureActivityLogEventHub: func() error {
+			return wrapSetupError(azureactivitylogeventhub.AddSource(ctx, source, pg, log, oasRouter))
+		},
+		sources.AzureDevOps: func() error { return wrapSetupError(azuredevops.AddSourceToRouter(ctx, source, pg, oasRouter)) },
+		sources.Github:      func() error { return wrapSetupError(github.AddSourceToRouter(ctx, source, pg, oasRouter)) },
+		sources.JBoss:       func() error { return setupJBossSource(ctx, log, source, pg, oasRouter, integration) },
+	}
+
+	if handler, exists := handlers[source.Type]; exists {
+		return handler()
+	}
+
+	return fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)
+}
+
+func wrapSetupError(err error) error {
+	if err != nil {
+		return fmt.Errorf("%w: %w", errSetupSource, err)
+	}
+	return nil
+}
+
+func setupGCPInventorySource(ctx context.Context, log *logrus.Logger, source config.GenericConfig, pg pipeline.IPipelineGroup, oasRouter *swagger.Router[fiber.Handler, fiber.Router], integration *Integration) error {
+	gcpSource, err := gcppubsub.NewInventorySource(ctx, log, source, pg, oasRouter)
+	if err != nil {
+		return fmt.Errorf("%w: %w", errSetupSource, err)
+	}
+	integration.appendCloseableSource(gcpSource)
+	return nil
+}
+
+func setupAWSCloudTrailSource(ctx context.Context, log *logrus.Logger, source config.GenericConfig, pg pipeline.IPipelineGroup, oasRouter *swagger.Router[fiber.Handler, fiber.Router], integration *Integration) error {
+	awsConsumer, err := awssqs.NewCloudTrailSource(ctx, log, source, pg, oasRouter)
+	if err != nil {
+		return fmt.Errorf("%w: %w", errSetupSource, err)
+	}
+	integration.appendCloseableSource(awsConsumer)
+	return nil
+}
+
+func setupJBossSource(ctx context.Context, log *logrus.Logger, source config.GenericConfig, pg pipeline.IPipelineGroup, oasRouter *swagger.Router[fiber.Handler, fiber.Router], integration *Integration) error {
+	jbossSource, err := jboss.NewJBossSource(ctx, log, source, pg, oasRouter)
+	if err != nil {
+		return fmt.Errorf("%w: %w", errSetupSource, err)
+	}
+	integration.appendCloseableSource(jbossSource)
+	return nil
 }

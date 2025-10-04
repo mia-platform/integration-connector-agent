@@ -89,12 +89,12 @@ func (w *Writer[T]) createCatalogItem(event T) (*consoleclient.MarketplaceResour
 	}
 
 	return &consoleclient.MarketplaceResource[any]{
-		TenantID:        w.config.TenantID,
-		Name:            itemName,
-		ItemID:          itemID,
-		Type:            w.config.ItemType,
-		LifecycleStatus: w.config.ItemLifecycleStatus,
-		Resources:       res,
+		TenantID:              w.config.TenantID,
+		Name:                  itemName,
+		ItemID:                itemID,
+		ItemTypeDefinitionRef: w.config.ItemTypeDefinitionRef,
+		LifecycleStatus:       w.config.ItemLifecycleStatus,
+		Resources:             res,
 	}, nil
 }
 

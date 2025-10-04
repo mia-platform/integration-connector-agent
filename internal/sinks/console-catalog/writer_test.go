@@ -31,9 +31,12 @@ func TestWriteData(t *testing.T) {
 
 	t.Run("should return error on invalid data", func(t *testing.T) {
 		writer, err := NewWriter[entities.PipelineEvent](&Config{
-			URL:          "http://example.com",
-			TenantID:     "tenant-id",
-			ItemType:     "item-type",
+			URL:      "http://example.com",
+			TenantID: "tenant-id",
+			ItemTypeDefinitionRef: consoleclient.ItemTypeDefinitionRef{
+				Name:      "item-type",
+				Namespace: "default",
+			},
 			ClientID:     "client-id",
 			ClientSecret: "secret",
 		}, log)
@@ -50,7 +53,8 @@ func TestWriteData(t *testing.T) {
 			ApplyResult: "item-id",
 			ApplyAssert: func(ctx context.Context, item *consoleclient.MarketplaceResource[any]) {
 				require.Equal(t, "tenant-id", item.TenantID)
-				require.Equal(t, "item-type", item.Type)
+				require.Equal(t, "item-type", item.ItemTypeDefinitionRef.Name)
+				require.Equal(t, "default", item.ItemTypeDefinitionRef.Namespace)
 
 				require.Equal(t, "bd2700071a46b945e610d1fad65eff454595a9ac", item.ItemID)
 				require.Equal(t, "Test Name", item.Name)
@@ -61,9 +65,12 @@ func TestWriteData(t *testing.T) {
 			client: mockClient,
 			log:    log,
 			config: &Config{
-				URL:              "http://example.com",
-				TenantID:         "tenant-id",
-				ItemType:         "item-type",
+				URL:      "http://example.com",
+				TenantID: "tenant-id",
+				ItemTypeDefinitionRef: consoleclient.ItemTypeDefinitionRef{
+					Name:      "item-type",
+					Namespace: "default",
+				},
 				ClientID:         "client-id",
 				ClientSecret:     "secret",
 				ItemIDTemplate:   "{{name}}-{{assetId}}",
@@ -90,9 +97,12 @@ func TestWriteData(t *testing.T) {
 			log:    log,
 			client: mockClient,
 			config: &Config{
-				URL:            "http://example.com",
-				TenantID:       "tenant-id",
-				ItemType:       "item-type",
+				URL:      "http://example.com",
+				TenantID: "tenant-id",
+				ItemTypeDefinitionRef: consoleclient.ItemTypeDefinitionRef{
+					Name:      "item-type",
+					Namespace: "default",
+				},
 				ClientID:       "client-id",
 				ClientSecret:   "secret",
 				ItemIDTemplate: "{{name}}-{{assetId}}",
@@ -118,9 +128,12 @@ func TestWriteData(t *testing.T) {
 			client: mockClient,
 			log:    log,
 			config: &Config{
-				URL:              "http://example.com",
-				TenantID:         "tenant-id",
-				ItemType:         "item-type",
+				URL:      "http://example.com",
+				TenantID: "tenant-id",
+				ItemTypeDefinitionRef: consoleclient.ItemTypeDefinitionRef{
+					Name:      "item-type",
+					Namespace: "default",
+				},
 				ClientID:         "client-id",
 				ClientSecret:     "secret",
 				ItemIDTemplate:   "",
