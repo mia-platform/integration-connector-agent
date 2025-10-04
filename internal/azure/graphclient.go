@@ -48,11 +48,11 @@ func NewGraphClient(config AuthConfig) (GraphClientInterface, error) {
 	var err error
 
 	if credentials, err = config.AzureTokenProvider(); err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrClientInitialization, err)
+		return nil, fmt.Errorf("%w: %w", ErrClientInitialization, err)
 	}
 
 	if client, err = armresourcegraph.NewClient(credentials, nil); err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrClientInitialization, err)
+		return nil, fmt.Errorf("%w: %w", ErrClientInitialization, err)
 	}
 
 	return &GraphClient{

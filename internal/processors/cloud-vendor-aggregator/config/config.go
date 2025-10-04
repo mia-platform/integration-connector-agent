@@ -28,6 +28,9 @@ var (
 )
 
 type AuthOptions struct {
+	// Azure
+	azure.AuthConfig
+
 	// GCP
 	CredenialsJSON config.SecretSource `json:"credentialsJson,omitempty"` //nolint:tagliatelle
 
@@ -36,9 +39,6 @@ type AuthOptions struct {
 	SecretAccessKey config.SecretSource `json:"secretAccessKey"`
 	SessionToken    config.SecretSource `json:"sessionToken"`
 	Region          string              `json:"region"`
-
-	// Azure
-	azure.AuthConfig
 }
 
 type Config struct {

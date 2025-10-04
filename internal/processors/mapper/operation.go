@@ -70,7 +70,7 @@ func (o operation) apply(input, output []byte) ([]byte, error) {
 func (o operation) setData(input, output []byte) ([]byte, error) {
 	if !gjson.ValidBytes(input) {
 		err := json.Unmarshal(input, &map[string]any{})
-		return nil, fmt.Errorf("%w: %s", errTransform, err)
+		return nil, fmt.Errorf("%w: %w", errTransform, err)
 	}
 	if o.keyToUpdate == "" {
 		return nil, fmt.Errorf("%w: output key is empty", errTransform)
@@ -78,7 +78,7 @@ func (o operation) setData(input, output []byte) ([]byte, error) {
 
 	out, err := sjson.SetBytes(output, o.keyToUpdate, o.getValueToSet(input))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", errTransform, err)
+		return nil, fmt.Errorf("%w: %w", errTransform, err)
 	}
 
 	return out, nil

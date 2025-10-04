@@ -103,6 +103,8 @@ func TestValidateConfig(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
 			err := test.config.Validate()
 			if test.expectedError != nil {
 				assert.ErrorIs(t, err, test.expectedError)
@@ -272,6 +274,8 @@ func TestImportFunction(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
 			server := importTestServer(t, test.handler)
 			defer server.Close()
 
@@ -542,6 +546,8 @@ func TestWebhookFunction(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
 			server := webhookTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method == http.MethodGet && r.RequestURI == "/_apis/projects?stateFilter=wellFormed" {
 					w.Header().Set("Content-Type", "application/json")

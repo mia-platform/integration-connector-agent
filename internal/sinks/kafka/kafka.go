@@ -19,6 +19,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
@@ -33,11 +34,11 @@ type Config struct {
 
 func (c *Config) Validate() error {
 	if c.ProducerConfig == nil {
-		return fmt.Errorf("producerConfig is required")
+		return errors.New("producerConfig is required")
 	}
 
 	if len(c.Topic) == 0 {
-		return fmt.Errorf("topic is required")
+		return errors.New("topic is required")
 	}
 	return nil
 }

@@ -128,6 +128,8 @@ func TestValidateConfig(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			err := tc.config.Validate()
 			if tc.expectedError != nil {
 				assert.ErrorIs(t, err, tc.expectedError)
@@ -140,7 +142,6 @@ func TestValidateConfig(t *testing.T) {
 }
 
 func TestAddSourceToRouter(t *testing.T) {
-	t.Parallel()
 	logger, _ := test.NewNullLogger()
 
 	ctx := t.Context()
@@ -194,7 +195,6 @@ func TestAddSourceToRouter(t *testing.T) {
 			defer s.ResetCalls()
 
 			req := getWebhookRequest(bytes.NewBufferString(tc.body), tc.eventName)
-
 			resp, err := app.Test(req)
 			require.NoError(t, err)
 			defer resp.Body.Close()
@@ -248,7 +248,7 @@ func TestAddSourceToRouter(t *testing.T) {
 func getWebhookRequest(body *bytes.Buffer, eventType string) *http.Request {
 	req := httptest.NewRequest(http.MethodPost, "/webhook", body)
 	hmac := getHMACValidationHeader("SECRET_VALUE", body.Bytes())
-	req.Header.Add(authHeaderName, fmt.Sprintf("sha256=%s", hmac))
+	req.Header.Add(authHeaderName, "sha256="+hmac)
 	req.Header.Add(githubEventHeader, eventType)
 	return req
 }

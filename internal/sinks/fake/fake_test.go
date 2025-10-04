@@ -78,7 +78,7 @@ func TestImplementWriter(t *testing.T) {
 
 		require.Len(t, f.Calls(), 1)
 		f.ResetCalls()
-		require.Len(t, f.Calls(), 0)
+		require.Empty(t, f.Calls())
 	})
 
 	t.Run("mock error write", func(t *testing.T) {

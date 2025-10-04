@@ -49,7 +49,7 @@ func TestSetupRouter(t *testing.T) {
 		require.Equal(t, fiber.StatusOK, response.StatusCode, "The response statusCode should be 200")
 		body, readBodyError := io.ReadAll(response.Body)
 		require.NoError(t, readBodyError)
-		require.True(t, string(body) != "", "The response body should not be an empty string")
+		require.NotEmpty(t, string(body), "The response body should not be an empty string")
 	})
 
 	t.Run("API documentation is correctly exposed without prefix - yaml", func(t *testing.T) {
@@ -61,6 +61,6 @@ func TestSetupRouter(t *testing.T) {
 		require.Equal(t, fiber.StatusOK, response.StatusCode, "The response statusCode should be 200")
 		body, readBodyError := io.ReadAll(response.Body)
 		require.NoError(t, readBodyError)
-		require.True(t, string(body) != "", "The response body should not be an empty string")
+		require.NotEmpty(t, string(body), "The response body should not be an empty string")
 	})
 }

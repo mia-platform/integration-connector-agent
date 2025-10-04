@@ -1,6 +1,8 @@
 module github.com/mia-platform/integration-connector-agent
 
-go 1.25.1
+go 1.25
+
+toolchain go1.25.1
 
 require (
 	cloud.google.com/go/pubsub/v2 v2.0.0

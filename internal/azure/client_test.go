@@ -83,6 +83,8 @@ func TestClient(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
 			client := &Client{
 				armClient: testArmClient(t, test.responder, test.errorResponder),
 			}

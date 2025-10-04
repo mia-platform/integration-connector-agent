@@ -104,8 +104,10 @@ func TestPipeline(t *testing.T) {
 			t.Helper()
 			time.Sleep(10 * time.Millisecond)
 
-			eventChannel := getPipeline(t, p).eventChan
-			close(eventChannel)
+			if pipeline, ok := p.(*Pipeline); ok {
+				eventChannel := pipeline.eventChan
+				close(eventChannel)
+			}
 		}(t)
 
 		err = p.Start(t.Context())
@@ -225,7 +227,7 @@ func TestPipeline(t *testing.T) {
 			return len(w.Calls()) < 1
 		}, 1*time.Second, 100*time.Millisecond)
 
-		assert.Equal(t, 0, len(w.Calls()))
+		assert.Empty(t, w.Calls())
 		logErrorProcessingDataMessageCount := 0
 		for _, entry := range hook.AllEntries() {
 			if entry.Message == "error processing data" {
@@ -235,15 +237,6 @@ func TestPipeline(t *testing.T) {
 
 		assert.Equal(t, 0, logErrorProcessingDataMessageCount)
 	})
-}
-
-func getPipeline(t *testing.T, p IPipeline) *Pipeline {
-	t.Helper()
-
-	pipeline, ok := p.(*Pipeline)
-	require.True(t, ok)
-
-	return pipeline
 }
 
 func runPipeline(t *testing.T, p IPipeline) {

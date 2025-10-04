@@ -16,6 +16,7 @@
 package awssqsevents
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -100,11 +101,11 @@ func (e CloudTrailEvent) ResourceName() (string, error) {
 	if slices.Contains(eventMappedData.resourceNameFromResourceArnEvents, e.Detail.EventName) {
 		resource, exists := e.Detail.RequestParameters["resource"]
 		if !exists {
-			return "", fmt.Errorf("resource field not found in event detail")
+			return "", errors.New("resource field not found in event detail")
 		}
 		resourceArn, ok := resource.(string)
 		if !ok {
-			return "", fmt.Errorf("resource field is not a string")
+			return "", errors.New("resource field is not a string")
 		}
 
 		if !arn.IsARN(resourceArn) {

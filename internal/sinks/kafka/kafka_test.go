@@ -16,8 +16,8 @@
 package kafka
 
 import (
+	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -85,7 +85,7 @@ func TestKafkaConsumer(t *testing.T) {
 		}
 
 		assert.Equal(t, topicName, *message.TopicPartition.Topic)
-		assert.Equal(t, "a94ca16651d330029359101fafc1f9fd35413da8185dd93e1d5a80ef933a027b", fmt.Sprintf("%x", message.Key))
+		assert.Equal(t, "a94ca16651d330029359101fafc1f9fd35413da8185dd93e1d5a80ef933a027b", hex.EncodeToString(message.Key))
 		assert.Equal(t, testMessage, string(message.Value))
 		assert.Equal(t, expectedHeaders, message.Headers)
 		break

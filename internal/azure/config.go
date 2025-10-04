@@ -80,14 +80,14 @@ func (c *AuthConfig) AzureTokenProvider() (azcore.TokenCredential, error) {
 			nil, // Options
 		)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %s", ErrAzureClientSecretCredential, err)
+			return nil, fmt.Errorf("%w: %w", ErrAzureClientSecretCredential, err)
 		}
 		credentials = append(credentials, secretCredential)
 	}
 
 	defaultCredential, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrAzureDefaultCredential, err)
+		return nil, fmt.Errorf("%w: %w", ErrAzureDefaultCredential, err)
 	}
 	credentials = append(credentials, defaultCredential)
 

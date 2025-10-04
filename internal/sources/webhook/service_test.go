@@ -149,6 +149,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 
 	for name, test := range testCases {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			app, router := testutils.GetTestRouter(t)
 
 			proc := &processors.Processors{}
@@ -270,6 +271,7 @@ func TestExtractBodyFromContentType(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
 			app := fiber.New()
 
 			var actualBody []byte

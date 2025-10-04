@@ -16,7 +16,6 @@
 package azure
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -49,9 +48,9 @@ func RelationshipFromID(id string) []string {
 			name := groupNames[groupIdx]
 			switch name {
 			case "subscriptionId":
-				relationships = append(relationships, fmt.Sprintf("subscription/%s", group))
+				relationships = append(relationships, "subscription/"+group)
 			case "resourceGroupName":
-				relationships = append(relationships, fmt.Sprintf("resourceGroup/%s", group))
+				relationships = append(relationships, "resourceGroup/"+group)
 			}
 		}
 	}

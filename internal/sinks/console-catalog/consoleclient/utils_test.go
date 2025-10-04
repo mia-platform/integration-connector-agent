@@ -17,7 +17,7 @@ package consoleclient
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 	"testing"
 
@@ -87,7 +87,7 @@ func registerAPI(t *testing.T, m *mocha.Mocha, request MockExpectation, response
 			mock = mock.Body(expect.Func(func(v any, _ expect.Args) (bool, error) {
 				bodyRaw, err := json.Marshal(v)
 				if err != nil {
-					return false, fmt.Errorf("unexpected error to read request body on mocha")
+					return false, errors.New("unexpected error to read request body on mocha")
 				}
 				require.Equal(t, request.bodyString, string(bodyRaw))
 				return true, nil

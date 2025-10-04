@@ -49,6 +49,7 @@ func TestRelationshipFromID(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
 			parsedRelationships := RelationshipFromID(test.id)
 			assert.Equal(t, test.expectedRelationships, parsedRelationships)
 		})
@@ -91,6 +92,7 @@ func TestEventIsForResourceType(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
 			result := EventIsForSource(test.event, test.resourceType)
 			assert.Equal(t, test.expected, result)
 		})

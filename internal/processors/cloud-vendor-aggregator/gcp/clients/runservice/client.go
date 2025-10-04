@@ -64,7 +64,7 @@ func (c *gcpRunServiceClient) GetService(ctx context.Context, name string) (*Ser
 	}
 
 	return &Service{
-		Name:   service.Name,
-		Labels: service.Labels,
+		Name:   service.GetName(),
+		Labels: service.GetLabels(),
 	}, nil
 }

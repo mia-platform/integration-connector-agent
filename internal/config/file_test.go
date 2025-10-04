@@ -47,6 +47,8 @@ func TestReadFile(t *testing.T) {
 
 	for testName, test := range tests {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
 			out, err := readFile(test.path)
 			switch len(test.expectedError) {
 			case 0:

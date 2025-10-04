@@ -207,7 +207,7 @@ func adaptFields(args ...interface{}) map[string]interface{} {
 		var val string
 		switch v := argsVal.(type) {
 		case error:
-			switch v.(type) {
+			switch v.(type) { //nolint: errorlint
 			case json.Marshaler, encoding.TextMarshaler:
 			default:
 				val = v.Error()

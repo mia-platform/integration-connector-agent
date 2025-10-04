@@ -152,6 +152,8 @@ func TestConfig(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
 			cfg := new(EventHubConfig)
 			err := json.Unmarshal(test.configData, cfg)
 			require.NoError(t, err)
@@ -199,6 +201,8 @@ func TestAzureCredentials(t *testing.T) {
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
 			credentials, err := test.config.AzureTokenProvider()
 			if test.expectedError != nil {
 				assert.ErrorIs(t, err, test.expectedError)

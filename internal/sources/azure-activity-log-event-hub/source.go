@@ -73,7 +73,7 @@ func AddSource(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipel
 		_, err = router.AddRoute(
 			http.MethodPost,
 			config.WebhookPath,
-			webhookHandler(client, config, pg),
+			webhookHandler(client, config, pg), //nolint: contextcheck
 			swagger.Definitions{},
 		)
 		if err != nil {

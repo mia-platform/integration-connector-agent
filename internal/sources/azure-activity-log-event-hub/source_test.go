@@ -122,6 +122,8 @@ func TestConfig(t *testing.T) {
 	logger, _ := test.NewNullLogger()
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
 			cfg, err := configFromGeneric(test.config, &testPipelineGroup{}, logger)
 			if len(test.expectedError) > 0 {
 				assert.Nil(t, cfg)
@@ -299,6 +301,8 @@ func TestActivityLogConsumer(t *testing.T) {
 	log, _ := test.NewNullLogger()
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
 			pg := &testPipelineGroup{}
 			consumerFunction := activityLogConsumer(pg, log)
 

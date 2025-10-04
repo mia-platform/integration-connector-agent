@@ -18,6 +18,7 @@ package azure
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/mia-platform/integration-connector-agent/internal/azure"
@@ -41,7 +42,7 @@ func (a *AzureClient) GetData(ctx context.Context, event *azure.ActivityLogEvent
 	data, _ := json.Marshal(event)
 	entity, found := event.Properties["entity"]
 	if !found {
-		return nil, fmt.Errorf("entity not found in event properties")
+		return nil, errors.New("entity not found in event properties")
 	}
 
 	resource, err := a.client.GetByID(ctx, entity.(string), apiVersionForSource(a.eventSource))

@@ -18,6 +18,7 @@ package awssqs
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -47,7 +48,7 @@ type CloudTrailSourceConfig struct {
 
 func (c *CloudTrailSourceConfig) Validate() error {
 	if c.QueueURL == "" {
-		return fmt.Errorf("queueId must be provided")
+		return errors.New("queueId must be provided")
 	}
 
 	return c.Authentication.Validate()

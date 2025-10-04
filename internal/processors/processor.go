@@ -17,6 +17,7 @@ package processors
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
@@ -32,7 +33,7 @@ import (
 )
 
 var (
-	ErrProcessorNotSupported = fmt.Errorf("processor not supported")
+	ErrProcessorNotSupported = errors.New("processor not supported")
 )
 
 const (

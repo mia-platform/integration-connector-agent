@@ -48,7 +48,7 @@ func (c *Config) Validate() error {
 	}
 
 	if _, err := url.Parse(c.URL); err != nil {
-		return fmt.Errorf("%w: %s", ErrInvalidURL, err)
+		return fmt.Errorf("%w: %w", ErrInvalidURL, err)
 	}
 
 	if c.TenantID == "" {

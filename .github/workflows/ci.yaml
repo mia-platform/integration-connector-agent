@@ -14,7 +14,7 @@ on:
     - examples/**
 
 env:
-  GOLANGCI_LINT_VERSION: v2.4.0
+  GOLANGCI_LINT_VERSION: v2.5.0
 jobs:
   lint:
     name: Lint Code
@@ -25,7 +25,7 @@ jobs:
       with:
         show-progress: false
     - name: Setup Golang
-      uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+      uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
       with:
         go-version-file: go.mod
         cache: false
@@ -47,7 +47,7 @@ jobs:
       with:
         show-progress: false
     - name: Setup Golang
-      uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+      uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
       with:
         go-version-file: go.mod
     - name: Run Test Coverage
@@ -70,24 +70,24 @@ jobs:
       with:
         show-progress: false
     - name: Docker Login to GitHub Repository
-      uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+      uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Docker Login to DockerHub
-      uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+      uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
       with:
         username: ${{ secrets.BOT_DOCKER_USERNAME }}
         password: ${{ secrets.BOT_DOCKER_TOKEN }}
     - name: Docker Login to Mia registry
-      uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+      uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
       with:
         registry: nexus.mia-platform.eu
         username: ${{ secrets.NEXUS_USER }}
         password: ${{ secrets.NEXUS_TOKEN }}
     - name: Install Cosign
-      uses: sigstore/cosign-installer@d58896d6a1865668819e1d91763c7751a165e159 # v3.9.2
+      uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
     - name: Set up QEMU
       uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
       with:
@@ -138,7 +138,7 @@ jobs:
         registry-password: ${{ secrets.NEXUS_TOKEN }}
         stop-on-processing-error: true
     - name: Generate SBOM
-      uses: anchore/sbom-action@da167eac915b4e86f08b264dbdbc867b61be6f0c # v0.20.5
+      uses: anchore/sbom-action@f8bdd1d8ac5e901a77a92f111440fdb1b593736b # v0.20.6
       if: github.ref_type == 'tag'
       with:
         artifact-name: integration-connector-agent-sbom.spdx.json
