@@ -55,6 +55,14 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("%w: tenantId", ErrMissingField)
 	}
 
+	if c.ItemTypeDefinitionRef.Name == "" {
+		return fmt.Errorf("%w: itemTypeDefinitionRef.name", ErrMissingField)
+	}
+
+	if c.ItemTypeDefinitionRef.Namespace == "" {
+		return fmt.Errorf("%w: itemTypeDefinitionRef.namespace", ErrMissingField)
+	}
+
 	if c.ClientID == "" {
 		return fmt.Errorf("%w: clientId", ErrMissingField)
 	}

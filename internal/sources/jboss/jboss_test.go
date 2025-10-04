@@ -55,7 +55,7 @@ func TestConfig_withDefaults(t *testing.T) {
 
 	assert.Equal(t, defaultWildFlyURL, cfg.WildFlyURL)
 	assert.Equal(t, defaultUsername, cfg.Username)
-	assert.Equal(t, defaultPollingInterval, cfg.PollingInterval)
+	assert.Equal(t, Duration(defaultPollingInterval), cfg.PollingInterval)
 }
 
 func TestCreateDeploymentEvent(t *testing.T) {
