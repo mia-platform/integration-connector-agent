@@ -19,8 +19,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/mia-platform/integration-connector-agent/entities"
 	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
+	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
 type Config struct {
@@ -116,10 +116,10 @@ func (f *Writer) WriteData(ctx context.Context, data entities.PipelineEvent) err
 
 	// Log the data being written to fake sink
 	log.WithFields(map[string]interface{}{
-		"operation":    data.Operation().String(),
-		"primaryKeys":  data.GetPrimaryKeys(),
-		"eventType":    data.GetType(),
-		"dataSize":     len(data.Data()),
+		"operation":   data.Operation().String(),
+		"primaryKeys": data.GetPrimaryKeys(),
+		"eventType":   data.GetType(),
+		"dataSize":    len(data.Data()),
 	}).Info("Fake sink received data")
 
 	// Log the actual data content for debugging

@@ -18,7 +18,7 @@ package jboss
 import (
 	"bytes"
 	"context"
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec // MD5 is required for HTTP Digest Authentication per RFC 2617
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -61,15 +61,15 @@ type WildFlyPayload struct {
 	Operation      string      `json:"operation"`
 	Address        interface{} `json:"address"`
 	Recursive      bool        `json:"recursive,omitempty"`
-	IncludeRuntime bool        `json:"include-runtime,omitempty"`
-	JSONPretty     int         `json:"json.pretty"`
+	IncludeRuntime bool        `json:"includeRuntime,omitempty"`
+	JSONPretty     int         `json:"jsonPretty"`
 }
 
 // WildFlyResponse represents the management API response
 type WildFlyResponse struct {
 	Outcome            string      `json:"outcome"`
 	Result             interface{} `json:"result,omitempty"`
-	FailureDescription string      `json:"failure-description,omitempty"`
+	FailureDescription string      `json:"failureDescription,omitempty"`
 }
 
 // Deployment represents a JBoss/WildFly deployment with all available information
@@ -91,27 +91,26 @@ type DeploymentContent struct {
 
 // UndertowSubsystem represents Undertow web server subsystem information
 type UndertowSubsystem struct {
-	ActiveSessions  int                    `json:"active-sessions"`
-	ContextRoot     string                 `json:"context-root"`
+	ActiveSessions  int                    `json:"activeSessions"`
+	ContextRoot     string                 `json:"contextRoot"`
 	Server          string                 `json:"server"`
-	SessionsCreated int                    `json:"sessions-created"`
-	VirtualHost     string                 `json:"virtual-host"`
+	SessionsCreated int                    `json:"sessionsCreated"`
+	VirtualHost     string                 `json:"virtualHost"`
 	Servlet         map[string]ServletInfo `json:"servlet,omitempty"`
 }
 
 // ServletInfo represents servlet information
 type ServletInfo struct {
-	MaxRequestTime   int    `json:"max-request-time"`
-	MinRequestTime   int    `json:"min-request-time"`
-	RequestCount     int    `json:"request-count"`
-	ServletClass     string `json:"servlet-class"`
-	ServletName      string `json:"servlet-name"`
-	TotalRequestTime int    `json:"total-request-time"`
+	MaxRequestTime   int    `json:"maxRequestTime"`
+	MinRequestTime   int    `json:"minRequestTime"`
+	RequestCount     int    `json:"requestCount"`
+	ServletClass     string `json:"servletClass"`
+	ServletName      string `json:"servletName"`
+	TotalRequestTime int    `json:"totalRequestTime"`
 }
 
 // GetDeployments retrieves all deployments from WildFly
 func (c *JBossClient) GetDeployments(s *JBossSource) ([]Deployment, error) {
-
 	payload := WildFlyPayload{
 		Operation:      "read-resource",
 		Address:        []string{"deployment", "*"}, // use [] for all or you can specify ["subsystem", "datasources", "data-source", "*"]
@@ -142,122 +141,147 @@ func (c *JBossClient) GetDeployments(s *JBossSource) ([]Deployment, error) {
 		return nil, fmt.Errorf("WildFly request failed: %s", response.FailureDescription)
 	}
 
+	return c.parseDeploymentResults(s, response.Result)
+}
+
+// parseDeploymentResults processes the API response and extracts deployment information
+func (c *JBossClient) parseDeploymentResults(s *JBossSource, result interface{}) ([]Deployment, error) {
+	resultArray, ok := result.([]interface{})
+	if !ok {
+		s.log.WithField("resultType", fmt.Sprintf("%T", result)).Debug("JBoss client: unexpected result type")
+		return nil, fmt.Errorf("unexpected result type: %T", result)
+	}
+
+	s.log.WithField("deploymentCount", len(resultArray)).Debug("JBoss client: processing deployment array")
+
 	var deployments []Deployment
-
-	// Handle array of deployment results
-	switch result := response.Result.(type) {
-	case []interface{}:
-		s.log.WithField("deploymentCount", len(result)).Debug("JBoss client: processing deployment array")
-
-		for i, item := range result {
-			itemData, ok := item.(map[string]interface{})
-			if !ok {
-				s.log.WithField("itemIndex", i).Debug("JBoss client: skipping invalid item data")
-				continue
-			}
-
-			// Extract address array
-			addressData, ok := itemData["address"].([]interface{})
-			if !ok || len(addressData) == 0 {
-				s.log.WithField("itemIndex", i).Debug("JBoss client: no address data found")
-				continue
-			}
-
-			// Extract deployment name from address
-			var deploymentName string
-			for _, addr := range addressData {
-				if addrMap, ok := addr.(map[string]interface{}); ok {
-					if deployment, exists := addrMap["deployment"]; exists {
-						if name, ok := deployment.(string); ok {
-							deploymentName = name
-							break
-						}
-					}
-				}
-			}
-
-			if deploymentName == "" {
-				s.log.WithField("itemIndex", i).Debug("JBoss client: no deployment name found in address")
-				continue
-			}
-
-			// Extract deployment details from result
-			resultData, ok := itemData["result"].(map[string]interface{})
-			if !ok {
-				s.log.WithField("deploymentName", deploymentName).Debug("JBoss client: no result data found")
-				continue
-			}
-
-			deployment := Deployment{
-				Name:        deploymentName,
-				RuntimeName: getStringValue(resultData, "runtime-name"),
-				Status:      getStringValue(resultData, "status"),
-				Enabled:     getBoolValue(resultData, "enabled"),
-				Persistent:  getBoolValue(resultData, "persistent"),
-			}
-
-			// Parse content array if available
-			if contentData, ok := resultData["content"].([]interface{}); ok {
-				deployment.Content = parseContentArray(contentData)
-			}
-
-			// Parse subdeployment if available
-			if subdeployment, ok := resultData["subdeployment"]; ok {
-				deployment.Subdeployment = subdeployment
-			}
-
-			// Parse subsystem information if available
-			if subsystemData, ok := resultData["subsystem"].(map[string]interface{}); ok {
-				deployment.Subsystem = subsystemData
-
-				// Log specific subsystem information for debugging
-				if undertowData, ok := subsystemData["undertow"].(map[string]interface{}); ok {
-					s.log.WithFields(map[string]interface{}{
-						"deploymentName":  deploymentName,
-						"contextRoot":     getStringValue(undertowData, "context-root"),
-						"activeSessions":  getIntValue(undertowData, "active-sessions"),
-						"sessionsCreated": getIntValue(undertowData, "sessions-created"),
-						"server":          getStringValue(undertowData, "server"),
-						"virtualHost":     getStringValue(undertowData, "virtual-host"),
-					}).Debug("JBoss client: parsed Undertow subsystem information")
-
-					// Log servlet information if available
-					if servletData, ok := undertowData["servlet"].(map[string]interface{}); ok {
-						for servletName, servletInfo := range servletData {
-							if servletMap, ok := servletInfo.(map[string]interface{}); ok {
-								s.log.WithFields(map[string]interface{}{
-									"deploymentName":   deploymentName,
-									"servletName":      servletName,
-									"servletClass":     getStringValue(servletMap, "servlet-class"),
-									"requestCount":     getIntValue(servletMap, "request-count"),
-									"maxRequestTime":   getIntValue(servletMap, "max-request-time"),
-									"minRequestTime":   getIntValue(servletMap, "min-request-time"),
-									"totalRequestTime": getIntValue(servletMap, "total-request-time"),
-								}).Debug("JBoss client: parsed servlet information")
-							}
-						}
-					}
-				}
-			}
-
-			s.log.WithFields(map[string]interface{}{
-				"deploymentName":       deployment.Name,
-				"deploymentStatus":     deployment.Status,
-				"deploymentEnabled":    deployment.Enabled,
-				"deploymentPersistent": deployment.Persistent,
-				"deploymentSubsystem":  deployment.Subsystem != nil,
-				"deploymentContent":    len(deployment.Content),
-			}).Debug("JBoss client: parsed deployment with enhanced mapping")
-
-			deployments = append(deployments, deployment)
+	for i, item := range resultArray {
+		deployment, err := c.parseDeploymentItem(s, i, item)
+		if err != nil {
+			s.log.WithField("itemIndex", i).WithError(err).Debug("JBoss client: failed to parse deployment item")
+			continue
 		}
-	default:
-		s.log.WithField("resultType", fmt.Sprintf("%T", response.Result)).Debug("JBoss client: unexpected result type")
-		return nil, fmt.Errorf("unexpected result type: %T", response.Result)
+		if deployment != nil {
+			deployments = append(deployments, *deployment)
+		}
 	}
 
 	s.log.WithField("totalDeployments", len(deployments)).Debug("JBoss client: successfully retrieved deployments")
 	return deployments, nil
+}
+
+// parseDeploymentItem extracts deployment information from a single result item
+func (c *JBossClient) parseDeploymentItem(s *JBossSource, index int, item interface{}) (*Deployment, error) {
+	itemData, ok := item.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid item data at index %d", index)
+	}
+
+	deploymentName, err := c.extractDeploymentName(itemData)
+	if err != nil {
+		return nil, err
+	}
+
+	resultData, ok := itemData["result"].(map[string]interface{})
+	if !ok {
+		s.log.WithField("deploymentName", deploymentName).Debug("JBoss client: no result data found")
+		return nil, nil
+	}
+
+	deployment := Deployment{
+		Name:        deploymentName,
+		RuntimeName: getStringValue(resultData, "runtime-name"),
+		Status:      getStringValue(resultData, "status"),
+		Enabled:     getBoolValue(resultData, "enabled"),
+		Persistent:  getBoolValue(resultData, "persistent"),
+	}
+
+	c.enrichDeploymentData(s, &deployment, resultData)
+
+	s.log.WithFields(map[string]interface{}{
+		"deploymentName":       deployment.Name,
+		"deploymentStatus":     deployment.Status,
+		"deploymentEnabled":    deployment.Enabled,
+		"deploymentPersistent": deployment.Persistent,
+		"deploymentSubsystem":  deployment.Subsystem != nil,
+		"deploymentContent":    len(deployment.Content),
+	}).Debug("JBoss client: parsed deployment with enhanced mapping")
+
+	return &deployment, nil
+}
+
+// extractDeploymentName extracts the deployment name from the address field
+func (c *JBossClient) extractDeploymentName(itemData map[string]interface{}) (string, error) {
+	addressData, ok := itemData["address"].([]interface{})
+	if !ok || len(addressData) == 0 {
+		return "", fmt.Errorf("no address data found")
+	}
+
+	for _, addr := range addressData {
+		if addrMap, ok := addr.(map[string]interface{}); ok {
+			if deployment, exists := addrMap["deployment"]; exists {
+				if name, ok := deployment.(string); ok {
+					return name, nil
+				}
+			}
+		}
+	}
+
+	return "", fmt.Errorf("no deployment name found in address")
+}
+
+// enrichDeploymentData adds content and subsystem information to the deployment
+func (c *JBossClient) enrichDeploymentData(s *JBossSource, deployment *Deployment, resultData map[string]interface{}) {
+	// Parse content array if available
+	if contentData, ok := resultData["content"].([]interface{}); ok {
+		deployment.Content = parseContentArray(contentData)
+	}
+
+	// Parse subdeployment if available
+	if subdeployment, ok := resultData["subdeployment"]; ok {
+		deployment.Subdeployment = subdeployment
+	}
+
+	// Parse subsystem information if available
+	if subsystemData, ok := resultData["subsystem"].(map[string]interface{}); ok {
+		deployment.Subsystem = subsystemData
+		c.logSubsystemInfo(s, deployment.Name, subsystemData)
+	}
+}
+
+// logSubsystemInfo logs detailed subsystem information for debugging
+func (c *JBossClient) logSubsystemInfo(s *JBossSource, deploymentName string, subsystemData map[string]interface{}) {
+	if undertowData, ok := subsystemData["undertow"].(map[string]interface{}); ok {
+		s.log.WithFields(map[string]interface{}{
+			"deploymentName":  deploymentName,
+			"contextRoot":     getStringValue(undertowData, "context-root"),
+			"activeSessions":  getIntValue(undertowData, "active-sessions"),
+			"sessionsCreated": getIntValue(undertowData, "sessions-created"),
+			"server":          getStringValue(undertowData, "server"),
+			"virtualHost":     getStringValue(undertowData, "virtual-host"),
+		}).Debug("JBoss client: parsed Undertow subsystem information")
+
+		c.logServletInfo(s, deploymentName, undertowData)
+	}
+}
+
+// logServletInfo logs servlet information for debugging
+func (c *JBossClient) logServletInfo(s *JBossSource, deploymentName string, undertowData map[string]interface{}) {
+	if servletData, ok := undertowData["servlet"].(map[string]interface{}); ok {
+		for servletName, servletInfo := range servletData {
+			if servletMap, ok := servletInfo.(map[string]interface{}); ok {
+				s.log.WithFields(map[string]interface{}{
+					"deploymentName":   deploymentName,
+					"servletName":      servletName,
+					"servletClass":     getStringValue(servletMap, "servlet-class"),
+					"requestCount":     getIntValue(servletMap, "request-count"),
+					"maxRequestTime":   getIntValue(servletMap, "max-request-time"),
+					"minRequestTime":   getIntValue(servletMap, "min-request-time"),
+					"totalRequestTime": getIntValue(servletMap, "total-request-time"),
+				}).Debug("JBoss client: parsed servlet information")
+			}
+		}
+	}
 }
 
 // makeRequest performs an HTTP request with digest authentication
@@ -276,7 +300,7 @@ func (c *JBossClient) makeRequest(ctx context.Context, payload WildFlyPayload) (
 		"payload":     string(payloadBytes),
 	}).Debug("JBoss client: making initial HTTP request")
 
-	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL, bytes.NewReader(payloadBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL, bytes.NewReader(payloadBytes))
 	if err != nil {
 		log.WithError(err).Debug("JBoss client: failed to create HTTP request")
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -288,7 +312,6 @@ func (c *JBossClient) makeRequest(ctx context.Context, payload WildFlyPayload) (
 	log.WithFields(map[string]interface{}{
 		"method":      req.Method,
 		"url":         req.URL.String(),
-		"headers":     req.Header,
 		"bodySize":    len(payloadBytes),
 		"requestBody": string(payloadBytes),
 	}).Debug("JBoss client: raw initial HTTP request details")
@@ -303,10 +326,9 @@ func (c *JBossClient) makeRequest(ctx context.Context, payload WildFlyPayload) (
 
 	// Log the raw response details
 	log.WithFields(map[string]interface{}{
-		"statusCode":      resp.StatusCode,
-		"status":          resp.Status,
-		"responseHeaders": resp.Header,
-		"proto":           resp.Proto,
+		"statusCode": resp.StatusCode,
+		"status":     resp.Status,
+		"proto":      resp.Proto,
 	}).Debug("JBoss client: raw initial HTTP response details")
 
 	if resp.StatusCode != http.StatusUnauthorized {
@@ -332,7 +354,7 @@ func (c *JBossClient) makeRequest(ctx context.Context, payload WildFlyPayload) (
 	log.Debug("JBoss client: creating authenticated HTTP request")
 
 	// Create new request with digest authentication
-	req, err = http.NewRequestWithContext(ctx, "POST", c.baseURL, bytes.NewReader(payloadBytes))
+	req, err = http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL, bytes.NewReader(payloadBytes))
 	if err != nil {
 		log.WithError(err).Debug("JBoss client: failed to create authenticated request")
 		return nil, fmt.Errorf("failed to create authenticated request: %w", err)
@@ -345,18 +367,6 @@ func (c *JBossClient) makeRequest(ctx context.Context, payload WildFlyPayload) (
 		return nil, fmt.Errorf("failed to create auth header: %w", err)
 	}
 	req.Header.Set("Authorization", authHeaderValue)
-
-	// Log the raw authenticated request details
-	log.WithFields(map[string]interface{}{
-		"method":           req.Method,
-		"url":              req.URL.String(),
-		"headers":          req.Header,
-		"bodySize":         len(payloadBytes),
-		"requestBody":      string(payloadBytes),
-		"authHeaderLength": len(authHeaderValue),
-		"digestAuthRealm":  digestAuth.realm,
-		"digestAuthNonce":  digestAuth.nonce,
-	}).Debug("JBoss client: raw authenticated HTTP request details")
 
 	log.Debug("JBoss client: making authenticated HTTP request")
 
@@ -375,12 +385,11 @@ func (c *JBossClient) makeRequest(ctx context.Context, payload WildFlyPayload) (
 	}
 
 	log.WithFields(map[string]interface{}{
-		"statusCode":      resp.StatusCode,
-		"status":          resp.Status,
-		"contentLength":   resp.ContentLength,
-		"contentType":     resp.Header.Get("Content-Type"),
-		"responseHeaders": responseHeaders,
-		"protocol":        resp.Proto,
+		"statusCode":    resp.StatusCode,
+		"status":        resp.Status,
+		"contentLength": resp.ContentLength,
+		"contentType":   resp.Header.Get("Content-Type"),
+		"protocol":      resp.Proto,
 	}).Debug("JBoss client: received authenticated HTTP response")
 
 	if resp.StatusCode != http.StatusOK {
@@ -464,22 +473,22 @@ func (c *JBossClient) createDigestAuthHeader(auth *digestAuth, method, uri strin
 	nc := "00000001"
 
 	// Calculate HA1 = MD5(username:realm:password)
-	ha1 := md5.Sum([]byte(fmt.Sprintf("%s:%s:%s", c.username, auth.realm, c.password)))
+	ha1 := md5.Sum([]byte(fmt.Sprintf("%s:%s:%s", c.username, auth.realm, c.password))) //nolint:gosec // MD5 required for HTTP Digest Auth
 	ha1Hex := hex.EncodeToString(ha1[:])
 
 	// Calculate HA2 = MD5(method:uri)
-	ha2 := md5.Sum([]byte(fmt.Sprintf("%s:%s", method, uri)))
+	ha2 := md5.Sum([]byte(fmt.Sprintf("%s:%s", method, uri))) //nolint:gosec // MD5 required for HTTP Digest Auth
 	ha2Hex := hex.EncodeToString(ha2[:])
 
 	// Calculate response
 	var response string
 	if auth.qop == "auth" || auth.qop == "auth-int" {
 		// response = MD5(HA1:nonce:nc:cnonce:qop:HA2)
-		responseHash := md5.Sum([]byte(fmt.Sprintf("%s:%s:%s:%s:%s:%s", ha1Hex, auth.nonce, nc, cnonce, auth.qop, ha2Hex)))
+		responseHash := md5.Sum([]byte(fmt.Sprintf("%s:%s:%s:%s:%s:%s", ha1Hex, auth.nonce, nc, cnonce, auth.qop, ha2Hex))) //nolint:gosec // MD5 required for HTTP Digest Auth
 		response = hex.EncodeToString(responseHash[:])
 	} else {
 		// response = MD5(HA1:nonce:HA2)
-		responseHash := md5.Sum([]byte(fmt.Sprintf("%s:%s:%s", ha1Hex, auth.nonce, ha2Hex)))
+		responseHash := md5.Sum([]byte(fmt.Sprintf("%s:%s:%s", ha1Hex, auth.nonce, ha2Hex))) //nolint:gosec // MD5 required for HTTP Digest Auth
 		response = hex.EncodeToString(responseHash[:])
 	}
 
@@ -562,39 +571,4 @@ func parseContentArray(contentData []interface{}) []DeploymentContent {
 		}
 	}
 	return content
-}
-
-// parseUndertowSubsystem parses Undertow subsystem information
-func parseUndertowSubsystem(data map[string]interface{}) *UndertowSubsystem {
-	if data == nil {
-		return nil
-	}
-
-	undertow := &UndertowSubsystem{
-		ActiveSessions:  getIntValue(data, "active-sessions"),
-		ContextRoot:     getStringValue(data, "context-root"),
-		Server:          getStringValue(data, "server"),
-		SessionsCreated: getIntValue(data, "sessions-created"),
-		VirtualHost:     getStringValue(data, "virtual-host"),
-		Servlet:         make(map[string]ServletInfo),
-	}
-
-	// Parse servlet information
-	if servletData, ok := data["servlet"].(map[string]interface{}); ok {
-		for servletName, servletInfo := range servletData {
-			if servletMap, ok := servletInfo.(map[string]interface{}); ok {
-				servlet := ServletInfo{
-					MaxRequestTime:   getIntValue(servletMap, "max-request-time"),
-					MinRequestTime:   getIntValue(servletMap, "min-request-time"),
-					RequestCount:     getIntValue(servletMap, "request-count"),
-					ServletClass:     getStringValue(servletMap, "servlet-class"),
-					ServletName:      getStringValue(servletMap, "servlet-name"),
-					TotalRequestTime: getIntValue(servletMap, "total-request-time"),
-				}
-				undertow.Servlet[servletName] = servlet
-			}
-		}
-	}
-
-	return undertow
 }

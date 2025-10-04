@@ -16,7 +16,6 @@
 package jboss
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -61,11 +60,10 @@ func TestConfig_withDefaults(t *testing.T) {
 
 func TestCreateDeploymentEvent(t *testing.T) {
 	deployment := Deployment{
-		Name:               "test-app.war",
-		RuntimeName:        "test-app.war",
-		Status:             "OK",
-		Enabled:            true,
-		PersistentDeployed: true,
+		Name:        "test-app.war",
+		RuntimeName: "test-app.war",
+		Status:      "OK",
+		Enabled:     true,
 	}
 
 	timestamp := time.Now()
@@ -97,7 +95,7 @@ func TestJBossEventBuilder_GetPipelineEvent(t *testing.T) {
 	data, err := json.Marshal(deploymentEvent)
 	require.NoError(t, err)
 
-	event, err := builder.GetPipelineEvent(context.Background(), data)
+	event, err := builder.GetPipelineEvent(t.Context(), data)
 	require.NoError(t, err)
 
 	primaryKeys := event.GetPrimaryKeys()

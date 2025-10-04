@@ -27,9 +27,6 @@ import (
 const (
 	// Event types for JBoss/WildFly deployments
 	DeploymentStatusEvent = "jboss:deployment_status"
-
-	// Primary key path for deployment events
-	deploymentEventIDPath = "deployment.name"
 )
 
 // DeploymentEvent represents a JBoss/WildFly deployment status event
@@ -53,12 +50,8 @@ func CreateDeploymentEvent(deployment Deployment, timestamp time.Time) (entities
 	}
 
 	// Determine operation based on deployment status
-	var operation entities.Operation
-	if deployment.Enabled && deployment.Status == "OK" {
-		operation = entities.Write
-	} else {
-		operation = entities.Write // We still write the event but with different status
-	}
+	// We always write the event regardless of status
+	operation := entities.Write
 
 	// Create primary key fields from deployment name
 	primaryKeys := entities.PkFields{

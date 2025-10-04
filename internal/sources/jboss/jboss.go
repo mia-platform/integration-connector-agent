@@ -59,7 +59,7 @@ func (d Duration) Duration() time.Duration {
 }
 
 type Config struct {
-	WildFlyURL      string              `json:"wildflyUrl,omitempty"`
+	WildFlyURL      string              `json:"wildFlyUrl,omitempty"`
 	Username        string              `json:"username,omitempty"`
 	Password        config.SecretSource `json:"password"`
 	PollingInterval Duration            `json:"pollingInterval,omitempty"`
@@ -124,20 +124,16 @@ func NewJBossSource(
 		done:     make(chan struct{}),
 	}
 
-	if err := source.start(); err != nil {
-		return nil, fmt.Errorf("failed to start JBoss source: %w", err)
-	}
+	source.start()
 
 	return source, nil
 }
 
-func (s *JBossSource) start() error {
+func (s *JBossSource) start() {
 	s.pipeline.Start(s.ctx)
 
 	// Start the polling goroutine
 	go s.pollWildFly()
-
-	return nil
 }
 
 func (s *JBossSource) pollWildFly() {
