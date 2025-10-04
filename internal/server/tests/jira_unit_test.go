@@ -31,9 +31,7 @@ func TestJiraIntegrationUnit(t *testing.T) {
 	t.Run("webhook processes jira events correctly", func(t *testing.T) {
 		// Create a mock pipeline group to capture processed events
 		mockPipelineGroup := &pipeline.PipelineGroupMock{}
-
 		timestamp := time.Now().UnixMilli()
-
 		reqBody := map[string]any{
 			"webhookEvent": "jira:issue_created",
 			"id":           123,
@@ -51,26 +49,20 @@ func TestJiraIntegrationUnit(t *testing.T) {
 				"name": "testuser-name",
 			},
 		}
-
 		// For now, this is a minimal test that verifies the JSON marshaling works
 		// In a full implementation, you would inject the mock pipeline group
 		// into the Jira webhook handler and verify it processes events correctly
-
 		body, err := json.Marshal(reqBody)
 		require.NoError(t, err)
 		require.NotEmpty(t, body)
-
 		// Create a mock HTTP request
 		req := httptest.NewRequest(http.MethodPost, "/jira/webhook", bytes.NewBuffer(body))
 		req.Header.Set("Content-Type", "application/json")
-
 		// Verify the request was created successfully
 		require.Equal(t, "/jira/webhook", req.URL.Path)
 		require.Equal(t, "POST", req.Method)
-
 		// Verify mock pipeline group is ready
 		require.False(t, mockPipelineGroup.AddMessageInvoked)
 		require.False(t, mockPipelineGroup.StartInvoked)
-
 	})
 }

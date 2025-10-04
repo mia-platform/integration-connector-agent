@@ -33,7 +33,7 @@ func TestMongoUpsertUnit(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 
 	mt.Run("mongo upsert operations", func(mt *mtest.T) {
-		ctx := context.Background()
+		ctx := mt.Context()
 
 		w := &Writer[*entities.Event]{
 			client:        mt.Client,
@@ -75,7 +75,7 @@ func TestMongoUpsertWithMultiplePrimaryKeysUnit(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 
 	mt.Run("mongo upsert with multiple primary keys", func(mt *mtest.T) {
-		ctx := context.Background()
+		ctx := mt.Context()
 
 		w := &Writer[*entities.Event]{
 			client:        mt.Client,
@@ -120,7 +120,7 @@ func TestMongoOnlyInsertUnit(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 
 	mt.Run("mongo insert only operations", func(mt *mtest.T) {
-		ctx := context.Background()
+		ctx := mt.Context()
 
 		w := &Writer[*entities.Event]{
 			client:        mt.Client,
@@ -160,7 +160,7 @@ func TestMongoOnlyInsertUnit(t *testing.T) {
 
 func TestMongoWriterCreationUnit(t *testing.T) {
 	t.Run("writer creation with mock validation", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 
 		// Test successful writer creation with mocked validation
 		w, err := newMongoDBWriter[*entities.Event](ctx, &Config{
@@ -183,7 +183,7 @@ func TestMongoWriterCreationUnit(t *testing.T) {
 	})
 
 	t.Run("writer creation with insert only mode", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 
 		w, err := newMongoDBWriter[*entities.Event](ctx, &Config{
 			URL:        config.SecretSource("mongodb://localhost:27017/testdb"),

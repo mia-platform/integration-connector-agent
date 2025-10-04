@@ -18,6 +18,7 @@ package jboss
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -67,7 +68,7 @@ type Config struct {
 
 func (c *Config) Validate() error {
 	if c.Password.String() == "" {
-		return fmt.Errorf("password must be provided")
+		return errors.New("password must be provided")
 	}
 	return nil
 }

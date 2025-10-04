@@ -22,6 +22,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -43,7 +44,7 @@ type JBossClient struct {
 // NewJBossClient creates a new JBoss client with digest authentication
 func NewJBossClient(baseURL, username, password string) (*JBossClient, error) {
 	if baseURL == "" || username == "" || password == "" {
-		return nil, fmt.Errorf("baseURL, username, and password are required")
+		return nil, errors.New("baseURL, username, and password are required")
 	}
 
 	return &JBossClient{
@@ -214,7 +215,7 @@ func (c *JBossClient) parseDeploymentItem(s *JBossSource, index int, item interf
 func (c *JBossClient) extractDeploymentName(itemData map[string]interface{}) (string, error) {
 	addressData, ok := itemData["address"].([]interface{})
 	if !ok || len(addressData) == 0 {
-		return "", fmt.Errorf("no address data found")
+		return "", errors.New("no address data found")
 	}
 
 	for _, addr := range addressData {
@@ -227,7 +228,7 @@ func (c *JBossClient) extractDeploymentName(itemData map[string]interface{}) (st
 		}
 	}
 
-	return "", fmt.Errorf("no deployment name found in address")
+	return "", errors.New("no deployment name found in address")
 }
 
 // enrichDeploymentData adds content and subsystem information to the deployment
@@ -340,7 +341,7 @@ func (c *JBossClient) makeRequest(ctx context.Context, payload WildFlyPayload) (
 	authHeader := resp.Header.Get("WWW-Authenticate")
 	if authHeader == "" {
 		log.Debug("JBoss client: no WWW-Authenticate header found")
-		return nil, fmt.Errorf("no WWW-Authenticate header found")
+		return nil, errors.New("no WWW-Authenticate header found")
 	}
 
 	log.WithField("authHeader", authHeader).Debug("JBoss client: parsing digest authentication challenge")
@@ -429,7 +430,7 @@ type digestAuth struct {
 // parseDigestAuth parses WWW-Authenticate header
 func (c *JBossClient) parseDigestAuth(authHeader string) (*digestAuth, error) {
 	if !strings.HasPrefix(authHeader, "Digest ") {
-		return nil, fmt.Errorf("not a digest auth header")
+		return nil, errors.New("not a digest auth header")
 	}
 
 	auth := &digestAuth{}
@@ -454,7 +455,7 @@ func (c *JBossClient) parseDigestAuth(authHeader string) (*digestAuth, error) {
 	}
 
 	if auth.realm == "" || auth.nonce == "" {
-		return nil, fmt.Errorf("missing required digest auth parameters")
+		return nil, errors.New("missing required digest auth parameters")
 	}
 
 	return auth, nil
@@ -506,8 +507,8 @@ func (c *JBossClient) createDigestAuthHeader(auth *digestAuth, method, uri strin
 	}
 
 	if auth.qop != "" {
-		authParts = append(authParts, fmt.Sprintf(`qop=%s`, auth.qop))
-		authParts = append(authParts, fmt.Sprintf(`nc=%s`, nc))
+		authParts = append(authParts, `qop=`+auth.qop)
+		authParts = append(authParts, `nc=`+nc)
 		authParts = append(authParts, fmt.Sprintf(`cnonce="%s"`, cnonce))
 	}
 
