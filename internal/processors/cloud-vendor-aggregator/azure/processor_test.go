@@ -169,6 +169,45 @@ func TestProcessor(t *testing.T) {
 				}(),
 				),
 		},
+		"request a cognitive service account": {
+			client: &fakeClient{
+				t: t,
+				resource: &azure.Resource{
+					Name:     "azure-openai-account",
+					Type:     "Microsoft.CognitiveServices/accounts",
+					Tags:     map[string]string{"env": "test"},
+					Location: "eastus",
+				},
+				apiVersion: "2024-11-01",
+			},
+			input: &entities.Event{
+				PrimaryKeys: entities.PkFields{
+					{
+						Key:   "resourceId",
+						Value: "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group/providers/Microsoft.CognitiveServices/accounts/azure-openai-account",
+					},
+				},
+				Type:          azure.EventTypeRecordFromEventHub.String(),
+				OperationType: entities.Write,
+				OriginalRaw:   []byte(virtualMachineActivityLog),
+			},
+			expectedAsset: commons.NewAsset("azure-openai-account", "Microsoft.CognitiveServices/accounts", commons.AzureAssetProvider).
+				WithLocation("eastus").
+				WithRelationships([]string{
+					"subscription/00000000-0000-0000-0000-000000000000",
+					"resourceGroup/group",
+				}).
+				WithTags(map[string]string{"env": "test"}).
+				WithRawData(func() []byte {
+					event := new(azure.ActivityLogEventRecord)
+					err := json.Unmarshal([]byte(virtualMachineActivityLog), event)
+					require.NoError(t, err)
+					data, err := json.Marshal(event)
+					require.NoError(t, err)
+					return data
+				}(),
+				),
+		},
 		"event is from import event": {
 			input: &entities.Event{
 				PrimaryKeys: entities.PkFields{

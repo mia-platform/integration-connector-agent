@@ -30,6 +30,8 @@ Currently, this source only supports the following resource types:
 - Network Interface (`Microsoft.Network/networkInterfaces`)
 - Network Security Group (`Microsoft.Network/networkSecurityGroups`)
 - Public IP Address (`Microsoft.Network/publicIPAddresses`)
+- Cognitive Services Accounts (`Microsoft.cognitiveservices/accounts`)
+- Cognitive Services Deployments (`Microsoft.cognitiveservices/accounts/deployments`)
 
 :::
 
