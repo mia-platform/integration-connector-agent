@@ -36,6 +36,9 @@ const (
 	NetworkPublicIPAddressEventSource = "microsoft.network/publicipaddresses"
 
 	TagsEventSource = "microsoft.resources/tags"
+
+	CognitiveServicesAccountEventSource    = "microsoft.cognitiveservices/accounts"
+	CognitiveServicesDeploymentEventSource = "microsoft.cognitiveservices/accounts/deployments"
 )
 
 func RelationshipFromID(id string) []string {
@@ -76,6 +79,8 @@ func EventSourceFromEvent(event *ActivityLogEventRecord) string {
 		NetworkInterfaceEventSource,
 		NetworkSecurityGroupEventSource,
 		NetworkPublicIPAddressEventSource,
+		CognitiveServicesAccountEventSource,
+		CognitiveServicesDeploymentEventSource,
 	}
 
 	eventSource := strings.ToLower(event.OperationName)
