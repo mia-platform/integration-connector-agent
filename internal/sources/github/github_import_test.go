@@ -16,7 +16,6 @@
 package github
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -48,7 +47,7 @@ func TestNewGitHubSource(t *testing.T) {
 		_, router := testutils.GetTestRouter(t)
 		pg := &pipeline.PipelineGroupMock{}
 
-		source, err := NewGitHubSource(context.Background(), log, cfg, pg, router)
+		source, err := NewGitHubSource(t.Context(), log, cfg, pg, router)
 		require.NoError(t, err)
 		require.NotNil(t, source)
 
@@ -74,7 +73,7 @@ func TestNewGitHubSource(t *testing.T) {
 		_, router := testutils.GetTestRouter(t)
 		pg := &pipeline.PipelineGroupMock{}
 
-		_, err = NewGitHubSource(context.Background(), log, cfg, pg, router)
+		_, err = NewGitHubSource(t.Context(), log, cfg, pg, router)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "GitHub authentication is required for import functionality")
 	})
@@ -138,7 +137,7 @@ func TestGitHubEventBuilder(t *testing.T) {
 		data, err := json.Marshal(importData)
 		require.NoError(t, err)
 
-		event, err := builder.GetPipelineEvent(context.Background(), data)
+		event, err := builder.GetPipelineEvent(t.Context(), data)
 		require.NoError(t, err)
 		require.NotNil(t, event)
 

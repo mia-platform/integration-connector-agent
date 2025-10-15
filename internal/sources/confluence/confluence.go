@@ -96,6 +96,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
+//nolint:unparam // Configuration builder pattern, return value is useful API design
 func (c *Config) withDefault() *Config {
 	c.WebhookPath = cmp.Or(c.WebhookPath, defaultWebhookPath)
 	c.Authentication.HeaderName = cmp.Or(c.Authentication.HeaderName, authHeaderName)

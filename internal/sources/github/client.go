@@ -37,6 +37,10 @@ type GitHubClient struct {
 	authType     string // "token" or "app"
 }
 
+// Repository represents a GitHub repository.
+// JSON tags must match GitHub API response format exactly.
+//
+//nolint:tagliatelle // GitHub API uses snake_case, must maintain compatibility
 type Repository struct {
 	ID                        int64     `json:"id"`
 	NodeID                    string    `json:"node_id"`
@@ -138,6 +142,7 @@ type Repository struct {
 	ReadmeContent string `json:"readme_content,omitempty"` // README.md content
 }
 
+//nolint:tagliatelle // GitHub API uses snake_case, must maintain compatibility
 type PullRequest struct {
 	ID     int64  `json:"id"`
 	Number int    `json:"number"`
@@ -161,6 +166,7 @@ type PullRequest struct {
 	} `json:"base"`
 }
 
+//nolint:tagliatelle // GitHub API uses snake_case, must maintain compatibility
 type WorkflowRun struct {
 	ID     int64  `json:"id"`
 	Name   string `json:"name"`
@@ -176,6 +182,7 @@ type WorkflowRun struct {
 	JobsURL   string    `json:"jobs_url"`
 }
 
+//nolint:tagliatelle // GitHub API uses snake_case, must maintain compatibility
 type Issue struct {
 	ID     int64  `json:"id"`
 	Number int    `json:"number"`
@@ -252,6 +259,7 @@ func (c *GitHubClient) getAccessToken() error {
 		return fmt.Errorf("OAuth token request failed with status %d", resp.StatusCode)
 	}
 
+	//nolint:tagliatelle // GitHub API uses snake_case, must maintain compatibility
 	var tokenResponse struct {
 		AccessToken string `json:"access_token"`
 		TokenType   string `json:"token_type"`
@@ -329,6 +337,7 @@ func (c *GitHubClient) ListPullRequests(ctx context.Context, repoName string) ([
 }
 
 func (c *GitHubClient) ListWorkflowRuns(ctx context.Context, repoName string) ([]WorkflowRun, error) {
+	//nolint:tagliatelle // GitHub API uses snake_case, must maintain compatibility
 	var response struct {
 		WorkflowRuns []WorkflowRun `json:"workflow_runs"`
 	}

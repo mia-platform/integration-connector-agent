@@ -23,6 +23,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
+//nolint:tagliatelle // Confluence import event uses snake_case, must maintain compatibility
 type ConfluenceImportEvent struct {
 	Type     string      `json:"type"`
 	ID       string      `json:"id"`

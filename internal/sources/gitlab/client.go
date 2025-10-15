@@ -32,6 +32,7 @@ type GitLabClient struct {
 	group      string // Group/Organization name
 }
 
+//nolint:tagliatelle // GitLab API uses snake_case, must maintain compatibility
 type Project struct {
 	ID                               int64     `json:"id"`
 	Name                             string    `json:"name"`
@@ -109,6 +110,7 @@ type Project struct {
 	ReadmeContent string `json:"readme_content,omitempty"` // README content
 }
 
+//nolint:tagliatelle // GitLab API uses snake_case, must maintain compatibility
 type MergeRequest struct {
 	ID          int64  `json:"id"`
 	IID         int    `json:"iid"`
@@ -229,6 +231,7 @@ type MergeRequest struct {
 	ApprovalsBeforeMerge        int  `json:"approvals_before_merge"`
 }
 
+//nolint:tagliatelle // GitLab API uses snake_case, must maintain compatibility
 type Pipeline struct {
 	ID         int64     `json:"id"`
 	IID        int       `json:"iid"`
@@ -273,6 +276,7 @@ type Pipeline struct {
 	Name string `json:"name"`
 }
 
+//nolint:tagliatelle // GitLab API uses snake_case, must maintain compatibility
 type Release struct {
 	TagName         string    `json:"tag_name"`
 	Name            string    `json:"name"`

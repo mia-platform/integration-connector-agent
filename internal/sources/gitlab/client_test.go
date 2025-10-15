@@ -16,7 +16,6 @@
 package gitlab
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -74,7 +73,7 @@ func TestGitLabClient_ListProjects(t *testing.T) {
 	client, err := NewGitLabClient("test-token", server.URL, "test-group")
 	require.NoError(t, err)
 
-	projects, err := client.ListProjects(context.Background())
+	projects, err := client.ListProjects(t.Context())
 	require.NoError(t, err)
 	require.Len(t, projects, 1)
 
@@ -122,7 +121,7 @@ func TestGitLabClient_ListMergeRequests(t *testing.T) {
 	client, err := NewGitLabClient("test-token", server.URL, "test-group")
 	require.NoError(t, err)
 
-	mrs, err := client.ListMergeRequests(context.Background(), 123)
+	mrs, err := client.ListMergeRequests(t.Context(), 123)
 	require.NoError(t, err)
 	require.Len(t, mrs, 1)
 
@@ -169,7 +168,7 @@ func TestGitLabClient_ListPipelines(t *testing.T) {
 	client, err := NewGitLabClient("test-token", server.URL, "test-group")
 	require.NoError(t, err)
 
-	pipelines, err := client.ListPipelines(context.Background(), 123)
+	pipelines, err := client.ListPipelines(t.Context(), 123)
 	require.NoError(t, err)
 	require.Len(t, pipelines, 1)
 
@@ -215,7 +214,7 @@ func TestGitLabClient_ListReleases(t *testing.T) {
 	client, err := NewGitLabClient("test-token", server.URL, "test-group")
 	require.NoError(t, err)
 
-	releases, err := client.ListReleases(context.Background(), 123)
+	releases, err := client.ListReleases(t.Context(), 123)
 	require.NoError(t, err)
 	require.Len(t, releases, 1)
 
@@ -242,7 +241,7 @@ func TestGitLabClient_GetProjectReadme(t *testing.T) {
 	client, err := NewGitLabClient("test-token", server.URL, "test-group")
 	require.NoError(t, err)
 
-	readme, err := client.GetProjectReadme(context.Background(), 123)
+	readme, err := client.GetProjectReadme(t.Context(), 123)
 	require.NoError(t, err)
 	assert.Equal(t, "# Test Project\n\nThis is a test project.", readme)
 }
@@ -256,7 +255,7 @@ func TestGitLabClient_GetProjectReadme_NotFound(t *testing.T) {
 	client, err := NewGitLabClient("test-token", server.URL, "test-group")
 	require.NoError(t, err)
 
-	readme, err := client.GetProjectReadme(context.Background(), 123)
+	readme, err := client.GetProjectReadme(t.Context(), 123)
 	require.NoError(t, err)
 	assert.Empty(t, readme)
 }

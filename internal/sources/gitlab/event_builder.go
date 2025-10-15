@@ -24,6 +24,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
+//nolint:tagliatelle // GitLab API uses snake_case, must maintain compatibility
 type GitLabImportEvent struct {
 	Type      string      `json:"type"`
 	ID        int64       `json:"id"`

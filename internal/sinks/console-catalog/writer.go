@@ -182,6 +182,7 @@ func (w *Writer[T]) createCatalogItem(event T) (*consoleclient.MarketplaceResour
 	return marketplaceResource, nil
 }
 
+//nolint:gocyclo // Complex metadata creation logic - refactoring would reduce readability
 func (w *Writer[T]) createCatalogMetadata(event T) (*consoleclient.CatalogMetadata, error) {
 	if w.config.CatalogMetadata == nil {
 		return nil, nil

@@ -36,6 +36,7 @@ type ConfluenceClient struct {
 	log        *logrus.Logger
 }
 
+//nolint:tagliatelle // Confluence API uses snake_case/_links, must maintain compatibility
 type Space struct {
 	ID          string `json:"id"`
 	Key         string `json:"key"`
@@ -58,6 +59,7 @@ type Space struct {
 	} `json:"_links"`
 }
 
+//nolint:tagliatelle // Confluence API uses snake_case/_links, must maintain compatibility
 type Page struct {
 	ID       string `json:"id"`
 	Type     string `json:"type"`
@@ -88,6 +90,7 @@ type Page struct {
 	} `json:"_links"`
 }
 
+//nolint:tagliatelle // Confluence API uses snake_case/_links, must maintain compatibility
 type SpaceListResponse struct {
 	Results []Space `json:"results"`
 	Start   int     `json:"start"`
@@ -98,6 +101,7 @@ type SpaceListResponse struct {
 	} `json:"_links"`
 }
 
+//nolint:tagliatelle // Confluence API uses snake_case/_links, must maintain compatibility
 type PageListResponse struct {
 	Results []Page `json:"results"`
 	Start   int    `json:"start"`

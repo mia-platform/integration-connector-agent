@@ -16,7 +16,6 @@
 package confluence
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -48,7 +47,7 @@ func TestNewConfluenceSource(t *testing.T) {
 		pg := pipeline.NewGroup(log)
 		_, router := testutils.GetTestRouter(t)
 
-		source, err := NewConfluenceSource(context.Background(), log, cfg, pg, router)
+		source, err := NewConfluenceSource(t.Context(), log, cfg, pg, router)
 		require.NoError(t, err)
 		assert.NotNil(t, source)
 
@@ -73,7 +72,7 @@ func TestNewConfluenceSource(t *testing.T) {
 		pg := pipeline.NewGroup(log)
 		_, router := testutils.GetTestRouter(t)
 
-		_, err = NewConfluenceSource(context.Background(), log, cfg, pg, router)
+		_, err = NewConfluenceSource(t.Context(), log, cfg, pg, router)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "username")
 	})
@@ -151,7 +150,7 @@ func TestConfluenceSource_isItemTypeEnabled(t *testing.T) {
 		pg := pipeline.NewGroup(log)
 		_, router := testutils.GetTestRouter(t)
 
-		source, err := NewConfluenceSource(context.Background(), log, cfg, pg, router)
+		source, err := NewConfluenceSource(t.Context(), log, cfg, pg, router)
 		require.NoError(t, err)
 
 		confluenceSource := source.(*ConfluenceSource)
@@ -177,7 +176,7 @@ func TestConfluenceSource_isItemTypeEnabled(t *testing.T) {
 		pg := pipeline.NewGroup(log)
 		_, router := testutils.GetTestRouter(t)
 
-		source, err := NewConfluenceSource(context.Background(), log, cfg, pg, router)
+		source, err := NewConfluenceSource(t.Context(), log, cfg, pg, router)
 		require.NoError(t, err)
 
 		confluenceSource := source.(*ConfluenceSource)
@@ -204,7 +203,7 @@ func TestConfluenceSource_isItemTypeEnabled(t *testing.T) {
 		pg := pipeline.NewGroup(log)
 		_, router := testutils.GetTestRouter(t)
 
-		source, err := NewConfluenceSource(context.Background(), log, cfg, pg, router)
+		source, err := NewConfluenceSource(t.Context(), log, cfg, pg, router)
 		require.NoError(t, err)
 
 		confluenceSource := source.(*ConfluenceSource)

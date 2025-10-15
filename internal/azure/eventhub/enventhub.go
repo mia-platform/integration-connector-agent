@@ -144,15 +144,15 @@ func enhancePartitionProcessingError(err error) error {
 
 	// Check for common runtime errors
 	if strings.Contains(errStr, "403") || strings.Contains(errStr, "AuthorizationPermissionMismatch") {
-		return fmt.Errorf("Azure permission error during event processing: %w\n\nThis typically indicates issues with:\n1. Storage Blob permissions for checkpoint storage (need 'Storage Blob Data Contributor')\n2. Event Hub permissions (need 'Azure Event Hubs Data Receiver')\n\nPlease verify all required permissions are correctly assigned to your service principal.", err)
+		return fmt.Errorf("azure permission error during event processing: %w\n\nThis typically indicates issues with:\n1. Storage Blob permissions for checkpoint storage (need 'Storage Blob Data Contributor')\n2. Event Hub permissions (need 'Azure Event Hubs Data Receiver')\n\nPlease verify all required permissions are correctly assigned to your service principal", err)
 	}
 
 	if strings.Contains(errStr, "401") || strings.Contains(errStr, "authentication") {
-		return fmt.Errorf("Azure authentication error during event processing: %w\n\nThis may indicate:\n1. Expired service principal credentials\n2. Token refresh issues\n3. Network connectivity problems\n\nCheck your Azure credentials and network connectivity.", err)
+		return fmt.Errorf("azure authentication error during event processing: %w\n\nThis may indicate:\n1. Expired service principal credentials\n2. Token refresh issues\n3. Network connectivity problems\n\nCheck your Azure credentials and network connectivity", err)
 	}
 
 	if strings.Contains(errStr, "timeout") || strings.Contains(errStr, "deadline") {
-		return fmt.Errorf("Azure Event Hub timeout error: %w\n\nThis may indicate:\n1. Network connectivity issues\n2. Event Hub throttling\n3. Resource scaling issues\n\nConsider checking:\n- Network connectivity to Azure\n- Event Hub throughput units\n- Processing performance", err)
+		return fmt.Errorf("azure Event Hub timeout error: %w\n\nThis may indicate:\n1. Network connectivity issues\n2. Event Hub throttling\n3. Resource scaling issues\n\nConsider checking:\n- Network connectivity to Azure\n- Event Hub throughput units\n- Processing performance", err)
 	}
 
 	return err
