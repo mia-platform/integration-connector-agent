@@ -6,3 +6,64 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+
+## [0.5.5] - 2025-10-15
+
+### Added
+
+#### New Integration Sources
+
+- **Confluence Integration**: Full support for Confluence pages and spaces with configurable authentication and event tracking
+- **Enhanced GitHub Integration**: Improved GitHub integration with app-based authentication support
+  and comprehensive event types
+- **Enhanced GitLab Integration**: Extended GitLab integration with web hook support and CI/CD monitoring capabilities
+- **Azure DevOps Integration**: New integration for Azure DevOps pipeline and project monitoring
+
+#### New Item Types and Schemas
+
+- **Azure Item Types**: Support for Azure resource management with comprehensive schemas
+  - `azure-resource.json` for Azure resource tracking
+- **Confluence Item Types**: Complete Confluence integration schemas
+  - `confluence-page.json` for page tracking
+  - `confluence-space.json` for space management
+- **GitHub Item Types**: Extended GitHub schema support
+  - `github-issue.json` for issue tracking
+  - `github-member.json` for team management
+  - `github-pull-request.json` for PR workflow
+  - `github-release.json` for release management
+  - `github-repository.json` for repository metadata
+  - `github-star.json` for star tracking
+  - `github-workflow-run.json` for CI/CD monitoring
+- **GitLab Item Types**: Comprehensive GitLab integration schemas
+  - `gitlab-merge-request.json` for MR workflow
+  - `gitlab-pipeline.json` for CI/CD tracking
+  - `gitlab-project.json` for project management
+  - `gitlab-release.json` for release tracking
+
+#### Enhanced Features
+
+- **Cloud Vendor Aggregator**: New Azure processor for cloud resource aggregation
+- **Console Catalog Sink**: Enhanced console catalog integration with improved client interface
+- **Authentication Migration**: Added GitHub authentication migration documentation
+- **Azure Permissions**: New troubleshooting documentation for Azure permissions
+
+#### Configuration Examples
+
+- Complete Azure pipeline configurations (simple, conditional, and complete)
+- Confluence integration configuration examples
+- GitHub app and token-based authentication examples
+- GitLab CI monitoring and web hook configuration examples
+
+### Enhanced
+
+- Improved error handling and logging across all integrations
+- Enhanced web hook processing capabilities
+- Better configuration validation and schema support
+- Improved test coverage for all new integrations
+
+### Documentation
+
+- Updated source documentation for all new integrations
+- Added troubleshooting guides for Azure permissions
+- Enhanced GitHub authentication migration guide
+- Comprehensive examples for all new configurations
