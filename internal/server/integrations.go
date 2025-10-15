@@ -75,8 +75,11 @@ func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Conf
 
 		pg := pipeline.NewGroup(log, pipelines...)
 
-		// skip this source as it is only used for test
+		// skip this source as it is only used for test, but still add it to integrations
 		if cfgIntegration.Source.Type == "test" {
+			integrations = append(integrations, &Integration{
+				PipelineGroup: pg,
+			})
 			continue
 		}
 
@@ -250,7 +253,7 @@ func setupSource(ctx context.Context, log *logrus.Logger, source config.GenericC
 		log.WithFields(logrus.Fields{
 			"sourceType": source.Type,
 		}).Error("source type not supported")
-		return fmt.Errorf("source type %s not supported", source.Type)
+		return fmt.Errorf("unsupported integration type: %s", source.Type)
 	}
 
 	log.WithFields(logrus.Fields{
