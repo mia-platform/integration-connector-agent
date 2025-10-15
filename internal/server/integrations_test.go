@@ -225,7 +225,6 @@ func TestSetupIntegrations(t *testing.T) {
 			}
 		})
 	}
-	}
 }
 
 func getRouter(t *testing.T) *swagger.Router[fiber.Handler, fiber.Router] {

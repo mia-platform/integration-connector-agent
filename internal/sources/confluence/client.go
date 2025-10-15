@@ -399,7 +399,7 @@ func (c *ConfluenceClient) ListPages(ctx context.Context, spaceKey string) ([]Pa
 		params := url.Values{}
 		params.Set("space-key", spaceKey)
 		params.Set("start", strconv.Itoa(start))
-		params.Set("limit", fmt.Sprintf("%d", limit))
+		params.Set("limit", strconv.Itoa(limit))
 		params.Set("status", "current")
 		params.Set("body-format", "storage")
 

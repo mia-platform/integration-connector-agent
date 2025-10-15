@@ -258,5 +258,5 @@ func TestGitLabClient_GetProjectReadme_NotFound(t *testing.T) {
 
 	readme, err := client.GetProjectReadme(context.Background(), 123)
 	require.NoError(t, err)
-	assert.Equal(t, "", readme)
+	assert.Empty(t, readme)
 }

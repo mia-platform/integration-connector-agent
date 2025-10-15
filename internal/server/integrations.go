@@ -306,33 +306,3 @@ func setupAWSCloudTrailSource(ctx context.Context, log *logrus.Logger, source co
 	integration.appendCloseableSource(awsConsumer)
 	return nil
 }
-
-func setupJBossSource(ctx context.Context, log *logrus.Logger, source config.GenericConfig, pg pipeline.IPipelineGroup, oasRouter *swagger.Router[fiber.Handler, fiber.Router], integration *Integration) error {
-	jbossSource, err := jboss.NewJBossSource(ctx, log, source, pg, oasRouter)
-	if err != nil {
-		return fmt.Errorf("%w: %w", errSetupSource, err)
-	}
-	integration.appendCloseableSource(jbossSource)
-	return nil
-}
-
-func setupGitHubSource(ctx context.Context, log *logrus.Logger, source config.GenericConfig, pg pipeline.IPipelineGroup, oasRouter *swagger.Router[fiber.Handler, fiber.Router], integration *Integration) error {
-	// First check if this is using the new enhanced GitHub source with import functionality
-	githubConfig, err := config.GetConfig[*github.Config](source)
-	if err != nil {
-		return fmt.Errorf("%w: %w", errSetupSource, err)
-	}
-
-	// If import webhook is configured, use the new enhanced source
-	if githubConfig.ImportWebhookPath != "" {
-		githubSource, err := github.NewGitHubSource(ctx, log, source, pg, oasRouter)
-		if err != nil {
-			return fmt.Errorf("%w: %w", errSetupSource, err)
-		}
-		integration.appendCloseableSource(githubSource)
-		return nil
-	}
-
-	// Otherwise, use the simple webhook setup for backward compatibility
-	return wrapSetupError(github.AddSourceToRouter(ctx, source, pg, oasRouter))
-}

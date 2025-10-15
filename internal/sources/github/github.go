@@ -100,8 +100,10 @@ func NewGitHubSource(
 
 	var client *GitHubClient
 	if config.ImportWebhookPath != "" {
-		// Check for GitHub App authentication (preferred)
-		if config.ClientID.String() != "" && config.ClientSecret.String() != "" {
+		// Check for GitHub authentication type
+		switch {
+		case config.ClientID.String() != "" && config.ClientSecret.String() != "":
+			// GitHub App authentication (preferred)
 			if config.Organization == "" {
 				return nil, errors.New("GitHub organization is required for import functionality")
 			}
@@ -110,7 +112,7 @@ func NewGitHubSource(
 			if err != nil {
 				return nil, fmt.Errorf("failed to create GitHub client with App authentication: %w", err)
 			}
-		} else if config.Token.String() != "" {
+		case config.Token.String() != "":
 			// Fallback to legacy token authentication
 			if config.Organization == "" {
 				return nil, errors.New("GitHub organization is required for import functionality")
@@ -120,7 +122,7 @@ func NewGitHubSource(
 			if err != nil {
 				return nil, fmt.Errorf("failed to create GitHub client: %w", err)
 			}
-		} else {
+		default:
 			return nil, errors.New("GitHub authentication is required for import functionality: either clientId/clientSecret or token must be provided")
 		}
 	}

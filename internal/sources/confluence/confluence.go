@@ -83,13 +83,13 @@ func (c *Config) Validate() error {
 
 		// Validate required fields for import functionality
 		if c.Username.String() == "" {
-			return errors.New("Confluence username is required for import functionality")
+			return errors.New("confluence username is required for import functionality")
 		}
 		if c.APIToken.String() == "" {
-			return errors.New("Confluence API token is required for import functionality")
+			return errors.New("confluence API token is required for import functionality")
 		}
 		if c.BaseURL == "" {
-			return errors.New("Confluence baseUrl is required for import functionality")
+			return errors.New("confluence baseUrl is required for import functionality")
 		}
 	}
 

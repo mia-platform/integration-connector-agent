@@ -281,9 +281,9 @@ func (c *GitHubClient) makeRequest(ctx context.Context, endpoint string, result 
 
 	// Set authorization header based on auth type
 	if c.authType == "app" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
+		req.Header.Set("Authorization", "Bearer "+c.accessToken)
 	} else {
-		req.Header.Set("Authorization", fmt.Sprintf("token %s", c.token))
+		req.Header.Set("Authorization", "token "+c.token)
 	}
 
 	req.Header.Set("Accept", "application/vnd.github.v3+json")

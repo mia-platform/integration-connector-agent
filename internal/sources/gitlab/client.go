@@ -334,13 +334,6 @@ type Release struct {
 	} `json:"assets"`
 	UpcomingRelease   bool `json:"upcoming_release"`
 	HistoricalRelease bool `json:"historical_release"`
-	_links            struct {
-		ClosedIssuesURL        string `json:"closed_issues_url"`
-		ClosedMergeRequestsURL string `json:"closed_merge_requests_url"`
-		EditURL                string `json:"edit_url"`
-		MergedMergeRequestsURL string `json:"merged_merge_requests_url"`
-		SelfURL                string `json:"self_url"`
-	} `json:"_links"`
 }
 
 func NewGitLabClient(token, baseURL, group string) (*GitLabClient, error) {

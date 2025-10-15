@@ -23,6 +23,13 @@ import (
 	"unicode/utf8"
 )
 
+const (
+	// MinBase64Length is the minimum length for a valid base64 string
+	MinBase64Length = 4
+	// MaxBodySizeForDecoding is the maximum body size we'll attempt to decode
+	MaxBodySizeForDecoding = 10000
+)
+
 func IsNil(i any) bool {
 	defer func() { recover() }() //nolint:errcheck
 	return i == nil || reflect.ValueOf(i).IsNil()
@@ -31,7 +38,7 @@ func IsNil(i any) bool {
 // IsBase64 checks if a string appears to be base64 encoded
 func IsBase64(s string) bool {
 	// Must be at least 4 characters long for valid base64
-	if len(s) < 4 {
+	if len(s) < MinBase64Length {
 		return false
 	}
 
@@ -77,7 +84,7 @@ func TryDecodeBase64Body(body []byte) (original string, decoded string, wasDecod
 	original = string(body)
 
 	// Skip very large bodies to avoid performance issues
-	if len(body) > 10000 {
+	if len(body) > MaxBodySizeForDecoding {
 		return original, "", false
 	}
 
