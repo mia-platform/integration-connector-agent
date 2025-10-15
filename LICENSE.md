@@ -46,11 +46,11 @@ Website: https://www.mia-platform.eu
 
 ADDITIONAL TERMS
 
-The AGPLv3 license requires that if you run a modified version of this
-software on a server and let other users interact with it there, your
-server must also allow them to download the complete source code of your
+The AGPLv3 license requires that if you run a modified version of this 
+software on a server and let other users interact with it there, your 
+server must also allow them to download the complete source code of your 
 modified software.
 
-If you cannot or do not want to comply with the AGPLv3 requirements, you
-must obtain a commercial license from Mia-Platform before using this
+If you cannot or do not want to comply with the AGPLv3 requirements, you 
+must obtain a commercial license from Mia-Platform before using this 
 software in your application.
