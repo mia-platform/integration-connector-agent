@@ -1,0 +1,180 @@
+{
+  "integrations": [
+    {
+      "source": {
+        "type": "azure-activity-log-event-hub",
+        "subscriptionId": "{{AZURE_SUBSCRIPTION_ID}}",
+        "eventHubNamespace": "{{AZURE_ACTIVITY_LOG_NAMESPACE}}",
+        "eventHubName": "{{AZURE_ACTIVITY_LOG_TOPIC}}",
+        "checkpointStorageAccountName": "{{AZURE_ACTIVITY_LOG_CHECKPOINT}}",
+        "checkpointStorageContainerName": "{{AZURE_ACTIVITY_LOG_CONTAINER_NAME}}",
+        "tenantId": "{{AZURE_TENANT_ID}}",
+        "clientId": { "fromEnv": "AZURE_CLIENT_ID" },
+        "clientSecret": { "fromEnv": "AZURE_CLIENT_SECRET" },
+        "webhookPath": "/import"
+      },
+      "pipelines": [
+       {
+  "processors": [
+    {
+      "type": "cloud-vendor-aggregator",
+      "cloudVendorName": "azure",
+      "authOptions": {
+        "tenantId": "{{AZURE_TENANT_ID}}",
+        "clientId": { "fromEnv": "AZURE_CLIENT_ID" },
+        "clientSecret": { "fromEnv": "AZURE_CLIENT_SECRET" }
+      }
+    },
+    {
+      "type": "mapper",
+      "outputEvent": {
+        "name": "{{name}}",
+        "runtimeData": {
+          "name": "{{name}}",
+          "type": "{{type}}",
+          "provider": "{{provider}}",
+          "location": "{{location}}",
+          "resourceGroup": "{{resourceGroup}}",
+          "subscriptionId": "{{subscriptionId}}",
+          "relationships": "{{relationships}}",
+          "tags": "{{tags}}",
+          "properties": "{{properties}}",
+          "sku": {
+            "name": "{{sku.name}}",
+            "tier": "{{sku.tier}}",
+            "size": "{{sku.size}}",
+            "family": "{{sku.family}}",
+            "capacity": "{{sku.capacity}}"
+          },
+          "identity": {
+            "type": "{{identity.type}}",
+            "principalId": "{{identity.principalId}}",
+            "tenantId": "{{identity.tenantId}}",
+            "userAssignedIdentities": "{{identity.userAssignedIdentities}}"
+          },
+          "zones": "{{zones}}",
+          "kind": "{{kind}}",
+          "resourceId": "{{resourceId}}",
+          "etag": "{{etag}}",
+          "managedBy": "{{managedBy}}",
+          "plan": {
+            "name": "{{plan.name}}",
+            "publisher": "{{plan.publisher}}",
+            "product": "{{plan.product}}",
+            "promotionCode": "{{plan.promotionCode}}",
+            "version": "{{plan.version}}"
+          },
+          "provisioningState": "{{provisioningState}}",
+          "createdTime": "{{createdTime}}",
+          "changedTime": "{{changedTime}}",
+          "timestamp": "{{timestamp}}"
+        }
+      }
+    }
+  ],
+  "sinks": [
+    {
+      "type": "console-catalog",
+      "url": "https://demo.console.gcp.mia-platform.eu/",
+      "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+      "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+      "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+      "itemTypeDefinitionRef": {
+        "name": "azure-resource",
+        "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+      },
+      "itemLifecycleStatus": "published",
+      "itemNameTemplate": "{{name}} ({{runtimeData.type}})",
+      "catalogMetadata": {
+        "displayName": "{{name}}",
+        "description": "Azure {{runtimeData.type}} resource in {{runtimeData.location}}",
+        "icon": {
+          "mediaType": "image/svg+xml",
+          "base64Data": "PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTMgNWEyIDIgMCAwIDEgMi0yaDZhMiAyIDAgMCAxIDIgMnY2YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0yVjV6bTIgMGg2djZINVY1eiIvPgo8L3N2Zz4K"
+        },
+        "documentation": {
+          "type": "externalLink",
+          "url": "https://portal.azure.com/#@{{runtimeData.identity.tenantId}}/resource{{runtimeData.resourceId}}"
+        },
+        "labels": {
+          "provider": "{{runtimeData.provider | replace('/', '.')}}",
+          "location": "{{runtimeData.location | replace('/', '.')}}",
+          "resourceGroup": "{{runtimeData.resourceGroup | replace('/', '.')}}",
+          "subscriptionId": "{{runtimeData.subscriptionId | replace('/', '.')}}",
+          "resourceType": "{{runtimeData.type | replace('/', '.')}}",
+          "provisioningState": "{{runtimeData.provisioningState | replace('/', '.')}}",
+          "kind": "{{runtimeData.kind | replace('/', '.')}}",
+          "skuName": "{{runtimeData.sku.name | replace('/', '.')}}",
+          "skuTier": "{{runtimeData.sku.tier | replace('/', '.')}}",
+          "identityType": "{{runtimeData.identity.type | replace('/', '.')}}",
+          "zones": "{{runtimeData.zones | replace('/', '.')}}",
+          "imported": "true"
+        },
+        "annotations": {
+          "azure.com/resource-id": "{{runtimeData.resourceId}}",
+          "azure.com/type": "{{runtimeData.type}}",
+          "azure.com/provider": "{{runtimeData.provider}}",
+          "azure.com/location": "{{runtimeData.location}}",
+          "azure.com/resource-group": "{{runtimeData.resourceGroup}}",
+          "azure.com/subscription-id": "{{runtimeData.subscriptionId}}",
+          "azure.com/relationships": "{{runtimeData.relationships}}",
+          "azure.com/provisioning-state": "{{runtimeData.provisioningState}}",
+          "azure.com/kind": "{{runtimeData.kind}}",
+          "azure.com/sku-name": "{{runtimeData.sku.name}}",
+          "azure.com/sku-tier": "{{runtimeData.sku.tier}}",
+          "azure.com/sku-size": "{{runtimeData.sku.size}}",
+          "azure.com/sku-family": "{{runtimeData.sku.family}}",
+          "azure.com/sku-capacity": "{{runtimeData.sku.capacity}}",
+          "azure.com/identity-type": "{{runtimeData.identity.type}}",
+          "azure.com/identity-principal-id": "{{runtimeData.identity.principalId}}",
+          "azure.com/identity-tenant-id": "{{runtimeData.identity.tenantId}}",
+          "azure.com/zones": "{{runtimeData.zones}}",
+          "azure.com/etag": "{{runtimeData.etag}}",
+          "azure.com/managed-by": "{{runtimeData.managedBy}}",
+          "azure.com/plan-name": "{{runtimeData.plan.name}}",
+          "azure.com/plan-publisher": "{{runtimeData.plan.publisher}}",
+          "azure.com/plan-product": "{{runtimeData.plan.product}}",
+          "azure.com/created-time": "{{runtimeData.createdTime}}",
+          "azure.com/changed-time": "{{runtimeData.changedTime}}",
+          "azure.com/import-source": "azure-cloud-vendor-aggregator"
+        },
+        "tags": [
+          "azure",
+          "cloud",
+          "resource",
+          "{{runtimeData.provider}}",
+          "{{runtimeData.location}}",
+          "imported"
+        ],
+        "links": [
+          {
+            "displayName": "Azure Portal",
+            "url": "https://portal.azure.com/#@{{runtimeData.identity.tenantId}}/resource{{runtimeData.resourceId}}"
+          },
+          {
+            "displayName": "Resource Group",
+            "url": "https://portal.azure.com/#@{{runtimeData.identity.tenantId}}/resource/subscriptions/{{runtimeData.subscriptionId}}/resourceGroups/{{runtimeData.resourceGroup}}"
+          },
+          {
+            "displayName": "Subscription",
+            "url": "https://portal.azure.com/#@{{runtimeData.identity.tenantId}}/resource/subscriptions/{{runtimeData.subscriptionId}}"
+          }
+        ],
+        "maintainers": [
+          {
+            "name": "Platform Team",
+            "email": "platform@company.com"
+          }
+        ],
+        "publisher": {
+          "name": "Microsoft Azure",
+          "url": "https://azure.microsoft.com"
+        }
+      }
+    }
+  ]
+}
+      ]
+    }
+  ]
+}

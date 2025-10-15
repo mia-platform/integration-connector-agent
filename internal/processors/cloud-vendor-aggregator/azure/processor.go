@@ -26,6 +26,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/azure"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/config"
+	"github.com/mia-platform/integration-connector-agent/internal/utils"
 
 	"github.com/sirupsen/logrus"
 )
@@ -71,12 +72,19 @@ func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEven
 
 	successResultTypes := []string{"Success", "Succeeded"}
 	if !slices.Contains(successResultTypes, activityLogEvent.ResultType) {
-		p.logger.
-			WithFields(logrus.Fields{
-				"allowedResultTypes": successResultTypes,
-				"resultType":         activityLogEvent.ResultType,
-			}).
-			Debug("Event discarded for result type")
+		originalBody, decodedBody, wasDecoded := utils.TryDecodeBase64Body(input.Data())
+		logFields := logrus.Fields{
+			"allowedResultTypes": successResultTypes,
+			"resultType":         activityLogEvent.ResultType,
+			"reason":             "unsupported_result_type",
+			"operationName":      activityLogEvent.OperationName,
+			"originalBody":       originalBody,
+		}
+		if wasDecoded {
+			logFields["decodedBody"] = decodedBody
+			logFields["wasBase64"] = true
+		}
+		p.logger.WithFields(logFields).Debug("Event discarded for result type")
 		return nil, entities.ErrDiscardEvent
 	}
 

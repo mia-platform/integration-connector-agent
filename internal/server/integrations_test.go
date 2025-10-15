@@ -19,6 +19,7 @@
 package server
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/mia-platform/integration-connector-agent/internal/config"
@@ -196,22 +197,34 @@ func TestSetupIntegrations(t *testing.T) {
 			jsonCfg: `{"integrations":[{"source":{"type":"console"},"pipelines":[{"sinks":[{"type":"fake","raw":{}}]}]}]}`,
 		},
 	}
-
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			ctx := t.Context()
 			log, _ := test.NewNullLogger()
 			router := getRouter(t)
 
-			integrations, err := setupIntegrations(ctx, log, &tc.cfg, router)
+			cfg := &tc.cfg
+			if tc.jsonCfg != "" {
+				var jsonConfig config.Configuration
+				err := json.Unmarshal([]byte(tc.jsonCfg), &jsonConfig)
+				require.NoError(t, err)
+				cfg = &jsonConfig
+			}
+
+			integrations, err := setupIntegrations(ctx, log, cfg, router)
 			if tc.expectError != "" {
 				require.EqualError(t, err, tc.expectError)
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, integrations)
-				require.Len(t, integrations, tc.expectedIntegrations)
+				if tc.expectedIntegrations > 0 {
+					require.Len(t, integrations, tc.expectedIntegrations)
+				} else {
+					require.Len(t, integrations, len(cfg.Integrations))
+				}
 			}
 		})
+	}
 	}
 }
 

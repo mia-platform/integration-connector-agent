@@ -88,31 +88,70 @@ func webhookHandler[T Authentication](config Configuration[T], p pipeline.IPipel
 	return func(c *fiber.Ctx) error {
 		log := glogrus.FromContext(c.UserContext())
 
+		log.WithFields(map[string]interface{}{
+			"sourceType":  "webhook",
+			"eventSource": "webhook-event",
+			"path":        c.Path(),
+			"method":      c.Method(),
+		}).Debug("received webhook request")
+
 		if err := config.CheckSignature(c); err != nil {
-			log.WithError(err).Error("error validating webhook request")
+			log.WithError(err).WithFields(map[string]interface{}{
+				"sourceType":  "webhook",
+				"eventSource": "webhook-event",
+			}).Error("error validating webhook request")
 			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
 		}
 
 		body, err := extractBodyFromContentType(c, config.Events)
 		if err != nil {
-			log.WithError(err).Error("error extracting body from content type")
+			log.WithError(err).WithFields(map[string]interface{}{
+				"sourceType":  "webhook",
+				"eventSource": "webhook-event",
+			}).Error("error extracting body from content type")
 			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
 		}
 		if len(body) == 0 {
-			log.Error("empty request body")
+			log.WithFields(map[string]interface{}{
+				"sourceType":  "webhook",
+				"eventSource": "webhook-event",
+			}).Error("empty request body")
 			return c.SendStatus(http.StatusOK)
 		}
+
+		log.WithFields(map[string]interface{}{
+			"sourceType":  "webhook",
+			"eventSource": "webhook-event",
+			"bodySize":    len(body),
+		}).Debug("processing webhook event")
 
 		event, err := config.Events.getPipelineEvent(log, RequestInfo{
 			data:    body,
 			headers: http.Header(c.GetReqHeaders()),
 		})
 		if err != nil {
-			log.WithError(err).Error("error unmarshaling event")
+			log.WithError(err).WithFields(map[string]interface{}{
+				"sourceType":  "webhook",
+				"eventSource": "webhook-event",
+			}).Error("error unmarshaling event")
 			return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
 		}
 
+		log.WithFields(map[string]interface{}{
+			"sourceType":  "webhook",
+			"eventSource": "webhook-event",
+			"eventType":   event.GetType(),
+			"primaryKeys": event.GetPrimaryKeys().Map(),
+			"operation":   event.Operation(),
+		}).Debug("webhook event processed successfully, adding to pipeline")
+
 		p.AddMessage(event)
+
+		log.WithFields(map[string]interface{}{
+			"sourceType":  "webhook",
+			"eventSource": "webhook-event",
+			"eventType":   event.GetType(),
+		}).Debug("webhook event added to pipeline")
 
 		return c.SendStatus(http.StatusOK)
 	}

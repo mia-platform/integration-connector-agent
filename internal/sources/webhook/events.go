@@ -16,6 +16,7 @@
 package webhook
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -106,11 +107,54 @@ func (e *Events) getPipelineEvent(logger *logrus.Entry, requestInfo RequestInfo)
 		return nil, fmt.Errorf("%w: %s", ErrMissingFieldID, webhookEvent)
 	}
 
+	// Inject the eventType into the payload for use by processors like mapper
+	// Only do this if eventType comes from headers (not from payload)
+	enhancedData := rawData
+	if webhookEvent != "" {
+		// Check if the event type was extracted from the payload itself
+		// by comparing with what GetEventType returns when called with empty headers
+		eventTypeFromPayloadOnly := e.GetEventType(EventTypeParam{
+			Data:    parsed,
+			Headers: http.Header{},
+		})
+
+		logger.WithFields(logrus.Fields{
+			"webhookEvent":             webhookEvent,
+			"eventTypeFromPayloadOnly": eventTypeFromPayloadOnly,
+			"willInjectEventType":      eventTypeFromPayloadOnly == "",
+		}).Info("webhook eventType injection check")
+
+		// Only inject eventType if it came from headers (not from payload)
+		if eventTypeFromPayloadOnly == "" {
+			// Parse the existing JSON and add eventType field
+			var jsonData map[string]interface{}
+			if err := json.Unmarshal(rawData, &jsonData); err == nil {
+				jsonData["eventType"] = webhookEvent
+				if enhancedBytes, err := json.Marshal(jsonData); err == nil {
+					enhancedData = enhancedBytes
+					logger.WithFields(logrus.Fields{
+						"originalDataSize":  len(rawData),
+						"enhancedDataSize":  len(enhancedData),
+						"injectedEventType": webhookEvent,
+					}).Info("successfully injected eventType into webhook payload")
+				} else {
+					logger.WithError(err).Error("failed to marshal enhanced webhook data")
+				}
+			} else {
+				logger.WithError(err).Error("failed to unmarshal webhook data for eventType injection")
+			}
+		} else {
+			logger.WithField("eventTypeFromPayload", eventTypeFromPayloadOnly).Info("eventType already in payload, skipping injection")
+		}
+	} else {
+		logger.Info("no webhook event type detected, skipping eventType injection")
+	}
+
 	return &entities.Event{
 		PrimaryKeys:   pk,
 		OperationType: event.Operation,
 		Type:          webhookEvent,
 
-		OriginalRaw: rawData,
+		OriginalRaw: enhancedData,
 	}, nil
 }

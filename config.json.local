@@ -1,49 +1,1644 @@
+
 {
   "integrations": [
     {
       "source": {
-        "type": "jboss",
-        "wildflyUrl": "http://localhost:9990/management",
-        "username": "admin",
-        "password": {
-          "fromEnv": "JBOSS_PASSWORD"
+        "type": "github",
+        "webhookPath": "/github/webhook",
+        "authentication": {
+          "secret": {"fromEnv": "GITHUB_WEBHOOK_SECRET"},
+          "headerName": "X-Hub-Signature-256"
         },
-        "pollingInterval": "3s"
+        "token": {"fromEnv": "GITHUB_TOKEN"},
+        "organization": "mia-platform",
+        "timeout": "120s",
+        "retryAttempts": 3,
+        "retryDelay": "5s"
       },
       "pipelines": [
         {
           "processors": [
             {
               "type": "filter",
-              "celExpression": "eventType == 'jboss:deployment_status'"
+              "celExpression": "eventType == 'repository'"
             },
             {
               "type": "mapper",
               "outputEvent": {
-                "deploymentName": "{{ deployment.name }}",
-                "status": "{{ deployment.status }}",
-                "enabled": "{{ deployment.enabled }}",
-                "runtimeName": "{{ deployment.runtimeName }}",
-                "persistent": "{{ deployment.persistent }}",
-                "content": "{{ deployment.content }}",
-                "subsystem": "{{ deployment.subsystem }}",
-                "timestamp": "{{ timestamp }}",
-                "source": "jboss"
+                "eventType": "{{ eventType }}",
+                "action": "{{ action }}",
+                "repositoryId": "{{ repository.id }}",
+                "repositoryName": "{{ repository.name }}",
+                "repositoryFullName": "{{ repository.full_name }}",
+                "repositoryDescription": "{{ repository.description }}",
+                "repositoryLanguage": "{{ repository.language }}",
+                "repositoryPrivate": "{{ repository.private }}",
+                "repositoryHtmlUrl": "{{ repository.html_url }}",
+                "repositoryCloneUrl": "{{ repository.clone_url }}",
+                "repositoryDefaultBranch": "{{ repository.default_branch }}",
+                "repositoryStarsCount": "{{ repository.stargazers_count }}",
+                "repositoryForksCount": "{{ repository.forks_count }}",
+                "repositoryOwnerLogin": "{{ repository.owner.login }}",
+                "repositoryOwnerType": "{{ repository.owner.type }}",
+                "repositoryCreatedAt": "{{ repository.created_at }}",
+                "repositoryUpdatedAt": "{{ repository.updated_at }}",
+                "senderLogin": "{{ sender.login }}",
+                "senderType": "{{ sender.type }}",
+                "organizationLogin": "{{ organization.login }}",
+                "source": "github-webhook"
               }
             }
           ],
           "sinks": [
             {
               "type": "console-catalog",
-              "url": "https://your-console-url.com",
-              "tenantId": "your-tenant-id",
-              "clientId": "your-client-id",
-              "clientSecret": { "fromEnv": "CONSOLE_CLIENT_SECRET" },
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
               "itemTypeDefinitionRef": {
-                "name": "jboss-application",
-                "namespace": "your-tenant-id"
+                "name": "github-repository",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
               },
-              "itemNameTemplate": "{{deploymentName}} - {{runtimeName}}"
+              "itemNameTemplate": "{{repositoryFullName}}",
+              "catalogMetadata": {
+                "displayName": "{{repositoryName}}",
+                "description": "{{repositoryDescription}}",
+                "icon": {
+                  "mediaType": "image/svg+xml",
+                  "base64Data": "PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTMgNWEyIDIgMCAwIDEgMi0yaDZhMiAyIDAgMCAxIDIgMnY2YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0yVjV6bTIgMGg2djZINVY1eiIvPgo8L3N2Zz4K"
+                },
+                "documentation": {
+                  "type": "externalLink",
+                  "url": "{{repositoryHtmlUrl}}"
+                },
+                "labels": {
+                  "language": "{{repositoryLanguage}}",
+                  "private": "{{repositoryPrivate}}",
+                  "organization": "{{organizationLogin}}",
+                  "stars": "{{repositoryStarsCount}}",
+                  "forks": "{{repositoryForksCount}}"
+                },
+                "annotations": {
+                  "github.com/repository-id": "{{repositoryId}}",
+                  "github.com/repository": "{{repositoryFullName}}",
+                  "github.com/default-branch": "{{repositoryDefaultBranch}}",
+                  "github.com/owner": "{{repositoryOwnerLogin}}",
+                  "github.com/owner-type": "{{repositoryOwnerType}}"
+                },
+                "tags": [
+                  "github",
+                  "repository"
+                ],
+                "links": [
+                  {
+                    "displayName": "Repository",
+                    "url": "{{repositoryHtmlUrl}}"
+                  },
+                  {
+                    "displayName": "Clone URL",
+                    "url": "{{repositoryCloneUrl}}"
+                  }
+                ],
+                "maintainers": [
+                  {
+                    "name": "{{repositoryOwnerLogin}}",
+                    "email": "noreply@github.com"
+                  }
+                ],
+                "publisher": {
+                  "name": "{{organizationLogin}}",
+                  "url": "https://github.com/{{organizationLogin}}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "eventType == 'issues'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "{{ eventType }}",
+                "action": "{{ action }}",
+                "issueId": "{{ issue.id }}",
+                "issueNumber": "{{ issue.number }}",
+                "issueTitle": "{{ issue.title }}",
+                "issueBody": "{{ issue.body }}",
+                "issueState": "{{ issue.state }}",
+                "issueStateReason": "{{ issue.state_reason }}",
+                "issueLocked": "{{ issue.locked }}",
+                "issueHtmlUrl": "{{ issue.html_url }}",
+                "issueUrl": "{{ issue.url }}",
+                "issueCommentsUrl": "{{ issue.comments_url }}",
+                "issueEventsUrl": "{{ issue.events_url }}",
+                "issueLabelsUrl": "{{ issue.labels_url }}",
+                "issueTimelineUrl": "{{ issue.timeline_url }}",
+                "issueCreatedAt": "{{ issue.created_at }}",
+                "issueUpdatedAt": "{{ issue.updated_at }}",
+                "issueClosedAt": "{{ issue.closed_at }}",
+                "issueAuthorLogin": "{{ issue.user.login }}",
+                "issueAuthorId": "{{ issue.user.id }}",
+                "issueAuthorType": "{{ issue.user.type }}",
+                "issueAuthorAssociation": "{{ issue.author_association }}",
+                "issueAssigneeLogin": "{{ issue.assignee.login }}",
+                "issueAssigneeId": "{{ issue.assignee.id }}",
+                "issueLabels": "{{ issue.labels }}",
+                "issueMilestoneTitle": "{{ issue.milestone.title }}",
+                "issueMilestoneId": "{{ issue.milestone.id }}",
+                "repositoryId": "{{ repository.id }}",
+                "repositoryName": "{{ repository.name }}",
+                "repositoryFullName": "{{ repository.full_name }}",
+                "repositoryPrivate": "{{ repository.private }}",
+                "repositoryHtmlUrl": "{{ repository.html_url }}",
+                "repositoryOwnerLogin": "{{ repository.owner.login }}",
+                "repositoryOwnerType": "{{ repository.owner.type }}",
+                "organizationLogin": "{{ organization.login }}",
+                "senderLogin": "{{ sender.login }}",
+                "senderType": "{{ sender.type }}",
+                "source": "github-webhook"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "github-issue",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{repositoryFullName}}#{{issueNumber}}"
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "eventType == 'pull_request'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "{{ eventType }}",
+                "action": "{{ action }}",
+                "pullRequestId": "{{ pull_request.id }}",
+                "pullRequestNumber": "{{ pull_request.number }}",
+                "pullRequestTitle": "{{ pull_request.title }}",
+                "pullRequestBody": "{{ pull_request.body }}",
+                "pullRequestState": "{{ pull_request.state }}",
+                "pullRequestDraft": "{{ pull_request.draft }}",
+                "pullRequestMerged": "{{ pull_request.merged }}",
+                "pullRequestMergeable": "{{ pull_request.mergeable }}",
+                "pullRequestRebaseable": "{{ pull_request.rebaseable }}",
+                "pullRequestHtmlUrl": "{{ pull_request.html_url }}",
+                "pullRequestUrl": "{{ pull_request.url }}",
+                "pullRequestDiffUrl": "{{ pull_request.diff_url }}",
+                "pullRequestPatchUrl": "{{ pull_request.patch_url }}",
+                "pullRequestCommits": "{{ pull_request.commits }}",
+                "pullRequestAdditions": "{{ pull_request.additions }}",
+                "pullRequestDeletions": "{{ pull_request.deletions }}",
+                "pullRequestChangedFiles": "{{ pull_request.changed_files }}",
+                "pullRequestCreatedAt": "{{ pull_request.created_at }}",
+                "pullRequestUpdatedAt": "{{ pull_request.updated_at }}",
+                "pullRequestClosedAt": "{{ pull_request.closed_at }}",
+                "pullRequestMergedAt": "{{ pull_request.merged_at }}",
+                "pullRequestAuthorLogin": "{{ pull_request.user.login }}",
+                "pullRequestAuthorId": "{{ pull_request.user.id }}",
+                "pullRequestAuthorType": "{{ pull_request.user.type }}",
+                "pullRequestAuthorAssociation": "{{ pull_request.author_association }}",
+                "pullRequestHeadRef": "{{ pull_request.head.ref }}",
+                "pullRequestHeadSha": "{{ pull_request.head.sha }}",
+                "pullRequestHeadLabel": "{{ pull_request.head.label }}",
+                "pullRequestBaseRef": "{{ pull_request.base.ref }}",
+                "pullRequestBaseSha": "{{ pull_request.base.sha }}",
+                "pullRequestBaseLabel": "{{ pull_request.base.label }}",
+                "repositoryId": "{{ repository.id }}",
+                "repositoryName": "{{ repository.name }}",
+                "repositoryFullName": "{{ repository.full_name }}",
+                "repositoryPrivate": "{{ repository.private }}",
+                "repositoryHtmlUrl": "{{ repository.html_url }}",
+                "repositoryOwnerLogin": "{{ repository.owner.login }}",
+                "repositoryOwnerType": "{{ repository.owner.type }}",
+                "organizationLogin": "{{ organization.login }}",
+                "senderLogin": "{{ sender.login }}",
+                "senderType": "{{ sender.type }}",
+                "source": "github-webhook"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "github-pull-request",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{repositoryFullName}}#{{pullRequestNumber}}",
+              "catalogMetadata": {
+                "displayName": "{{pullRequestTitle}}",
+                "description": "Pull Request #{{pullRequestNumber}} in {{repositoryFullName}}",
+                "icon": {
+                  "mediaType": "image/svg+xml",
+                  "base64Data": "PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTcuMTc3IDEuNjQxYS43NS43NSAwIDAgMSAxLjA2IDBsMS4wMjUgMS4wMDJ2Mi4xMjRhLjc1Ljc1IDAgMCAxLTEuNSAwVjMuNzgzTC43NSA0Ljc5NGEuNzUuNzUgMCAwIDEtMS4wNi0xLjA2bDMuNDg3LTMuNDEyem0xLjYzMyA0LjcyaS43NS43NSAwIDAgMS0xLjUtLjAxM3Y0LjgzOGEuNzUuNzUgMCAwIDEtMS41IDBWNi4zNzhhLjc1Ljc1IDAgMCAxLS43NS0uNzVWNC41YS43NS43NSAwIDAgMSAuNzUtLjc1aDEuMjV6Ii8+Cjwvc3ZnPgo="
+                },
+                "documentation": {
+                  "type": "externalLink",
+                  "url": "{{pullRequestHtmlUrl}}"
+                },
+                "links": [
+                  {
+                    "displayName": "Pull Request",
+                    "url": "{{pullRequestHtmlUrl}}"
+                  },
+                  {
+                    "displayName": "Repository",
+                    "url": "{{repositoryHtmlUrl}}"
+                  },
+                  {
+                    "displayName": "Diff",
+                    "url": "{{pullRequestDiffUrl}}"
+                  }
+                ],
+                "maintainers": [
+                  {
+                    "name": "{{pullRequestAuthorLogin}}",
+                    "email": "noreply@github.com"
+                  }
+                ],
+                "publisher": {
+                  "name": "{{organizationLogin}}",
+                  "url": "https://github.com/{{organizationLogin}}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "eventType == 'push'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "{{ eventType }}",
+                "ref": "{{ ref }}",
+                "refType": "{{ ref_type }}",
+                "before": "{{ before }}",
+                "after": "{{ after }}",
+                "created": "{{ created }}",
+                "deleted": "{{ deleted }}",
+                "forced": "{{ forced }}",
+                "baseRef": "{{ base_ref }}",
+                "compare": "{{ compare }}",
+                "commits": "{{ commits }}",
+                "headCommitId": "{{ head_commit.id }}",
+                "headCommitTreeId": "{{ head_commit.tree_id }}",
+                "headCommitMessage": "{{ head_commit.message }}",
+                "headCommitTimestamp": "{{ head_commit.timestamp }}",
+                "headCommitUrl": "{{ head_commit.url }}",
+                "headCommitAuthorName": "{{ head_commit.author.name }}",
+                "headCommitAuthorEmail": "{{ head_commit.author.email }}",
+                "headCommitAuthorUsername": "{{ head_commit.author.username }}",
+                "headCommitCommitterName": "{{ head_commit.committer.name }}",
+                "headCommitCommitterEmail": "{{ head_commit.committer.email }}",
+                "headCommitCommitterUsername": "{{ head_commit.committer.username }}",
+                "pusherName": "{{ pusher.name }}",
+                "pusherEmail": "{{ pusher.email }}",
+                "repositoryId": "{{ repository.id }}",
+                "repositoryName": "{{ repository.name }}",
+                "repositoryFullName": "{{ repository.full_name }}",
+                "repositoryPrivate": "{{ repository.private }}",
+                "repositoryHtmlUrl": "{{ repository.html_url }}",
+                "repositoryOwnerLogin": "{{ repository.owner.login }}",
+                "repositoryOwnerType": "{{ repository.owner.type }}",
+                "organizationLogin": "{{ organization.login }}",
+                "senderLogin": "{{ sender.login }}",
+                "senderType": "{{ sender.type }}",
+                "source": "github-webhook"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "github-push",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{repositoryFullName}}-push-{{after}}"
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "eventType == 'release'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "{{ eventType }}",
+                "action": "{{ action }}",
+                "releaseId": "{{ release.id }}",
+                "releaseTagName": "{{ release.tag_name }}",
+                "releaseName": "{{ release.name }}",
+                "releaseBody": "{{ release.body }}",
+                "releaseHtmlUrl": "{{ release.html_url }}",
+                "releaseUrl": "{{ release.url }}",
+                "releaseAssetsUrl": "{{ release.assets_url }}",
+                "releaseTarballUrl": "{{ release.tarball_url }}",
+                "releaseZipballUrl": "{{ release.zipball_url }}",
+                "releaseUploadUrl": "{{ release.upload_url }}",
+                "releaseTargetCommitish": "{{ release.target_commitish }}",
+                "releaseDraft": "{{ release.draft }}",
+                "releasePrerelease": "{{ release.prerelease }}",
+                "releaseMakeLatest": "{{ release.make_latest }}",
+                "releaseGenerateReleaseNotes": "{{ release.generate_release_notes }}",
+                "releaseCreatedAt": "{{ release.created_at }}",
+                "releasePublishedAt": "{{ release.published_at }}",
+                "releaseAuthorLogin": "{{ release.author.login }}",
+                "releaseAuthorId": "{{ release.author.id }}",
+                "releaseAuthorType": "{{ release.author.type }}",
+                "releaseAssets": "{{ release.assets }}",
+                "repositoryId": "{{ repository.id }}",
+                "repositoryName": "{{ repository.name }}",
+                "repositoryFullName": "{{ repository.full_name }}",
+                "repositoryPrivate": "{{ repository.private }}",
+                "repositoryHtmlUrl": "{{ repository.html_url }}",
+                "repositoryOwnerLogin": "{{ repository.owner.login }}",
+                "repositoryOwnerType": "{{ repository.owner.type }}",
+                "organizationLogin": "{{ organization.login }}",
+                "senderLogin": "{{ sender.login }}",
+                "senderType": "{{ sender.type }}",
+                "source": "github-webhook"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "github-release",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{repositoryFullName}}-{{releaseTagName}}"
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "eventType == 'star' || eventType == 'watch'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "{{ eventType }}",
+                "action": "{{ action }}",
+                "starredAt": "{{ starred_at }}",
+                "repositoryId": "{{ repository.id }}",
+                "repositoryName": "{{ repository.name }}",
+                "repositoryFullName": "{{ repository.full_name }}",
+                "repositoryDescription": "{{ repository.description }}",
+                "repositoryPrivate": "{{ repository.private }}",
+                "repositoryFork": "{{ repository.fork }}",
+                "repositoryHtmlUrl": "{{ repository.html_url }}",
+                "repositoryCloneUrl": "{{ repository.clone_url }}",
+                "repositoryLanguage": "{{ repository.language }}",
+                "repositoryDefaultBranch": "{{ repository.default_branch }}",
+                "repositoryStarsCount": "{{ repository.stargazers_count }}",
+                "repositoryWatchersCount": "{{ repository.watchers_count }}",
+                "repositoryForksCount": "{{ repository.forks_count }}",
+                "repositoryOpenIssuesCount": "{{ repository.open_issues_count }}",
+                "repositorySize": "{{ repository.size }}",
+                "repositoryCreatedAt": "{{ repository.created_at }}",
+                "repositoryUpdatedAt": "{{ repository.updated_at }}",
+                "repositoryPushedAt": "{{ repository.pushed_at }}",
+                "repositoryOwnerLogin": "{{ repository.owner.login }}",
+                "repositoryOwnerId": "{{ repository.owner.id }}",
+                "repositoryOwnerType": "{{ repository.owner.type }}",
+                "organizationLogin": "{{ organization.login }}",
+                "senderLogin": "{{ sender.login }}",
+                "senderId": "{{ sender.id }}",
+                "senderType": "{{ sender.type }}",
+                "senderAvatarUrl": "{{ sender.avatar_url }}",
+                "senderHtmlUrl": "{{ sender.html_url }}",
+                "source": "github-webhook"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "github-star",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{repositoryFullName}}-{{eventType}}-{{senderLogin}}"
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "eventType == 'workflow_run'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "{{ eventType }}",
+                "action": "{{ action }}",
+                "workflowRunId": "{{ workflow_run.id }}",
+                "workflowRunName": "{{ workflow_run.name }}",
+                "workflowRunDisplayTitle": "{{ workflow_run.display_title }}",
+                "workflowRunStatus": "{{ workflow_run.status }}",
+                "workflowRunConclusion": "{{ workflow_run.conclusion }}",
+                "workflowRunUrl": "{{ workflow_run.url }}",
+                "workflowRunHtmlUrl": "{{ workflow_run.html_url }}",
+                "workflowRunJobsUrl": "{{ workflow_run.jobs_url }}",
+                "workflowRunLogsUrl": "{{ workflow_run.logs_url }}",
+                "workflowRunCheckSuiteUrl": "{{ workflow_run.check_suite_url }}",
+                "workflowRunArtifactsUrl": "{{ workflow_run.artifacts_url }}",
+                "workflowRunCancelUrl": "{{ workflow_run.cancel_url }}",
+                "workflowRunRerunUrl": "{{ workflow_run.rerun_url }}",
+                "workflowRunWorkflowUrl": "{{ workflow_run.workflow_url }}",
+                "workflowRunHeadBranch": "{{ workflow_run.head_branch }}",
+                "workflowRunHeadSha": "{{ workflow_run.head_sha }}",
+                "workflowRunRunNumber": "{{ workflow_run.run_number }}",
+                "workflowRunRunAttempt": "{{ workflow_run.run_attempt }}",
+                "workflowRunEvent": "{{ workflow_run.event }}",
+                "workflowRunCreatedAt": "{{ workflow_run.created_at }}",
+                "workflowRunUpdatedAt": "{{ workflow_run.updated_at }}",
+                "workflowRunRunStartedAt": "{{ workflow_run.run_started_at }}",
+                "workflowId": "{{ workflow.id }}",
+                "workflowName": "{{ workflow.name }}",
+                "workflowPath": "{{ workflow.path }}",
+                "workflowState": "{{ workflow.state }}",
+                "workflowUrl": "{{ workflow.url }}",
+                "workflowHtmlUrl": "{{ workflow.html_url }}",
+                "workflowBadgeUrl": "{{ workflow.badge_url }}",
+                "workflowCreatedAt": "{{ workflow.created_at }}",
+                "workflowUpdatedAt": "{{ workflow.updated_at }}",
+                "repositoryId": "{{ repository.id }}",
+                "repositoryName": "{{ repository.name }}",
+                "repositoryFullName": "{{ repository.full_name }}",
+                "repositoryPrivate": "{{ repository.private }}",
+                "repositoryHtmlUrl": "{{ repository.html_url }}",
+                "repositoryOwnerLogin": "{{ repository.owner.login }}",
+                "repositoryOwnerType": "{{ repository.owner.type }}",
+                "organizationLogin": "{{ organization.login }}",
+                "senderLogin": "{{ sender.login }}",
+                "senderType": "{{ sender.type }}",
+                "source": "github-webhook"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "github-flow",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{repositoryFullName}}-{{workflowRunName}}-{{workflowRunRunNumber}}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source": {
+        "type": "github",
+        "importWebhookPath": "/github/import",
+        "importAuthentication": {
+          "secret": {"fromEnv": "GITHUB_WEBHOOK_SECRET"},
+          "headerName": "X-Hub-Signature-256"
+        },
+        "token": {"fromEnv": "GITHUB_TOKEN"},
+        "organization": "mia-platform",
+        "timeout": "120s",
+        "retryAttempts": 3,
+        "retryDelay": "5s"
+      },
+      "pipelines": [
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "data.type == 'repository'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "repository",
+                "action": "import",
+                "repositoryId": "{{ data.id }}",
+                "repositoryName": "{{ data.name }}",
+                "repositoryFullName": "{{ data.full_name }}",
+                "repositoryDescription": "{{ data.description }}",
+                "repositoryReadmeContent": "{{ data.readme_content }}",
+                "repositoryLanguage": "{{ data.language }}",
+                "repositoryPrivate": "{{ data.private }}",
+                "repositoryHtmlUrl": "{{ data.html_url }}",
+                "repositoryCloneUrl": "{{ data.clone_url }}",
+                "repositoryDefaultBranch": "{{ data.default_branch }}",
+                "repositoryStarsCount": "{{ data.stargazers_count }}",
+                "repositoryForksCount": "{{ data.forks_count }}",
+                "repositoryOwnerLogin": "{{ data.owner.login }}",
+                "repositoryOwnerType": "{{ data.owner.type }}",
+                "repositoryCreatedAt": "{{ data.created_at }}",
+                "repositoryUpdatedAt": "{{ data.updated_at }}",
+                "organizationLogin": "{{ organization }}",
+                "source": "github-import"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "github-repository",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{repositoryFullName}}",
+              "catalogMetadata": {
+                "displayName": "{{repositoryName}}",
+                "description": "{{repositoryReadmeContent}}",
+                "icon": {
+                  "mediaType": "image/svg+xml",
+                  "base64Data": "PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTMgNWEyIDIgMCAwIDEgMi0yaDZhMiAyIDAgMCAxIDIgMnY2YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0yVjV6bTIgMGg2djZINVY1eiIvPgo8L3N2Zz4K"
+                },
+                "documentation": {
+                  "type": "externalLink",
+                  "url": "{{repositoryHtmlUrl}}"
+                },
+                "labels": {
+                  "language": "{{repositoryLanguage}}",
+                  "private": "{{repositoryPrivate}}",
+                  "organization": "{{organizationLogin}}",
+                  "stars": "{{repositoryStarsCount}}",
+                  "forks": "{{repositoryForksCount}}",
+                  "imported": "true"
+                },
+                "annotations": {
+                  "github.com/repository-id": "{{repositoryId}}",
+                  "github.com/repository": "{{repositoryFullName}}",
+                  "github.com/default-branch": "{{repositoryDefaultBranch}}",
+                  "github.com/owner": "{{repositoryOwnerLogin}}",
+                  "github.com/owner-type": "{{repositoryOwnerType}}",
+                  "github.com/import-source": "github-import"
+                },
+                "tags": [
+                  "github",
+                  "repository",
+                  "imported"
+                ],
+                "links": [
+                  {
+                    "displayName": "Repository",
+                    "url": "{{repositoryHtmlUrl}}"
+                  },
+                  {
+                    "displayName": "Clone URL",
+                    "url": "{{repositoryCloneUrl}}"
+                  }
+                ],
+                "maintainers": [
+                  {
+                    "name": "{{repositoryOwnerLogin}}",
+                    "email": "noreply@github.com"
+                  }
+                ],
+                "publisher": {
+                  "name": "{{organizationLogin}}",
+                  "url": "https://github.com/{{organizationLogin}}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "data.type == 'issue'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "issues",
+                "action": "{{ data.state == 'closed' ? 'closed' : 'opened' }}",
+                "issueId": "{{ data.id }}",
+                "issueNumber": "{{ data.number }}",
+                "issueTitle": "{{ data.title }}",
+                "issueBody": "{{ data.body }}",
+                "issueState": "{{ data.state }}",
+                "issueHtmlUrl": "{{ data.html_url }}",
+                "issueCreatedAt": "{{ data.created_at }}",
+                "issueUpdatedAt": "{{ data.updated_at }}",
+                "issueAuthorLogin": "{{ data.user.login }}",
+                "issueAuthorId": "{{ data.user.id }}",
+                "issueLabels": "{{ data.labels }}",
+                "organizationLogin": "{{ organization }}",
+                "repositoryName": "{{ repository }}",
+                "source": "github-import"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "github-issue",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{repositoryFullName}}#{{issueNumber}}"
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "data.type == 'pull_request'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "pull_request",
+                "action": "import",
+                "pullRequestId": "{{ data.id }}",
+                "pullRequestNumber": "{{ data.number }}",
+                "pullRequestTitle": "{{ data.title }}",
+                "pullRequestBody": "{{ data.body }}",
+                "pullRequestState": "{{ data.state }}",
+                "pullRequestHtmlUrl": "{{ data.html_url }}",
+                "pullRequestCreatedAt": "{{ data.created_at }}",
+                "pullRequestUpdatedAt": "{{ data.updated_at }}",
+                "pullRequestAuthorLogin": "{{ data.user.login }}",
+                "pullRequestAuthorId": "{{ data.user.id }}",
+                "pullRequestHeadRef": "{{ data.head.ref }}",
+                "pullRequestHeadSha": "{{ data.head.sha }}",
+                "pullRequestBaseRef": "{{ data.base.ref }}",
+                "pullRequestBaseSha": "{{ data.base.sha }}",
+                "repositoryName": "{{ repository }}",
+                "repositoryFullName": "{{ full_name }}",
+                "organizationLogin": "{{ organization }}",
+                "source": "github-import"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "github-pull-request",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{repositoryFullName}}#{{pullRequestNumber}}",
+              "catalogMetadata": {
+                "displayName": "{{pullRequestTitle}}",
+                "description": "Pull Request #{{pullRequestNumber}} in {{repositoryFullName}}" 
+              }
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "data.type == 'release'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "release",
+                "action": "{{ data.draft ? 'published' : 'created' }}",
+                "releaseId": "{{ data.id }}",
+                "releaseTagName": "{{ data.tag_name }}",
+                "releaseName": "{{ data.name }}",
+                "releaseBody": "{{ data.body }}",
+                "releaseHtmlUrl": "{{ data.html_url }}",
+                "releaseUrl": "{{ data.url }}",
+                "releaseAssetsUrl": "{{ data.assets_url }}",
+                "releaseTarballUrl": "{{ data.tarball_url }}",
+                "releaseZipballUrl": "{{ data.zipball_url }}",
+                "releaseUploadUrl": "{{ data.upload_url }}",
+                "releaseTargetCommitish": "{{ data.target_commitish }}",
+                "releaseDraft": "{{ data.draft }}",
+                "releasePrerelease": "{{ data.prerelease }}",
+                "releaseMakeLatest": "{{ data.make_latest }}",
+                "releaseGenerateReleaseNotes": "{{ data.generate_release_notes }}",
+                "releaseCreatedAt": "{{ data.created_at }}",
+                "releasePublishedAt": "{{ data.published_at }}",
+                "releaseAuthorLogin": "{{ data.author.login }}",
+                "releaseAuthorId": "{{ data.author.id }}",
+                "releaseAuthorType": "{{ data.author.type }}",
+                "releaseAssets": "{{ data.assets }}",
+                "repositoryId": "{{ repository.id }}",
+                "repositoryName": "{{ repository.name }}",
+                "repositoryFullName": "{{ repository.full_name }}",
+                "repositoryPrivate": "{{ repository.private }}",
+                "repositoryHtmlUrl": "{{ repository.html_url }}",
+                "repositoryOwnerLogin": "{{ repository.owner.login }}",
+                "repositoryOwnerType": "{{ repository.owner.type }}",
+                "organizationLogin": "{{ organization }}",
+                "source": "github-import"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "github-release",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{repositoryFullName}}-{{releaseTagName}}"
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "data.type == 'workflow_run'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "workflow_run",
+                "action": "{{ data.status == 'completed' ? 'completed' : 'requested' }}",
+                "workflowRunId": "{{ data.id }}",
+                "workflowRunName": "{{ data.name }}",
+                "workflowRunDisplayTitle": "{{ data.display_title }}",
+                "workflowRunStatus": "{{ data.status }}",
+                "workflowRunConclusion": "{{ data.conclusion }}",
+                "workflowRunUrl": "{{ data.url }}",
+                "workflowRunHtmlUrl": "{{ data.html_url }}",
+                "workflowRunJobsUrl": "{{ data.jobs_url }}",
+                "workflowRunLogsUrl": "{{ data.logs_url }}",
+                "workflowRunCheckSuiteUrl": "{{ data.check_suite_url }}",
+                "workflowRunArtifactsUrl": "{{ data.artifacts_url }}",
+                "workflowRunCancelUrl": "{{ data.cancel_url }}",
+                "workflowRunRerunUrl": "{{ data.rerun_url }}",
+                "workflowRunWorkflowUrl": "{{ data.workflow_url }}",
+                "workflowRunHeadBranch": "{{ data.head_branch }}",
+                "workflowRunHeadSha": "{{ data.head_sha }}",
+                "workflowRunRunNumber": "{{ data.run_number }}",
+                "workflowRunRunAttempt": "{{ data.run_attempt }}",
+                "workflowRunEvent": "{{ data.event }}",
+                "workflowRunCreatedAt": "{{ data.created_at }}",
+                "workflowRunUpdatedAt": "{{ data.updated_at }}",
+                "workflowRunRunStartedAt": "{{ data.run_started_at }}",
+                "workflowId": "{{ data.workflow.id }}",
+                "workflowName": "{{ data.workflow.name }}",
+                "workflowPath": "{{ data.workflow.path }}",
+                "workflowState": "{{ data.workflow.state }}",
+                "workflowUrl": "{{ data.workflow.url }}",
+                "workflowHtmlUrl": "{{ data.workflow.html_url }}",
+                "workflowBadgeUrl": "{{ data.workflow.badge_url }}",
+                "workflowCreatedAt": "{{ data.workflow.created_at }}",
+                "workflowUpdatedAt": "{{ data.workflow.updated_at }}",
+                "repositoryId": "{{ repository.id }}",
+                "repositoryName": "{{ repository.name }}",
+                "repositoryFullName": "{{ repository.full_name }}",
+                "repositoryPrivate": "{{ repository.private }}",
+                "repositoryHtmlUrl": "{{ repository.html_url }}",
+                "repositoryOwnerLogin": "{{ repository.owner.login }}",
+                "repositoryOwnerType": "{{ repository.owner.type }}",
+                "organizationLogin": "{{ organization }}",
+                "source": "github-import"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "github-flow",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{repositoryFullName}}-{{workflowRunName}}-{{workflowRunRunNumber}}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source": {
+        "type": "confluence",
+        "webhookPath": "/confluence/webhook",
+        "authentication": {
+          "secret": {"fromEnv": "CONFLUENCE_WEBHOOK_SECRET"},
+          "headerName": "X-Hub-Signature-256"
+        }
+      },
+      "pipelines": [
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "eventType == 'page_created' || eventType == 'page_updated' || eventType == 'page_moved' || eventType == 'page_removed'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "{{ eventType }}",
+                "action": "{{ action }}",
+                "pageId": "{{ page.id }}",
+                "pageTitle": "{{ page.title }}",
+                "pageType": "{{ page.type }}",
+                "pageStatus": "{{ page.status }}",
+                "pageSpaceId": "{{ page.spaceId }}",
+                "pageParentId": "{{ page.parentId }}",
+                "pageAuthorId": "{{ page.authorId }}",
+                "pageVersionNumber": "{{ page.version.number }}",
+                "pageVersionMessage": "{{ page.version.message }}",
+                "pageVersionCreatedAt": "{{ page.version.createdAt }}",
+                "pageBodyStorageValue": "{{ page.body.storage.value }}",
+                "pageBodyStorageRepresentation": "{{ page.body.storage.representation }}",
+                "pageCreatedAt": "{{ page.createdAt }}",
+                "pageWebUrl": "{{ page._links.webui }}",
+                "spaceKey": "{{ space.key }}",
+                "spaceName": "{{ space.name }}",
+                "source": "confluence-webhook"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "confluence-page",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{spaceKey}}/{{pageTitle}}",
+              "catalogMetadata": {
+                "displayName": "{{pageTitle}}",
+                "description": "Confluence page in {{spaceName}} space",
+                "icon": {
+                  "mediaType": "image/svg+xml",
+                  "base64Data": "PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEgMWgxNHYxNEgxVjF6bTEgMXYxMmgxMlYySDF6bTIgMmgxdjFIM3Ytem0wIDJoOHYxSDN2LTF6bTAgMmg2djFIM3Ytem0wIDJoMTB2MUgzdi0xem0wIDJoNHYxSDN2LTF6Ii8+Cjwvc3ZnPgo="
+                },
+                "documentation": {
+                  "type": "externalLink",
+                  "url": "{{pageWebUrl}}"
+                },
+                "labels": {
+                  "type": "{{pageType}}",
+                  "status": "{{pageStatus}}",
+                  "space": "{{spaceKey}}"
+                },
+                "annotations": {
+                  "confluence.com/page-id": "{{pageId}}",
+                  "confluence.com/space-id": "{{pageSpaceId}}",
+                  "confluence.com/space-key": "{{spaceKey}}",
+                  "confluence.com/version": "{{pageVersionNumber}}"
+                },
+                "tags": [
+                  "confluence",
+                  "page"
+                ],
+                "links": [
+                  {
+                    "displayName": "View Page",
+                    "url": "{{pageWebUrl}}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "eventType == 'space_created' || eventType == 'space_updated' || eventType == 'space_removed'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "{{ eventType }}",
+                "action": "{{ action }}",
+                "spaceId": "{{ space.id }}",
+                "spaceKey": "{{ space.key }}",
+                "spaceName": "{{ space.name }}",
+                "spaceType": "{{ space.type }}",
+                "spaceStatus": "{{ space.status }}",
+                "spaceDescription": "{{ space.description.plain.value }}",
+                "spaceHomepageId": "{{ space.homepage.id }}",
+                "spaceHomepageTitle": "{{ space.homepage.title }}",
+                "spaceCreatedAt": "{{ space.createdAt }}",
+                "spaceWebUrl": "{{ space._links.webui }}",
+                "source": "confluence-webhook"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "wiki-spaces",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{spaceKey}}",
+              "catalogMetadata": {
+                "displayName": "{{spaceName}}",
+                "description": "{{spaceDescription}}",
+                "icon": {
+                  "mediaType": "image/svg+xml",
+                  "base64Data": "PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIgMmgxMnYxMkgyVjJ6bTEgMXYxMGgxMFYzSDN6bTIgMmg2djJINXYtem0wIDNoNnYxSDV2LTF6bTAgMmg0djFINXYtem0wIDJoNnYxSDV2LTF6Ii8+Cjwvc3ZnPgo="
+                },
+                "documentation": {
+                  "type": "externalLink",
+                  "url": "{{spaceWebUrl}}"
+                },
+                "labels": {
+                  "type": "{{spaceType}}",
+                  "status": "{{spaceStatus}}",
+                  "key": "{{spaceKey}}"
+                },
+                "annotations": {
+                  "confluence.com/space-id": "{{spaceId}}",
+                  "confluence.com/space-key": "{{spaceKey}}",
+                  "confluence.com/homepage-id": "{{spaceHomepageId}}"
+                },
+                "tags": [
+                  "confluence",
+                  "space"
+                ],
+                "links": [
+                  {
+                    "displayName": "View Space",
+                    "url": "{{spaceWebUrl}}"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source": {
+        "type": "confluence",
+        "importWebhookPath": "/confluence/import",
+        "importAuthentication": {
+          "secret": {"fromEnv": "CONFLUENCE_IMPORT_SECRET"},
+          "headerName": "X-Hub-Signature-256"
+        },
+        "username": {"fromEnv": "CONFLUENCE_USERNAME"},
+        "apiToken": {"fromEnv": "CONFLUENCE_API_TOKEN"},
+        "baseUrl": "https://makeitapp.atlassian.net",
+        "itemTypes": ["space"],
+        "spaceKeysFilter": ["~giulio.roggero"]
+      },
+      "pipelines": [
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "data.type == 'space' && data.key == '~giulio.roggero'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "space",
+                "action": "import",
+                "spaceId": "{{ data.id }}",
+                "spaceKey": "{{ data.key }}",
+                "spaceName": "{{ data.name }}",
+                "spaceType": "{{ data.type }}",
+                "spaceStatus": "{{ data.status }}",
+                "spaceDescription": "{{ data.description.plain.value }}",
+                "spaceHomepageId": "{{ data.homepage.id }}",
+                "spaceHomepageTitle": "{{ data.homepage.title }}",
+                "spaceCreatedAt": "{{ data.createdAt }}",
+                "spaceWebUrl": "{{ data._links.webui }}",
+                "baseUrl": "{{ base_url }}",
+                "source": "confluence-import"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "wiki-spaces",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{spaceKey}}",
+              "resources": {
+                "id": "{{spaceId}}",
+                "type": "space",
+                "status": "{{spaceStatus}}",
+                "title": "{{spaceName}}",
+                "spaceDescription": {
+                  "plain": {
+                    "value": "{{spaceDescription}}"
+                  }
+                }
+              },
+              "catalogMetadata": {
+                "displayName": "{{spaceName}}",
+                "description": "{{spaceDescription}}",
+                "icon": {
+                  "mediaType": "image/svg+xml",
+                  "base64Data": "PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIgMmgxMnYxMkgyVjJ6bTEgMXYxMGgxMFYzSDN6bTIgMmg2djJINXYtem0wIDNoNnYxSDV2LTF6bTAgMmg0djFINXYtem0wIDJoNnYxSDV2LTF6Ii8+Cjwvc3ZnPgo="
+                },
+                "documentation": {
+                  "type": "externalLink",
+                  "url": "{{baseUrl}}{{spaceWebUrl}}"
+                },
+                "labels": {
+                  "type": "{{spaceType}}",
+                  "status": "{{spaceStatus}}",
+                  "imported": "true"
+                },
+                "annotations": {
+                  "confluence.com/space-id": "{{spaceId}}",
+                  "confluence.com/space-key": "{{spaceKey}}",
+                  "confluence.com/homepage-id": "{{spaceHomepageId}}",
+                  "confluence.com/import-source": "confluence-import"
+                },
+                "tags": [
+                  "confluence",
+                  "space",
+                  "imported"
+                ],
+                "links": [
+                  {
+                    "displayName": "View Space",
+                    "url": "{{baseUrl}}{{spaceWebUrl}}"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source": {
+        "type": "gitlab",
+        "webhookPath": "/gitlab/webhook",
+        "authentication": {
+          "secret": {"fromEnv": "GITLAB_WEBHOOK_SECRET"},
+          "headerName": "X-Gitlab-Token"
+        },
+        "token": {"fromEnv": "GITLAB_TOKEN"},
+        "baseUrl": "https://git.tools.mia-platform.eu",
+        "group": "mia-platform",
+        "timeout": "120s",
+        "retryAttempts": 3,
+        "retryDelay": "5s"
+      },
+      "pipelines": [
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "eventType == 'Project Hook'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "{{ eventType }}",
+                "action": "{{ action }}",
+                "projectId": "{{ project.id }}",
+                "projectName": "{{ project.name }}",
+                "projectFullName": "{{ project.path_with_namespace }}",
+                "projectDescription": "{{ project.description }}",
+                "projectVisibility": "{{ project.visibility }}",
+                "projectWebUrl": "{{ project.web_url }}",
+                "projectHttpUrlToRepo": "{{ project.http_url_to_repo }}",
+                "projectSshUrlToRepo": "{{ project.ssh_url_to_repo }}",
+                "projectDefaultBranch": "{{ project.default_branch }}",
+                "projectStarCount": "{{ project.star_count }}",
+                "projectForksCount": "{{ project.forks_count }}",
+                "projectNamespaceId": "{{ project.namespace.id }}",
+                "projectNamespaceName": "{{ project.namespace.name }}",
+                "projectNamespacePath": "{{ project.namespace.path }}",
+                "projectCreatedAt": "{{ project.created_at }}",
+                "projectUpdatedAt": "{{ project.updated_at }}",
+                "projectLastActivityAt": "{{ project.last_activity_at }}",
+                "userLogin": "{{ user_username }}",
+                "userId": "{{ user_id }}",
+                "source": "gitlab-webhook"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "gitlab-project",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{projectFullName}}",
+              "catalogMetadata": {
+                "displayName": "{{projectName}}",
+                "description": "{{projectDescription}}",
+                "icon": {
+                  "mediaType": "image/svg+xml",
+                  "base64Data": "PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTMgNWEyIDIgMCAwIDEgMi0yaDZhMiAyIDAgMCAxIDIgMnY2YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0yVjV6bTIgMGg2djZINVY1eiIvPgo8L3N2Zz4K"
+                },
+                "documentation": {
+                  "type": "externalLink",
+                  "url": "{{projectWebUrl}}"
+                },
+                "labels": {
+                  "visibility": "{{projectVisibility}}",
+                  "namespace": "{{projectNamespaceName}}",
+                  "stars": "{{projectStarCount}}",
+                  "forks": "{{projectForksCount}}"
+                },
+                "annotations": {
+                  "gitlab.com/project-id": "{{projectId}}",
+                  "gitlab.com/project": "{{projectFullName}}",
+                  "gitlab.com/default-branch": "{{projectDefaultBranch}}",
+                  "gitlab.com/namespace": "{{projectNamespaceName}}"
+                },
+                "tags": [
+                  "gitlab",
+                  "project"
+                ],
+                "links": [
+                  {
+                    "displayName": "Project",
+                    "url": "{{projectWebUrl}}"
+                  },
+                  {
+                    "displayName": "Clone URL",
+                    "url": "{{projectHttpUrlToRepo}}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "eventType == 'Merge Request Hook'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "{{ eventType }}",
+                "action": "{{ object_attributes.action }}",
+                "mergeRequestId": "{{ object_attributes.id }}",
+                "mergeRequestIid": "{{ object_attributes.iid }}",
+                "mergeRequestTitle": "{{ object_attributes.title }}",
+                "mergeRequestDescription": "{{ object_attributes.description }}",
+                "mergeRequestState": "{{ object_attributes.state }}",
+                "mergeRequestMergeStatus": "{{ object_attributes.merge_status }}",
+                "mergeRequestTargetBranch": "{{ object_attributes.target_branch }}",
+                "mergeRequestSourceBranch": "{{ object_attributes.source_branch }}",
+                "mergeRequestWebUrl": "{{ object_attributes.url }}",
+                "mergeRequestCreatedAt": "{{ object_attributes.created_at }}",
+                "mergeRequestUpdatedAt": "{{ object_attributes.updated_at }}",
+                "mergeRequestAuthorId": "{{ object_attributes.author_id }}",
+                "mergeRequestDraft": "{{ object_attributes.draft }}",
+                "projectId": "{{ project.id }}",
+                "projectName": "{{ project.name }}",
+                "projectFullName": "{{ project.path_with_namespace }}",
+                "projectWebUrl": "{{ project.web_url }}",
+                "userLogin": "{{ user.username }}",
+                "userId": "{{ user.id }}",
+                "source": "gitlab-webhook"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "gitlab-merge-request",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{projectFullName}}!{{mergeRequestIid}}",
+              "catalogMetadata": {
+                "displayName": "{{mergeRequestTitle}}",
+                "description": "Merge Request !{{mergeRequestIid}} in {{projectFullName}}",
+                "icon": {
+                  "mediaType": "image/svg+xml",
+                  "base64Data": "PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTcuMTc3IDEuNjQxYS43NS43NSAwIDAgMSAxLjA2IDBsMS4wMjUgMS4wMDJ2Mi4xMjRhLjc1Ljc1IDAgMCAxLTEuNSAwVjMuNzgzTC43NSA0Ljc5NGEuNzUuNzUgMCAwIDEtMS4wNi0xLjA2bDMuNDg3LTMuNDEyem0xLjYzMyA0LjcyaS43NS43NSAwIDAgMS0xLjUtLjAxM3Y0LjgzOGEuNzUuNzUgMCAwIDEtMS41IDBWNi4zNzhhLjc1Ljc1IDAgMCAxLS43NS0uNzVWNC41YS43NS43NSAwIDAgMSAuNzUtLjc1aDEuMjV6Ii8+Cjwvc3ZnPgo="
+                },
+                "documentation": {
+                  "type": "externalLink",
+                  "url": "{{mergeRequestWebUrl}}"
+                },
+                "links": [
+                  {
+                    "displayName": "Merge Request",
+                    "url": "{{mergeRequestWebUrl}}"
+                  },
+                  {
+                    "displayName": "Project",
+                    "url": "{{projectWebUrl}}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "eventType == 'Pipeline Hook'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "{{ eventType }}",
+                "pipelineId": "{{ object_attributes.id }}",
+                "pipelineRef": "{{ object_attributes.ref }}",
+                "pipelineSha": "{{ object_attributes.sha }}",
+                "pipelineStatus": "{{ object_attributes.status }}",
+                "pipelineSource": "{{ object_attributes.source }}",
+                "pipelineCreatedAt": "{{ object_attributes.created_at }}",
+                "pipelineFinishedAt": "{{ object_attributes.finished_at }}",
+                "pipelineDuration": "{{ object_attributes.duration }}",
+                "projectId": "{{ project.id }}",
+                "projectName": "{{ project.name }}",
+                "projectFullName": "{{ project.path_with_namespace }}",
+                "projectWebUrl": "{{ project.web_url }}",
+                "userLogin": "{{ user.username }}",
+                "userId": "{{ user.id }}",
+                "source": "gitlab-webhook"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "gitlab-pipeline",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{projectFullName}}-pipeline-{{pipelineId}}"
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "eventType == 'Release Hook'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "{{ eventType }}",
+                "releaseId": "{{ id }}",
+                "releaseTagName": "{{ tag }}",
+                "releaseName": "{{ name }}",
+                "releaseDescription": "{{ description }}",
+                "releaseCreatedAt": "{{ created_at }}",
+                "releaseReleasedAt": "{{ released_at }}",
+                "projectId": "{{ project.id }}",
+                "projectName": "{{ project.name }}",
+                "projectFullName": "{{ project.path_with_namespace }}",
+                "projectWebUrl": "{{ project.web_url }}",
+                "source": "gitlab-webhook"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "gitlab-release",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{projectFullName}}-{{releaseTagName}}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source": {
+        "type": "gitlab",
+        "importWebhookPath": "/gitlab/import",
+        "importAuthentication": {
+          "secret": {"fromEnv": "GITLAB_WEBHOOK_SECRET"},
+          "headerName": "X-Gitlab-Token"
+        },
+        "token": {"fromEnv": "GITLAB_TOKEN"},
+        "baseUrl": "https://git.tools.mia-platform.eu/",
+        "group": "mia-platform",
+        "timeout": "120s",
+        "retryAttempts": 3,
+        "retryDelay": "5s"
+      },
+      "pipelines": [
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "data.type == 'project'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "project",
+                "action": "import",
+                "projectId": "{{ data.id }}",
+                "projectName": "{{ data.name }}",
+                "projectFullName": "{{ data.path_with_namespace }}",
+                "projectDescription": "{{ data.description }}",
+                "projectReadmeContent": "{{ data.readme_content }}",
+                "projectVisibility": "{{ data.visibility }}",
+                "projectWebUrl": "{{ data.web_url }}",
+                "projectHttpUrlToRepo": "{{ data.http_url_to_repo }}",
+                "projectSshUrlToRepo": "{{ data.ssh_url_to_repo }}",
+                "projectDefaultBranch": "{{ data.default_branch }}",
+                "projectStarCount": "{{ data.star_count }}",
+                "projectForksCount": "{{ data.forks_count }}",
+                "projectNamespaceId": "{{ data.namespace.id }}",
+                "projectNamespaceName": "{{ data.namespace.name }}",
+                "projectNamespacePath": "{{ data.namespace.path }}",
+                "projectCreatedAt": "{{ data.created_at }}",
+                "projectUpdatedAt": "{{ data.updated_at }}",
+                "projectLastActivityAt": "{{ data.last_activity_at }}",
+                "group": "{{ group }}",
+                "source": "gitlab-import"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "gitlab-project",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{projectFullName}}",
+              "catalogMetadata": {
+                "displayName": "{{projectName}}",
+                "description": "{{projectReadmeContent}}",
+                "icon": {
+                  "mediaType": "image/svg+xml",
+                  "base64Data": "PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTMgNWEyIDIgMCAwIDEgMi0yaDZhMiAyIDAgMCAxIDIgMnY2YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0yVjV6bTIgMGg2djZINVY1eiIvPgo8L3N2Zz4K"
+                },
+                "documentation": {
+                  "type": "externalLink",
+                  "url": "{{projectWebUrl}}"
+                },
+                "labels": {
+                  "visibility": "{{projectVisibility}}",
+                  "namespace": "{{projectNamespaceName}}",
+                  "stars": "{{projectStarCount}}",
+                  "forks": "{{projectForksCount}}",
+                  "imported": "true"
+                },
+                "annotations": {
+                  "gitlab.com/project-id": "{{projectId}}",
+                  "gitlab.com/project": "{{projectFullName}}",
+                  "gitlab.com/default-branch": "{{projectDefaultBranch}}",
+                  "gitlab.com/namespace": "{{projectNamespaceName}}",
+                  "gitlab.com/import-source": "gitlab-import"
+                },
+                "tags": [
+                  "gitlab",
+                  "project",
+                  "imported"
+                ],
+                "links": [
+                  {
+                    "displayName": "Project",
+                    "url": "{{projectWebUrl}}"
+                  },
+                  {
+                    "displayName": "Clone URL",
+                    "url": "{{projectHttpUrlToRepo}}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "data.type == 'merge_request'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "merge_request",
+                "action": "import",
+                "mergeRequestId": "{{ data.id }}",
+                "mergeRequestIid": "{{ data.iid }}",
+                "mergeRequestTitle": "{{ data.title }}",
+                "mergeRequestDescription": "{{ data.description }}",
+                "mergeRequestState": "{{ data.state }}",
+                "mergeRequestMergeStatus": "{{ data.merge_status }}",
+                "mergeRequestTargetBranch": "{{ data.target_branch }}",
+                "mergeRequestSourceBranch": "{{ data.source_branch }}",
+                "mergeRequestWebUrl": "{{ data.web_url }}",
+                "mergeRequestCreatedAt": "{{ data.created_at }}",
+                "mergeRequestUpdatedAt": "{{ data.updated_at }}",
+                "mergeRequestAuthorId": "{{ data.author.id }}",
+                "mergeRequestAuthorUsername": "{{ data.author.username }}",
+                "mergeRequestDraft": "{{ data.draft }}",
+                "projectId": "{{ project_id }}",
+                "group": "{{ group }}",
+                "source": "gitlab-import"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "gitlab-merge-request",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{projectFullName}}!{{mergeRequestIid}}",
+              "catalogMetadata": {
+                "displayName": "{{mergeRequestTitle}}",
+                "description": "Merge Request !{{mergeRequestIid}}"
+              }
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "data.type == 'pipeline'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "pipeline",
+                "action": "import",
+                "pipelineId": "{{ data.id }}",
+                "pipelineRef": "{{ data.ref }}",
+                "pipelineSha": "{{ data.sha }}",
+                "pipelineStatus": "{{ data.status }}",
+                "pipelineSource": "{{ data.source }}",
+                "pipelineCreatedAt": "{{ data.created_at }}",
+                "pipelineUpdatedAt": "{{ data.updated_at }}",
+                "pipelineFinishedAt": "{{ data.finished_at }}",
+                "pipelineDuration": "{{ data.duration }}",
+                "pipelineWebUrl": "{{ data.web_url }}",
+                "pipelineUserId": "{{ data.user.id }}",
+                "pipelineUserUsername": "{{ data.user.username }}",
+                "projectId": "{{ project_id }}",
+                "group": "{{ group }}",
+                "source": "gitlab-import"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "gitlab-pipeline",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{projectFullName}}-pipeline-{{pipelineId}}"
+            }
+          ]
+        },
+        {
+          "processors": [
+            {
+              "type": "filter",
+              "celExpression": "data.type == 'release'"
+            },
+            {
+              "type": "mapper",
+              "outputEvent": {
+                "eventType": "release",
+                "action": "import",
+                "releaseTagName": "{{ data.tag_name }}",
+                "releaseName": "{{ data.name }}",
+                "releaseDescription": "{{ data.description }}",
+                "releaseCreatedAt": "{{ data.created_at }}",
+                "releaseReleasedAt": "{{ data.released_at }}",
+                "releaseAuthorId": "{{ data.author.id }}",
+                "releaseAuthorUsername": "{{ data.author.username }}",
+                "projectId": "{{ project_id }}",
+                "group": "{{ group }}",
+                "source": "gitlab-import"
+              }
+            }
+          ],
+          "sinks": [
+            {
+              "type": "console-catalog",
+              "url": "https://demo.console.gcp.mia-platform.eu/",
+              "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+              "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+              "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+              "itemTypeDefinitionRef": {
+                "name": "gitlab-release",
+                "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+              },
+              "itemNameTemplate": "{{projectFullName}}-{{releaseTagName}}"
             }
           ]
         }

@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "spaceId": {
+      "type": "string",
+      "description": "The unique identifier of the Confluence space"
+    },
+    "spaceKey": {
+      "type": "string",
+      "description": "The key of the Confluence space"
+    },
+    "spaceName": {
+      "type": "string",
+      "description": "The name of the Confluence space"
+    },
+    "spaceType": {
+      "type": "string",
+      "description": "The type of the space (personal, global)"
+    },
+    "spaceStatus": {
+      "type": "string",
+      "description": "The status of the space"
+    },
+    "spaceDescription": {
+      "type": "string",
+      "description": "Description of the space"
+    },
+    "homepage": {
+      "type": "object",
+      "properties": {
+        "spaceHomepageId": {
+          "type": "string",
+          "description": "Homepage page ID"
+        },
+        "spaceHomepageTitle": {
+          "type": "string",
+          "description": "Homepage type"
+        }
+      }
+    },
+    "spaceCreatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the space was created"
+    }
+  },
+  "required": ["spaceId", "spaceKey"],
+  "additionalProperties": true
+}

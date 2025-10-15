@@ -183,7 +183,7 @@ func TestImportFunction(t *testing.T) {
 				if r.Method == http.MethodGet && r.RequestURI == "/_apis/git/repositories" {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
-					_, err = fmt.Fprintf(w, `{"value":[%s],"count":1}`, string(repo1Data))
+					_, err := fmt.Fprintf(w, `{"value":[%s],"count":1}`, string(repo1Data))
 					require.NoError(t, err)
 					return
 				}
@@ -217,7 +217,7 @@ func TestImportFunction(t *testing.T) {
 				if r.Method == http.MethodGet && r.RequestURI == "/_apis/git/repositories" {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
-					_, err = fmt.Fprintf(w, `{"value":[%s,%s],"count":2}`, string(repo1Data), string(repo2Data))
+					_, err := fmt.Fprintf(w, `{"value":[%s,%s],"count":2}`, string(repo1Data), string(repo2Data))
 					require.NoError(t, err)
 					return
 				}

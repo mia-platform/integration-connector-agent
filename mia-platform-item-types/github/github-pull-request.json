@@ -1,0 +1,188 @@
+{
+  "type": "object",
+  "properties": {
+    "eventType": {
+      "type": ["string", "null"],
+      "description": "Type of event that triggered this data"
+    },
+    "action": {
+      "type": ["string", "null"],
+      "description": "Action performed (opened, closed, edited, etc.)"
+    },
+    "pullRequestId": {
+      "type": ["integer", "null"],
+      "description": "Pull request ID"
+    },
+    "pullRequestNumber": {
+      "type": ["integer", "null"],
+      "description": "Pull request number"
+    },
+    "pullRequestTitle": {
+      "type": ["string", "null"],
+      "description": "Pull request title"
+    },
+    "pullRequestBody": {
+      "type": ["string", "null"],
+      "description": "Pull request body/description"
+    },
+    "pullRequestState": {
+      "type": ["string", "null"],
+      "description": "Pull request state"
+    },
+    "pullRequestDraft": {
+      "type": ["boolean", "null"],
+      "description": "Whether the pull request is a draft"
+    },
+    "pullRequestMerged": {
+      "type": ["boolean", "null"],
+      "description": "Whether the pull request has been merged"
+    },
+    "pullRequestMergeable": {
+      "type": ["boolean", "null"],
+      "description": "Whether the pull request is mergeable"
+    },
+    "pullRequestRebaseable": {
+      "type": ["boolean", "null"],
+      "description": "Whether the pull request is rebaseable"
+    },
+    "pullRequestHtmlUrl": {
+      "type": ["string", "null"],
+      "description": "Pull request HTML URL"
+    },
+    "pullRequestUrl": {
+      "type": ["string", "null"],
+      "description": "Pull request API URL"
+    },
+    "pullRequestDiffUrl": {
+      "type": ["string", "null"],
+      "description": "Pull request diff URL"
+    },
+    "pullRequestPatchUrl": {
+      "type": ["string", "null"],
+      "description": "Pull request patch URL"
+    },
+    "pullRequestCommits": {
+      "type": ["integer", "null"],
+      "description": "Number of commits in the pull request"
+    },
+    "pullRequestAdditions": {
+      "type": ["integer", "null"],
+      "description": "Number of additions in the pull request"
+    },
+    "pullRequestDeletions": {
+      "type": ["integer", "null"],
+      "description": "Number of deletions in the pull request"
+    },
+    "pullRequestChangedFiles": {
+      "type": ["integer", "null"],
+      "description": "Number of changed files in the pull request"
+    },
+    "pullRequestCreatedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Pull request creation timestamp"
+    },
+    "pullRequestUpdatedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Pull request last update timestamp"
+    },
+    "pullRequestClosedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Pull request close timestamp"
+    },
+    "pullRequestMergedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Pull request merge timestamp"
+    },
+    "pullRequestAuthorLogin": {
+      "type": ["string", "null"],
+      "description": "Pull request author login"
+    },
+    "pullRequestAuthorId": {
+      "type": ["integer", "null"],
+      "description": "Pull request author ID"
+    },
+    "pullRequestAuthorType": {
+      "type": ["string", "null"],
+      "description": "Pull request author type"
+    },
+    "pullRequestAuthorAssociation": {
+      "type": ["string", "null"],
+      "description": "Pull request author association"
+    },
+    "pullRequestHeadRef": {
+      "type": ["string", "null"],
+      "description": "Head branch reference"
+    },
+    "pullRequestHeadSha": {
+      "type": ["string", "null"],
+      "description": "Head commit SHA"
+    },
+    "pullRequestHeadLabel": {
+      "type": ["string", "null"],
+      "description": "Head branch label"
+    },
+    "pullRequestBaseRef": {
+      "type": ["string", "null"],
+      "description": "Base branch reference"
+    },
+    "pullRequestBaseSha": {
+      "type": ["string", "null"],
+      "description": "Base commit SHA"
+    },
+    "pullRequestBaseLabel": {
+      "type": ["string", "null"],
+      "description": "Base branch label"
+    },
+    "repositoryId": {
+      "type": ["integer", "null"],
+      "description": "Repository ID"
+    },
+    "repositoryName": {
+      "type": ["string", "null"],
+      "description": "Repository name"
+    },
+    "repositoryFullName": {
+      "type": ["string", "null"],
+      "description": "Repository full name (owner/repo)"
+    },
+    "repositoryPrivate": {
+      "type": ["boolean", "null"],
+      "description": "Whether the repository is private"
+    },
+    "repositoryHtmlUrl": {
+      "type": ["string", "null"],
+      "description": "Repository HTML URL"
+    },
+    "repositoryOwnerLogin": {
+      "type": ["string", "null"],
+      "description": "Repository owner login"
+    },
+    "repositoryOwnerType": {
+      "type": ["string", "null"],
+      "description": "Repository owner type"
+    },
+    "organizationLogin": {
+      "type": ["string", "null"],
+      "description": "Organization login"
+    },
+    "senderLogin": {
+      "type": ["string", "null"],
+      "description": "Event sender login"
+    },
+    "senderType": {
+      "type": ["string", "null"],
+      "description": "Event sender type"
+    },
+    "source": {
+      "type": ["string", "null"],
+      "description": "Data source"
+    }
+  },
+  "required": [
+    "pullRequestId"
+  ]
+}

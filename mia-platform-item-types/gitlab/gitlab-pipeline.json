@@ -1,0 +1,166 @@
+{
+  "type": "object",
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "description": "Type of event that triggered this data"
+    },
+    "action": {
+      "type": "string",
+      "description": "Action performed"
+    
+    },
+    "pipelineId": {
+      "type": "integer",
+      "description": "Pipeline ID"
+    },
+    "pipelineIid": {
+      "type": ["integer", "null"],
+      "description": "Pipeline internal ID"
+    },
+    "pipelineRef": {
+      "type": "string",
+      "description": "Pipeline ref (branch/tag)"
+    },
+    "pipelineSha": {
+      "type": "string",
+      "description": "Pipeline commit SHA"
+    },
+    "pipelineBeforeSha": {
+      "type": ["string", "null"],
+      "description": "Pipeline before SHA"
+    },
+    "pipelineStatus": {
+      "type": "string",
+      "description": "Pipeline status"
+    },
+    "pipelineSource": {
+      "type": "string",
+      "description": "Pipeline source"
+    },
+    "pipelineTag": {
+      "type": "boolean",
+      "description": "Whether the pipeline is for a tag"
+    },
+    "pipelineYamlErrors": {
+      "type": ["string", "null"],
+      "description": "Pipeline YAML errors"
+    },
+    "pipelineCreatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Pipeline creation timestamp"
+    },
+    "pipelineUpdatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Pipeline last update timestamp"
+    },
+    "pipelineStartedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Pipeline start timestamp"
+    },
+    "pipelineFinishedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Pipeline finish timestamp"
+    },
+    "pipelineCommittedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Pipeline commit timestamp"
+    },
+    "pipelineDuration": {
+      "type": ["integer", "null"],
+      "description": "Pipeline duration in seconds"
+    },
+    "pipelineQueuedDuration": {
+      "type": ["integer", "null"],
+      "description": "Pipeline queued duration in seconds"
+    },
+    "pipelineCoverage": {
+      "type": ["string", "null"],
+      "description": "Pipeline coverage"
+    },
+    "pipelineWebUrl": {
+      "type": "string",
+      "description": "Pipeline web URL"
+    },
+    "pipelineName": {
+      "type": ["string", "null"],
+      "description": "Pipeline name"
+    },
+    "pipelineUserId": {
+      "type": ["integer", "null"],
+      "description": "Pipeline user ID"
+    },
+    "pipelineUserUsername": {
+      "type": ["string", "null"],
+      "description": "Pipeline user username"
+    },
+    "pipelineUserName": {
+      "type": ["string", "null"],
+      "description": "Pipeline user name"
+    },
+    "pipelineUserEmail": {
+      "type": ["string", "null"],
+      "description": "Pipeline user email"
+    },
+    "pipelineUserAvatarUrl": {
+      "type": ["string", "null"],
+      "description": "Pipeline user avatar URL"
+    },
+    "pipelineDetailedStatusIcon": {
+      "type": ["string", "null"],
+      "description": "Detailed status icon"
+    },
+    "pipelineDetailedStatusText": {
+      "type": ["string", "null"],
+      "description": "Detailed status text"
+    },
+    "pipelineDetailedStatusLabel": {
+      "type": ["string", "null"],
+      "description": "Detailed status label"
+    },
+    "pipelineDetailedStatusGroup": {
+      "type": ["string", "null"],
+      "description": "Detailed status group"
+    },
+    "projectId": {
+      "type": "integer",
+      "description": "Project ID"
+    },
+    "projectName": {
+      "type": "string",
+      "description": "Project name"
+    },
+    "projectFullName": {
+      "type": "string",
+      "description": "Project full name"
+    },
+    "projectWebUrl": {
+      "type": "string",
+      "description": "Project web URL"
+    },
+    "group": {
+      "type": ["string", "null"],
+      "description": "GitLab group"
+    },
+    "userLogin": {
+      "type": ["string", "null"],
+      "description": "Event user login"
+    },
+    "userId": {
+      "type": ["integer", "null"],
+      "description": "Event user ID"
+    },
+    "source": {
+      "type": "string",
+      "description": "Data source"
+    }
+  },
+  "required": [
+    "pipelineId"
+  ]
+}

@@ -68,6 +68,77 @@ type MarketplaceResource[T Resource] struct {
 	TenantID              string                `json:"tenantId"`
 	LifecycleStatus       LifecycleStatus       `json:"lifecycleStatus"`
 	Resources             T                     `json:"resources"`
+
+	// Catalog Metadata fields - moved from separate metadata object to be directly embedded
+	CategoryID          string            `json:"categoryId,omitempty"`
+	Documentation       *Documentation    `json:"documentation,omitempty"`
+	ImageURL            string            `json:"imageUrl,omitempty"`
+	Labels              map[string]string `json:"labels,omitempty"`
+	Links               []Link            `json:"links,omitempty"`
+	Maintainers         []Maintainer      `json:"maintainers,omitempty"`
+	Relationships       []Relationship    `json:"relationships,omitempty"`
+	ReleaseDate         string            `json:"releaseDate,omitempty"`
+	RepositoryURL       string            `json:"repositoryUrl,omitempty"`
+	SupportedBy         string            `json:"supportedBy,omitempty"`
+	SupportedByImageURL string            `json:"supportedByImageUrl,omitempty"`
+	Tags                []string          `json:"tags,omitempty"`
+	Version             *Version          `json:"version,omitempty"`
+	Visibility          *Visibility       `json:"visibility,omitempty"`
+	Annotations         map[string]string `json:"annotations,omitempty"`
+}
+
+type CatalogMetadata struct {
+	DisplayName   string            `json:"displayName,omitempty"`
+	Description   string            `json:"description,omitempty"`
+	Icon          *Icon             `json:"icon,omitempty"`
+	Documentation *Documentation    `json:"documentation,omitempty"`
+	Labels        map[string]string `json:"labels,omitempty"`
+	Annotations   map[string]string `json:"annotations,omitempty"`
+	Tags          []string          `json:"tags,omitempty"`
+	Links         []Link            `json:"links,omitempty"`
+	Maintainers   []Maintainer      `json:"maintainers,omitempty"`
+	Publisher     *Publisher        `json:"publisher,omitempty"`
+}
+
+type Icon struct {
+	MediaType  string `json:"mediaType,omitempty"`
+	Base64Data string `json:"base64Data,omitempty"`
+}
+
+type Documentation struct {
+	Type string `json:"type,omitempty"`
+	URL  string `json:"url,omitempty"`
+}
+
+type Link struct {
+	DisplayName string `json:"displayName,omitempty"`
+	URL         string `json:"url,omitempty"`
+}
+
+type Maintainer struct {
+	Name  string `json:"name,omitempty"`
+	Email string `json:"email,omitempty"`
+}
+
+type Relationship struct {
+	Type   string `json:"type,omitempty"`
+	Target string `json:"target,omitempty"`
+}
+
+type Version struct {
+	Name        string `json:"name,omitempty"`
+	ReleaseNote string `json:"releaseNote,omitempty"`
+}
+
+type Visibility struct {
+	Public     bool `json:"public"`
+	AllTenants bool `json:"allTenants"`
+}
+
+type Publisher struct {
+	Name  string `json:"name,omitempty"`
+	URL   string `json:"url,omitempty"`
+	Image *Icon  `json:"image,omitempty"`
 }
 
 type ValidationError struct {

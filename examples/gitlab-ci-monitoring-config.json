@@ -1,0 +1,109 @@
+{
+  "sources": [
+    {
+      "type": "gitlab",
+      "name": "gitlab-ci-monitoring",
+      "description": "GitLab source focused on CI/CD pipeline monitoring",
+      "configuration": {
+        "url": "https://gitlab.company.com/api/v4",
+        "token": "${GITLAB_TOKEN}",
+        "groups": ["devops", "platform"],
+        "importConfiguration": {
+          "pipelines": {
+            "enabled": true,
+            "pageSize": 100,
+            "statuses": ["failed", "success", "running"]
+          },
+          "mergeRequests": {
+            "enabled": true,
+            "pageSize": 50,
+            "states": ["opened"]
+          }
+        },
+        "webhookConfiguration": {
+          "secret": "${GITLAB_WEBHOOK_SECRET}",
+          "events": [
+            "pipeline",
+            "merge_requests"
+          ]
+        }
+      }
+    }
+  ],
+  "processors": [
+    {
+      "type": "filter",
+      "name": "failed-pipeline-filter",
+      "description": "Filter only failed pipelines for alerting",
+      "configuration": {
+        "condition": "$.status == 'failed'"
+      }
+    },
+    {
+      "type": "mapper",
+      "name": "pipeline-alert-mapper",
+      "description": "Maps failed pipelines to alert format",
+      "configuration": {
+        "mapping": {
+          "alertType": "pipeline_failure",
+          "projectName": "$.project.name",
+          "pipelineId": "$.id", 
+          "ref": "$.ref",
+          "status": "$.status",
+          "duration": "$.duration",
+          "failedAt": "$.finished_at",
+          "webUrl": "$.web_url",
+          "severity": "high"
+        }
+      }
+    },
+    {
+      "type": "mapper",
+      "name": "mr-review-mapper",
+      "description": "Maps merge requests needing review",
+      "configuration": {
+        "mapping": {
+          "alertType": "review_needed",
+          "mrId": "$.iid",
+          "title": "$.title", 
+          "author": "$.author.username",
+          "projectName": "$.project.name",
+          "sourceBranch": "$.source_branch",
+          "targetBranch": "$.target_branch",
+          "webUrl": "$.web_url",
+          "createdAt": "$.created_at",
+          "severity": "medium"
+        }
+      }
+    }
+  ],
+  "sinks": [
+    {
+      "type": "mongodb",
+      "name": "alerts-mongodb",
+      "description": "Stores alerts in MongoDB for dashboard",
+      "configuration": {
+        "connectionString": "${MONGODB_CONNECTION_STRING}",
+        "database": "devops_monitoring",
+        "collection": "gitlab_alerts"
+      }
+    }
+  ],
+  "pipeline": [
+    {
+      "sourceRef": "gitlab-ci-monitoring",
+      "processors": [
+        "failed-pipeline-filter",
+        "pipeline-alert-mapper"
+      ],
+      "sinkRef": "alerts-mongodb"
+    },
+    {
+      "sourceRef": "gitlab-ci-monitoring",
+      "processors": [
+        "mr-review-mapper"
+      ],
+      "sinkRef": "alerts-mongodb"
+    }
+  ]
+}

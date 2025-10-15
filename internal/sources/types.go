@@ -19,6 +19,8 @@ const (
 	Jira                     = "jira"
 	Console                  = "console"
 	Github                   = "github"
+	Gitlab                   = "gitlab"
+	Confluence               = "confluence"
 	GCPInventoryPubSub       = "gcp-inventory-pubsub"
 	AzureActivityLogEventHub = "azure-activity-log-event-hub"
 	AzureDevOps              = "azure-devops"

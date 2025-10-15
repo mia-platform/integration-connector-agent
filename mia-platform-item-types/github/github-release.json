@@ -1,0 +1,158 @@
+{
+  "type": "object",
+  "properties": {
+    "eventType": {
+      "type": ["string", "null"],
+      "description": "Type of event that triggered this data"
+    },
+    "action": {
+      "type": ["string", "null"],
+      "description": "Action performed"
+    },
+    "releaseId": {
+      "type": ["integer", "null"],
+      "description": "Release ID"
+    },
+    "releaseTagName": {
+      "type": ["string", "null"],
+      "description": "Release tag name"
+    },
+    "releaseName": {
+      "type": ["string", "null"],
+      "description": "Release name/title"
+    },
+    "releaseBody": {
+      "type": ["string", "null"],
+      "description": "Release body/description"
+    },
+    "releaseHtmlUrl": {
+      "type": ["string", "null"],
+      "description": "Release HTML URL"
+    },
+    "releaseUrl": {
+      "type": ["string", "null"],
+      "description": "Release API URL"
+    },
+    "releaseAssetsUrl": {
+      "type": ["string", "null"],
+      "description": "Release assets API URL"
+    },
+    "releaseTarballUrl": {
+      "type": ["string", "null"],
+      "description": "Release tarball URL"
+    },
+    "releaseZipballUrl": {
+      "type": ["string", "null"],
+      "description": "Release zipball URL"
+    },
+    "releaseUploadUrl": {
+      "type": ["string", "null"],
+      "description": "Release upload URL"
+    },
+    "releaseTargetCommitish": {
+      "type": ["string", "null"],
+      "description": "Target commitish for the release"
+    },
+    "releaseDraft": {
+      "type": ["boolean", "null"],
+      "description": "Whether the release is a draft"
+    },
+    "releasePrerelease": {
+      "type": ["boolean", "null"],
+      "description": "Whether the release is a prerelease"
+    },
+    "releaseMakeLatest": {
+      "type": ["string", "null"],
+      "description": "Whether to make this the latest release"
+    },
+    "releaseGenerateReleaseNotes": {
+      "type": ["boolean", "null"],
+      "description": "Whether to auto-generate release notes"
+    },
+    "releaseCreatedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Release creation timestamp"
+    },
+    "releasePublishedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Release publication timestamp"
+    },
+    "releaseAuthorLogin": {
+      "type": ["string", "null"],
+      "description": "Release author login"
+    },
+    "releaseAuthorId": {
+      "type": ["integer", "null"],
+      "description": "Release author ID"
+    },
+    "releaseAuthorType": {
+      "type": ["string", "null"],
+      "description": "Release author type"
+    },
+    "releaseAssets": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": ["integer", "null"]},
+          "name": {"type": ["string", "null"]},
+          "label": {"type": ["string", "null"]},
+          "content_type": {"type": ["string", "null"]},
+          "size": {"type": ["integer", "null"]},
+          "download_count": {"type": ["integer", "null"]},
+          "browser_download_url": {"type": ["string", "null"]}
+        }
+      },
+      "description": "Release assets"
+    },
+    "repositoryId": {
+      "type": ["integer", "null"],
+      "description": "Repository ID"
+    },
+    "repositoryName": {
+      "type": ["string", "null"],
+      "description": "Repository name"
+    },
+    "repositoryFullName": {
+      "type": ["string", "null"],
+      "description": "Repository full name (owner/repo)"
+    },
+    "repositoryPrivate": {
+      "type": ["boolean", "null"],
+      "description": "Whether the repository is private"
+    },
+    "repositoryHtmlUrl": {
+      "type": ["string", "null"],
+      "description": "Repository HTML URL"
+    },
+    "repositoryOwnerLogin": {
+      "type": ["string", "null"],
+      "description": "Repository owner login"
+    },
+    "repositoryOwnerType": {
+      "type": ["string", "null"],
+      "description": "Repository owner type"
+    },
+    "organizationLogin": {
+      "type": ["string", "null"],
+      "description": "Organization login"
+    },
+    "senderLogin": {
+      "type": ["string", "null"],
+      "description": "Event sender login"
+    },
+    "senderType": {
+      "type": ["string", "null"],
+      "description": "Event sender type"
+    },
+    "source": {
+      "type": ["string", "null"],
+      "description": "Data source"
+    }
+  },
+  "required": [
+    "releaseId"
+  ]
+}

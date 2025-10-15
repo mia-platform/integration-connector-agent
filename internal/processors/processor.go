@@ -47,13 +47,31 @@ type Processors struct {
 	processors []entities.Processor
 }
 
-func (p *Processors) Process(_ context.Context, message entities.PipelineEvent) (entities.PipelineEvent, error) {
-	for _, processor := range p.processors {
+func (p *Processors) Process(ctx context.Context, message entities.PipelineEvent) (entities.PipelineEvent, error) {
+	for i, processor := range p.processors {
+		processorType := fmt.Sprintf("%T", processor)
+		logger := logrus.WithFields(logrus.Fields{
+			"processorIndex": i,
+			"processorType":  processorType,
+			"eventType":      message.GetType(),
+			"primaryKeys":    message.GetPrimaryKeys().Map(),
+		})
+
+		logger.Debug("starting processor execution")
+
 		var err error
 		message, err = processor.Process(message)
 		if err != nil {
+			if errors.Is(err, entities.ErrDiscardEvent) {
+				// Event filtered out - not an error, just pass it through
+				logger.WithError(err).Debug("event filtered by processor")
+				return nil, err
+			}
+			logger.WithError(err).Error("processor execution failed")
 			return nil, err
 		}
+
+		logger.Debug("processor execution completed successfully")
 	}
 
 	return message, nil

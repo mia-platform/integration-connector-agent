@@ -1,0 +1,72 @@
+{
+  "sources": [
+    {
+      "type": "gitlab",
+      "name": "gitlab-webhook-source",
+      "description": "GitLab webhook-only source for real-time events",
+      "configuration": {
+        "url": "https://gitlab.example.com/api/v4",
+        "token": "${GITLAB_TOKEN}",
+        "webhookConfiguration": {
+          "secret": "${GITLAB_WEBHOOK_SECRET}",
+          "events": [
+            "push",
+            "merge_requests",
+            "pipeline", 
+            "release",
+            "project"
+          ]
+        }
+      }
+    }
+  ],
+  "processors": [
+    {
+      "type": "filter",
+      "name": "production-filter",
+      "description": "Filter events for production projects only",
+      "configuration": {
+        "condition": "$.project.namespace.name == 'production'"
+      }
+    },
+    {
+      "type": "mapper",
+      "name": "webhook-event-mapper",
+      "description": "Maps GitLab webhook events to standardized format",
+      "configuration": {
+        "mapping": {
+          "eventType": "$.object_kind",
+          "projectId": "$.project.id",
+          "projectName": "$.project.name",
+          "namespace": "$.project.namespace.name",
+          "timestamp": "$.created_at",
+          "eventData": "$"
+        }
+      }
+    }
+  ],
+  "sinks": [
+    {
+      "type": "kafka",
+      "name": "gitlab-events-kafka",
+      "description": "Sends GitLab events to Kafka topic",
+      "configuration": {
+        "brokers": ["${KAFKA_BROKER_1}", "${KAFKA_BROKER_2}"],
+        "topic": "gitlab-events",
+        "saslMechanism": "PLAIN",
+        "username": "${KAFKA_USERNAME}",
+        "password": "${KAFKA_PASSWORD}"
+      }
+    }
+  ],
+  "pipeline": [
+    {
+      "sourceRef": "gitlab-webhook-source", 
+      "processors": [
+        "production-filter",
+        "webhook-event-mapper"
+      ],
+      "sinkRef": "gitlab-events-kafka"
+    }
+  ]
+}

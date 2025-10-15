@@ -1,0 +1,186 @@
+{
+  "type": "object",
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "description": "Type of event that triggered this data"
+    },
+    "action": {
+      "type": "string",
+      "description": "Action performed",
+      "enum": ["create", "update", "delete", "import"]
+    },
+    "releaseId": {
+      "type": ["integer", "string"],
+      "description": "Release ID or identifier"
+    },
+    "releaseTagName": {
+      "type": "string",
+      "description": "Release tag name"
+    },
+    "releaseName": {
+      "type": ["string", "null"],
+      "description": "Release name"
+    },
+    "releaseDescription": {
+      "type": ["string", "null"],
+      "description": "Release description"
+    },
+    "releaseDescriptionHtml": {
+      "type": ["string", "null"],
+      "description": "Release description in HTML"
+    },
+    "releaseCreatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Release creation timestamp"
+    },
+    "releaseReleasedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Release publication timestamp"
+    },
+    "releaseAuthorId": {
+      "type": ["integer", "null"],
+      "description": "Release author ID"
+    },
+    "releaseAuthorUsername": {
+      "type": ["string", "null"],
+      "description": "Release author username"
+    },
+    "releaseAuthorName": {
+      "type": ["string", "null"],
+      "description": "Release author name"
+    },
+    "releaseAuthorEmail": {
+      "type": ["string", "null"],
+      "description": "Release author email"
+    },
+    "releaseAuthorAvatarUrl": {
+      "type": ["string", "null"],
+      "description": "Release author avatar URL"
+    },
+    "releaseCommitId": {
+      "type": ["string", "null"],
+      "description": "Release commit ID"
+    },
+    "releaseCommitShortId": {
+      "type": ["string", "null"],
+      "description": "Release commit short ID"
+    },
+    "releaseCommitTitle": {
+      "type": ["string", "null"],
+      "description": "Release commit title"
+    },
+    "releaseCommitAuthorName": {
+      "type": ["string", "null"],
+      "description": "Release commit author name"
+    },
+    "releaseCommitAuthorEmail": {
+      "type": ["string", "null"],
+      "description": "Release commit author email"
+    },
+    "releaseCommitAuthoredDate": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Release commit authored date"
+    },
+    "releaseCommitCommitterName": {
+      "type": ["string", "null"],
+      "description": "Release commit committer name"
+    },
+    "releaseCommitCommitterEmail": {
+      "type": ["string", "null"],
+      "description": "Release commit committer email"
+    },
+    "releaseCommitCommittedDate": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Release commit committed date"
+    },
+    "releaseCommitMessage": {
+      "type": ["string", "null"],
+      "description": "Release commit message"
+    },
+    "releaseCommitWebUrl": {
+      "type": ["string", "null"],
+      "description": "Release commit web URL"
+    },
+    "releaseTagPath": {
+      "type": ["string", "null"],
+      "description": "Release tag path"
+    },
+    "releaseCommitPath": {
+      "type": ["string", "null"],
+      "description": "Release commit path"
+    },
+    "releaseEvidenceSha": {
+      "type": ["string", "null"],
+      "description": "Release evidence SHA"
+    },
+    "releaseAssetsCount": {
+      "type": ["integer", "null"],
+      "description": "Number of release assets"
+    },
+    "releaseAssetsSourcesCount": {
+      "type": ["integer", "null"],
+      "description": "Number of release asset sources"
+    },
+    "releaseAssetsLinksCount": {
+      "type": ["integer", "null"],
+      "description": "Number of release asset links"
+    },
+    "releaseEvidenceFilePath": {
+      "type": ["string", "null"],
+      "description": "Release evidence file path"
+    },
+    "releaseUpcomingRelease": {
+      "type": ["boolean", "null"],
+      "description": "Whether this is an upcoming release"
+    },
+    "releaseHistoricalRelease": {
+      "type": ["boolean", "null"],
+      "description": "Whether this is a historical release"
+    },
+    "releaseMilestonesCount": {
+      "type": ["integer", "null"],
+      "description": "Number of associated milestones"
+    },
+    "projectId": {
+      "type": "integer",
+      "description": "Project ID"
+    },
+    "projectName": {
+      "type": "string",
+      "description": "Project name"
+    },
+    "projectFullName": {
+      "type": "string",
+      "description": "Project full name"
+    },
+    "projectWebUrl": {
+      "type": "string",
+      "description": "Project web URL"
+    },
+    "group": {
+      "type": ["string", "null"],
+      "description": "GitLab group"
+    },
+    "userLogin": {
+      "type": ["string", "null"],
+      "description": "Event user login"
+    },
+    "userId": {
+      "type": ["integer", "null"],
+      "description": "Event user ID"
+    },
+    "source": {
+      "type": "string",
+      "description": "Data source"
+    }
+  },
+  "required": [
+    "releaseTagName",
+    "projectId"
+  ]
+}

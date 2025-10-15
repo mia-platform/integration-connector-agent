@@ -1,0 +1,120 @@
+{
+  "type": "object",
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "description": "Type of event that triggered this data"
+    },
+    "action": {
+      "type": "string",
+      "description": "Action performed",
+      "enum": ["added", "removed", "edited"]
+    },
+    "memberLogin": {
+      "type": "string",
+      "description": "Member login"
+    },
+    "memberId": {
+      "type": "integer",
+      "description": "Member ID"
+    },
+    "memberNodeId": {
+      "type": "string",
+      "description": "Member Node ID"
+    },
+    "memberAvatarUrl": {
+      "type": "string",
+      "description": "Member avatar URL"
+    },
+    "memberGravatarId": {
+      "type": ["string", "null"],
+      "description": "Member Gravatar ID"
+    },
+    "memberUrl": {
+      "type": "string",
+      "description": "Member API URL"
+    },
+    "memberHtmlUrl": {
+      "type": "string",
+      "description": "Member HTML URL"
+    },
+    "memberType": {
+      "type": "string",
+      "description": "Member type",
+      "enum": ["User", "Bot"]
+    },
+    "memberSiteAdmin": {
+      "type": "boolean",
+      "description": "Whether the member is a site admin"
+    },
+    "changes": {
+      "type": "object",
+      "properties": {
+        "permission": {
+          "type": "object",
+          "properties": {
+            "from": {"type": "string"},
+            "to": {"type": "string"}
+          }
+        }
+      },
+      "description": "Changes made to the member (for edited action)"
+    },
+    "repositoryId": {
+      "type": "integer",
+      "description": "Repository ID"
+    },
+    "repositoryName": {
+      "type": "string",
+      "description": "Repository name"
+    },
+    "repositoryFullName": {
+      "type": "string",
+      "description": "Repository full name (owner/repo)"
+    },
+    "repositoryPrivate": {
+      "type": "boolean",
+      "description": "Whether the repository is private"
+    },
+    "repositoryHtmlUrl": {
+      "type": "string",
+      "description": "Repository HTML URL"
+    },
+    "repositoryOwnerLogin": {
+      "type": "string",
+      "description": "Repository owner login"
+    },
+    "repositoryOwnerType": {
+      "type": "string",
+      "description": "Repository owner type"
+    },
+    "organizationLogin": {
+      "type": ["string", "null"],
+      "description": "Organization login"
+    },
+    "organizationId": {
+      "type": ["integer", "null"],
+      "description": "Organization ID"
+    },
+    "senderLogin": {
+      "type": "string",
+      "description": "Event sender login"
+    },
+    "senderType": {
+      "type": "string",
+      "description": "Event sender type"
+    },
+    "source": {
+      "type": "string",
+      "description": "Data source",
+      "enum": ["github-webhook", "github-import"]
+    }
+  },
+  "required": [
+    "eventType",
+    "memberLogin",
+    "memberId",
+    "repositoryId",
+    "repositoryName"
+  ]
+}

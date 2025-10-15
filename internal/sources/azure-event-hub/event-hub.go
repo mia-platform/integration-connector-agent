@@ -29,11 +29,21 @@ func SetupEventHub(ctx context.Context, config azure.EventHubConfig, logger *log
 	consumerClient, err := eventhub.NewConsumerClient(config, azeventhubs.DefaultConsumerGroup)
 	if err != nil {
 		logger.WithError(err).Error("error initializing azure event hub consumer client")
+		logger.Error("Azure Event Hub configuration help:\n" +
+			"1. Verify Event Hub namespace and name are correct\n" +
+			"2. Ensure service principal has 'Azure Event Hubs Data Receiver' role\n" +
+			"3. Check Azure credentials (AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET)\n" +
+			"4. Confirm Event Hub exists and is accessible")
 		return
 	}
 	defer consumerClient.Close(ctx)
 
 	if err := eventhub.RunEventHubProcessor(ctx, config, consumerClient, logger); err != nil {
 		logger.WithError(err).Error("error running azure event hub processor")
+		logger.Error("Azure Event Hub processing help:\n" +
+			"1. Verify checkpoint storage account exists and is accessible\n" +
+			"2. Ensure service principal has 'Storage Blob Data Contributor' role on storage account\n" +
+			"3. Check that the checkpoint container exists in the storage account\n" +
+			"4. Verify network connectivity to Azure services")
 	}
 }

@@ -164,7 +164,7 @@ func TestPipeline(t *testing.T) {
 			Data:      event,
 		}, w.Calls().LastCall())
 
-		assert.Equal(t, "error writing data", hook.LastEntry().Message)
+		assert.Equal(t, "error writing data to sink", hook.LastEntry().Message)
 	})
 
 	t.Run("on error, the pipeline skips the element and logs - delete", func(t *testing.T) {
@@ -197,7 +197,7 @@ func TestPipeline(t *testing.T) {
 				OperationType: entities.Delete,
 			},
 		}, w.Calls().LastCall())
-		assert.Equal(t, "error writing data", hook.LastEntry().Message)
+		assert.Equal(t, "error writing data to sink", hook.LastEntry().Message)
 	})
 
 	t.Run("filter event when filter returns false", func(t *testing.T) {

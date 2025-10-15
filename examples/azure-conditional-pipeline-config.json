@@ -1,0 +1,117 @@
+{
+  "processors": [
+    {
+      "type": "cloud-vendor-aggregator", 
+      "cloudVendorName": "azure",
+      "authOptions": {
+        "tenantId": "{{AZURE_TENANT_ID}}",
+        "clientId": { "fromEnv": "AZURE_CLIENT_ID" },
+        "clientSecret": { "fromEnv": "AZURE_CLIENT_SECRET" }
+      }
+    },
+    {
+      "type": "mapper",
+      "outputEvent": {
+        "name": "{{name}}",
+        "runtimeData": {
+          "name": "{{name}}",
+          "type": "{{type}}",
+          "provider": "{{provider}}",
+          "location": "{{location}}",
+          "resourceGroup": "{{resourceGroup}}",
+          "subscriptionId": "{{subscriptionId}}",
+          "relationships": "{{relationships}}",
+          "tags": "{{tags}}",
+          "properties": "{{properties}}",
+          "sku": "{{sku}}",
+          "identity": "{{identity}}",
+          "zones": "{{zones}}",
+          "kind": "{{kind}}",
+          "resourceId": "{{resourceId}}",
+          "etag": "{{etag}}",
+          "managedBy": "{{managedBy}}",
+          "plan": "{{plan}}",
+          "provisioningState": "{{provisioningState}}",
+          "createdTime": "{{createdTime}}",
+          "changedTime": "{{changedTime}}",
+          "timestamp": "{{timestamp}}"
+        }
+      }
+    }
+  ],
+  "sinks": [
+    {
+      "type": "console-catalog",
+      "url": "https://demo.console.gcp.mia-platform.eu/",
+      "tenantId": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8",
+      "clientId": "FqCvmBauwBARNZKqxKGUYXXumeGbJVIp",
+      "clientSecret": { "fromEnv": "CONSOLE_SERVICE_ACCOUNT_CLIENT_SECRET" },
+      "itemTypeDefinitionRef": {
+        "name": "azure-resource",
+        "namespace": "b933f1ef-5b8e-4adf-a346-24a3b03d13e8"
+      },
+      "itemLifecycleStatus": "published",
+      "itemNameTemplate": "{{name}} ({{runtimeData.type}})",
+      "catalogMetadata": {
+        "displayName": "{{name}}",
+        "description": "Azure {{runtimeData.type}} resource in {{runtimeData.location}} (Resource Group: {{runtimeData.resourceGroup}})",
+        "icon": {
+          "mediaType": "image/svg+xml", 
+          "base64Data": "PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTguNDQ3IDEuMTA2YTEuMzMzIDEuMzMzIDAgMCAwLTEuNzk0IDBsLTUuMzMzIDQuOEE0IDQgMCAwIDAgMCA4djBhNCA0IDAgMCAwIDQuNDQ3IDMuNzI3TDggMTBsLTMuNTUzIDEuNzI3QTQgNCAwIDAgMCA0IDE2aDhhNCA0IDAgMCAwIDMuNTUzLTQuMjczTDE2IDEwdjBhNCA0IDAgMCAwLS42LTIuMDk0bC01LjMzMy00LjhaIiBmaWxsPSIjNDE0MTQxIi8+Cjwvc3ZnPgo="
+        },
+        "documentation": {
+          "type": "externalLink",
+          "url": "https://portal.azure.com/#resource{{runtimeData.resourceId}}"
+        },
+        "labels": {
+          "provider": "{{runtimeData.provider}}",
+          "location": "{{runtimeData.location}}",
+          "resourceType": "{{runtimeData.type}}",
+          "resourceGroup": "{{runtimeData.resourceGroup}}",
+          "provisioningState": "{{runtimeData.provisioningState}}",
+          "kind": "{{runtimeData.kind}}",
+          "skuName": "{{runtimeData.sku.name}}",
+          "skuTier": "{{runtimeData.sku.tier}}",
+          "imported": "true"
+        },
+        "annotations": {
+          "azure.com/type": "{{runtimeData.type}}",
+          "azure.com/provider": "{{runtimeData.provider}}",
+          "azure.com/location": "{{runtimeData.location}}",
+          "azure.com/resource-group": "{{runtimeData.resourceGroup}}",
+          "azure.com/subscription-id": "{{runtimeData.subscriptionId}}",
+          "azure.com/resource-id": "{{runtimeData.resourceId}}",
+          "azure.com/provisioning-state": "{{runtimeData.provisioningState}}",
+          "azure.com/kind": "{{runtimeData.kind}}",
+          "azure.com/sku-name": "{{runtimeData.sku.name}}",
+          "azure.com/sku-tier": "{{runtimeData.sku.tier}}",
+          "azure.com/identity-type": "{{runtimeData.identity.type}}",
+          "azure.com/zones": "{{runtimeData.zones}}",
+          "azure.com/import-source": "azure-cloud-vendor-aggregator"
+        },
+        "tags": [
+          "azure",
+          "cloud", 
+          "resource",
+          "{{runtimeData.location}}",
+          "{{runtimeData.kind}}",
+          "imported"
+        ],
+        "links": [
+          {
+            "displayName": "Azure Portal",
+            "url": "https://portal.azure.com/#resource{{runtimeData.resourceId}}"
+          },
+          {
+            "displayName": "Resource Group",
+            "url": "https://portal.azure.com/#resource/subscriptions/{{runtimeData.subscriptionId}}/resourceGroups/{{runtimeData.resourceGroup}}"
+          },
+          {
+            "displayName": "Subscription",
+            "url": "https://portal.azure.com/#resource/subscriptions/{{runtimeData.subscriptionId}}"
+          }
+        ]
+      }
+    }
+  ]
+}

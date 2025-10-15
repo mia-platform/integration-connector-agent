@@ -210,7 +210,7 @@ func TestAddSourceToRouter(t *testing.T) {
 					PrimaryKeys:   tc.expectedPk,
 					Type:          tc.eventName,
 					OperationType: tc.expectedOperation,
-					OriginalRaw:   []byte(tc.body),
+					OriginalRaw:   getExpectedPayloadWithEventType(tc.body, tc.eventName),
 				},
 			}, s.Calls().LastCall())
 		})
@@ -238,7 +238,7 @@ func TestAddSourceToRouter(t *testing.T) {
 					PrimaryKeys:   tc.expectedPk,
 					Type:          tc.eventName,
 					OperationType: tc.expectedOperation,
-					OriginalRaw:   []byte(tc.body),
+					OriginalRaw:   getExpectedPayloadWithEventType(tc.body, tc.eventName),
 				},
 			}, s.Calls().LastCall())
 		})
@@ -270,4 +270,24 @@ func getPullRequestPayload(action, id string) string {
 			}
 		}
 	}`, action, id)
+}
+
+// getExpectedPayloadWithEventType injects eventType into a JSON payload to match what the webhook processor creates
+func getExpectedPayloadWithEventType(originalPayload, eventType string) []byte {
+	// Parse the original payload
+	var jsonData map[string]interface{}
+	if err := json.Unmarshal([]byte(originalPayload), &jsonData); err != nil {
+		panic(err) // This should never happen in tests
+	}
+
+	// Add eventType field
+	jsonData["eventType"] = eventType
+
+	// Marshal back to bytes
+	enhanced, err := json.Marshal(jsonData)
+	if err != nil {
+		panic(err) // This should never happen in tests
+	}
+
+	return enhanced
 }

@@ -33,8 +33,10 @@ import (
 	awssqs "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs"
 	azureactivitylogeventhub "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub"
 	azuredevops "github.com/mia-platform/integration-connector-agent/internal/sources/azure-devops"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/confluence"
 	gcppubsub "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/github"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/gitlab"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jboss"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
 	console "github.com/mia-platform/integration-connector-agent/internal/sources/mia-platform-console"
@@ -205,24 +207,79 @@ func runIntegration(ctx context.Context, log *logrus.Logger, pg pipeline.IPipeli
 }
 
 func setupSource(ctx context.Context, log *logrus.Logger, source config.GenericConfig, pg pipeline.IPipelineGroup, oasRouter *swagger.Router[fiber.Handler, fiber.Router], integration *Integration) error {
+	log.WithFields(logrus.Fields{
+		"sourceType": source.Type,
+	}).Info("initializing source")
+
 	handlers := map[string]func() error{
-		sources.Jira:               func() error { return wrapSetupError(jira.AddSourceToRouter(ctx, source, pg, oasRouter)) },
-		sources.Console:            func() error { return wrapSetupError(console.AddSourceToRouter(ctx, source, pg, oasRouter)) },
+		sources.Jira:    func() error { return wrapSetupError(jira.AddSourceToRouter(ctx, source, pg, oasRouter)) },
+		sources.Console: func() error { return wrapSetupError(console.AddSourceToRouter(ctx, source, pg, oasRouter)) },
+		sources.Confluence: func() error {
+			s, err := confluence.NewConfluenceSource(ctx, log, source, pg, oasRouter)
+			if err != nil {
+				return err
+			}
+			integration.appendCloseableSource(s)
+			return nil
+		},
 		sources.GCPInventoryPubSub: func() error { return setupGCPInventorySource(ctx, log, source, pg, oasRouter, integration) },
 		sources.AWSCloudTrailSQS:   func() error { return setupAWSCloudTrailSource(ctx, log, source, pg, oasRouter, integration) },
 		sources.AzureActivityLogEventHub: func() error {
 			return wrapSetupError(azureactivitylogeventhub.AddSource(ctx, source, pg, log, oasRouter))
 		},
-		sources.AzureDevOps: func() error { return wrapSetupError(azuredevops.AddSourceToRouter(ctx, source, pg, oasRouter)) },
-		sources.Github:      func() error { return wrapSetupError(github.AddSourceToRouter(ctx, source, pg, oasRouter)) },
-		sources.JBoss:       func() error { return setupJBossSource(ctx, log, source, pg, oasRouter, integration) },
+		sources.AzureDevOps: func() error {
+			return wrapSetupError(azuredevops.AddSourceToRouter(ctx, source, pg, oasRouter))
+		},
+		sources.Github: func() error {
+			s, err := github.NewGitHubSource(ctx, log, source, pg, oasRouter)
+			if err != nil {
+				return err
+			}
+			integration.appendCloseableSource(s)
+			return nil
+		},
+		sources.JBoss: func() error {
+			s, err := jboss.NewJBossSource(ctx, log, source, pg, oasRouter)
+			if err != nil {
+				return err
+			}
+			integration.appendCloseableSource(s)
+			return nil
+		},
+		sources.Gitlab: func() error {
+			s, err := gitlab.NewGitLabSource(ctx, log, source, pg, oasRouter)
+			if err != nil {
+				return err
+			}
+			integration.appendCloseableSource(s)
+			return nil
+		},
 	}
 
-	if handler, exists := handlers[source.Type]; exists {
-		return handler()
+	handler, exists := handlers[source.Type]
+	if !exists {
+		log.WithFields(logrus.Fields{
+			"sourceType": source.Type,
+		}).Error("source type not supported")
+		return fmt.Errorf("source type %s not supported", source.Type)
 	}
 
-	return fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)
+	log.WithFields(logrus.Fields{
+		"sourceType": source.Type,
+	}).Debug("setting up source handler")
+
+	if err := handler(); err != nil {
+		log.WithFields(logrus.Fields{
+			"sourceType": source.Type,
+		}).WithError(err).Error("failed to setup source")
+		return err
+	}
+
+	log.WithFields(logrus.Fields{
+		"sourceType": source.Type,
+	}).Info("source successfully initialized")
+
+	return nil
 }
 
 func wrapSetupError(err error) error {
@@ -257,4 +314,25 @@ func setupJBossSource(ctx context.Context, log *logrus.Logger, source config.Gen
 	}
 	integration.appendCloseableSource(jbossSource)
 	return nil
+}
+
+func setupGitHubSource(ctx context.Context, log *logrus.Logger, source config.GenericConfig, pg pipeline.IPipelineGroup, oasRouter *swagger.Router[fiber.Handler, fiber.Router], integration *Integration) error {
+	// First check if this is using the new enhanced GitHub source with import functionality
+	githubConfig, err := config.GetConfig[*github.Config](source)
+	if err != nil {
+		return fmt.Errorf("%w: %w", errSetupSource, err)
+	}
+
+	// If import webhook is configured, use the new enhanced source
+	if githubConfig.ImportWebhookPath != "" {
+		githubSource, err := github.NewGitHubSource(ctx, log, source, pg, oasRouter)
+		if err != nil {
+			return fmt.Errorf("%w: %w", errSetupSource, err)
+		}
+		integration.appendCloseableSource(githubSource)
+		return nil
+	}
+
+	// Otherwise, use the simple webhook setup for backward compatibility
+	return wrapSetupError(github.AddSourceToRouter(ctx, source, pg, oasRouter))
 }

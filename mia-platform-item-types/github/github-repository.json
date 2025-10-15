@@ -1,0 +1,209 @@
+{
+  "type": "object",
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "description": "Type of event that triggered this data"
+    },
+    "action": {
+      "type": "string",
+      "description": "Action performed",
+      "enum": ["started", "created", "fork", "public", "privatized", "deleted", "archived", "unarchived", "edited", "renamed", "transferred"]
+    },
+    "repositoryId": {
+      "type": "integer",
+      "description": "Repository ID"
+    },
+    "repositoryNodeId": {
+      "type": "string",
+      "description": "Repository Node ID"
+    },
+    "repositoryName": {
+      "type": "string",
+      "description": "Repository name"
+    },
+    "repositoryFullName": {
+      "type": "string",
+      "description": "Repository full name (owner/repo)"
+    },
+    "repositoryDescription": {
+      "type": ["string", "null"],
+      "description": "Repository description"
+    },
+    "repositoryReadmeContent": {
+      "type": ["string", "null"],
+      "description": "Repository README.md content"
+    },
+    "repositoryLanguage": {
+      "type": ["string", "null"],
+      "description": "Primary programming language"
+    },
+    "repositoryPrivate": {
+      "type": "boolean",
+      "description": "Whether the repository is private"
+    },
+    "repositoryFork": {
+      "type": "boolean",
+      "description": "Whether the repository is a fork"
+    },
+    "repositoryArchived": {
+      "type": "boolean",
+      "description": "Whether the repository is archived"
+    },
+    "repositoryDisabled": {
+      "type": "boolean",
+      "description": "Whether the repository is disabled"
+    },
+    "repositoryTemplate": {
+      "type": "boolean",
+      "description": "Whether the repository is a template"
+    },
+    "repositoryVisibility": {
+      "type": "string",
+      "description": "Repository visibility",
+      "enum": ["public", "private", "internal"]
+    },
+    "repositoryDefaultBranch": {
+      "type": "string",
+      "description": "Default branch name"
+    },
+    "repositoryMasterBranch": {
+      "type": "string",
+      "description": "Master branch name"
+    },
+    "repositoryStarsCount": {
+      "type": "integer",
+      "description": "Number of stars"
+    },
+    "repositoryWatchersCount": {
+      "type": "integer",
+      "description": "Number of watchers"
+    },
+    "repositoryForksCount": {
+      "type": "integer",
+      "description": "Number of forks"
+    },
+    "repositoryOpenIssuesCount": {
+      "type": "integer",
+      "description": "Number of open issues"
+    },
+    "repositorySize": {
+      "type": "integer",
+      "description": "Repository size in KB"
+    },
+    "repositoryHtmlUrl": {
+      "type": "string",
+      "description": "Repository HTML URL"
+    },
+    "repositoryCloneUrl": {
+      "type": "string",
+      "description": "Repository clone URL"
+    },
+    "repositoryGitUrl": {
+      "type": "string",
+      "description": "Repository Git URL"
+    },
+    "repositorySshUrl": {
+      "type": "string",
+      "description": "Repository SSH URL"
+    },
+    "repositorySvnUrl": {
+      "type": "string",
+      "description": "Repository SVN URL"
+    },
+    "repositoryHomepage": {
+      "type": ["string", "null"],
+      "description": "Repository homepage URL"
+    },
+    "repositoryTopics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Repository topics"
+    },
+    "repositoryHasIssues": {
+      "type": "boolean",
+      "description": "Whether issues are enabled"
+    },
+    "repositoryHasProjects": {
+      "type": "boolean",
+      "description": "Whether projects are enabled"
+    },
+    "repositoryHasWiki": {
+      "type": "boolean",
+      "description": "Whether wiki is enabled"
+    },
+    "repositoryHasPages": {
+      "type": "boolean",
+      "description": "Whether GitHub Pages is enabled"
+    },
+    "repositoryHasDownloads": {
+      "type": "boolean",
+      "description": "Whether downloads are enabled"
+    },
+    "repositoryHasDiscussions": {
+      "type": "boolean",
+      "description": "Whether discussions are enabled"
+    },
+    "repositoryCreatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Repository creation timestamp"
+    },
+    "repositoryUpdatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Repository last update timestamp"
+    },
+    "repositoryPushedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Repository last push timestamp"
+    },
+    "repositoryOwnerLogin": {
+      "type": "string",
+      "description": "Repository owner login"
+    },
+    "repositoryOwnerId": {
+      "type": "integer",
+      "description": "Repository owner ID"
+    },
+    "repositoryOwnerType": {
+      "type": "string",
+      "description": "Repository owner type",
+      "enum": ["User", "Organization"]
+    },
+    "repositoryOwnerSiteAdmin": {
+      "type": "boolean",
+      "description": "Whether the owner is a site admin"
+    },
+    "organizationLogin": {
+      "type": ["string", "null"],
+      "description": "Organization login"
+    },
+    "organizationId": {
+      "type": ["integer", "null"],
+      "description": "Organization ID"
+    },
+    "senderLogin": {
+      "type": "string",
+      "description": "Event sender login"
+    },
+    "senderType": {
+      "type": "string",
+      "description": "Event sender type"
+    },
+    "source": {
+      "type": "string",
+      "description": "Data source",
+      "enum": ["github-webhook", "github-import"]
+    }
+  },
+  "required": [
+    "eventType",
+    "repositoryId",
+    "repositoryName",
+    "repositoryFullName"
+  ]
+}

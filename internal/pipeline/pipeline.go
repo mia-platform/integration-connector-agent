@@ -40,6 +40,11 @@ type Pipeline struct {
 }
 
 func (p Pipeline) AddMessage(data entities.PipelineEvent) {
+	p.logger.WithFields(logrus.Fields{
+		"eventType":   data.GetType(),
+		"primaryKeys": data.GetPrimaryKeys().Map(),
+		"operation":   data.Operation(),
+	}).Debug("adding event to pipeline")
 	p.eventChan <- data
 }
 
@@ -71,32 +76,67 @@ loop:
 		select {
 		case message, open := <-p.eventChan:
 			if !open {
-				// the chanel has been closed, break the loop
+				// the channel has been closed, break the loop
 				break loop
 			}
+
+			p.logger.WithFields(logrus.Fields{
+				"eventType":   message.GetType(),
+				"primaryKeys": message.GetPrimaryKeys().Map(),
+				"operation":   message.Operation(),
+			}).Debug("starting pipeline elaboration for event")
 
 			processedMessage, err := p.processors.Process(ctx, message)
 			if err != nil {
 				if errors.Is(err, entities.ErrDiscardEvent) {
 					// the message has been filtered out
-					p.logger.WithError(err).WithField("message", message.Data()).Trace("event filtered for pipeline")
+					originalBody, decodedBody, wasDecoded := utils.TryDecodeBase64Body(message.Data())
+					logFields := logrus.Fields{
+						"eventType":    message.GetType(),
+						"primaryKeys":  message.GetPrimaryKeys().Map(),
+						"reason":       "filtered_by_processor",
+						"originalBody": originalBody,
+					}
+					if wasDecoded {
+						logFields["decodedBody"] = decodedBody
+						logFields["wasBase64"] = true
+					}
+					p.logger.WithError(err).WithFields(logFields).Debug("event discarded by pipeline processor")
 					continue
 				}
-				p.logger.WithError(err).WithField("message", message.Data()).Error("error processing data")
+				p.logger.WithError(err).WithFields(logrus.Fields{
+					"eventType":   message.GetType(),
+					"primaryKeys": message.GetPrimaryKeys().Map(),
+					"message":     message.Data(),
+				}).Error("error processing data")
 				continue
 			}
+
+			p.logger.WithFields(logrus.Fields{
+				"eventType":   processedMessage.GetType(),
+				"primaryKeys": processedMessage.GetPrimaryKeys().Map(),
+				"operation":   processedMessage.Operation(),
+			}).Debug("pipeline elaboration completed, sending to sink")
 
 			if err := p.sinks.WriteData(ctx, processedMessage); err != nil {
 				// TODO: manage failure in writing message. DLQ?
 				p.logger.WithError(err).WithFields(logrus.Fields{
+					"eventType":        processedMessage.GetType(),
+					"primaryKeys":      processedMessage.GetPrimaryKeys().Map(),
 					"id":               processedMessage.GetPrimaryKeys().Map(),
 					"data":             string(processedMessage.Data()),
 					"messageOperation": processedMessage.Operation(),
-				}).Error("error writing data")
+				}).Error("error writing data to sink")
+			} else {
+				p.logger.WithFields(logrus.Fields{
+					"eventType":        processedMessage.GetType(),
+					"primaryKeys":      processedMessage.GetPrimaryKeys().Map(),
+					"messageOperation": processedMessage.Operation(),
+				}).Debug("event successfully written to sink")
 			}
 
 		case <-ctx.Done():
-			// context has been cancelled close che channel
+			// context has been cancelled close the channel
 			close(p.eventChan)
 			return ctx.Err()
 		}

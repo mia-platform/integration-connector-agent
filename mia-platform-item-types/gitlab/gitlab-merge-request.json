@@ -1,0 +1,196 @@
+{
+  "type": "object",
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "description": "Type of event that triggered this data"
+    },
+    "action": {
+      "type": "string",
+      "description": "Action performed"
+    },
+    "mergeRequestId": {
+      "type": "integer",
+      "description": "Merge request ID"
+    },
+    "mergeRequestIid": {
+      "type": "integer",
+      "description": "Merge request internal ID"
+    },
+    "mergeRequestTitle": {
+      "type": "string",
+      "description": "Merge request title"
+    },
+    "mergeRequestDescription": {
+      "type": ["string", "null"],
+      "description": "Merge request description"
+    },
+    "mergeRequestState": {
+      "type": "string",
+      "description": "Merge request state"
+    },
+    "mergeRequestMergeStatus": {
+      "type": "string",
+      "description": "Merge request merge status"
+    },
+    "mergeRequestDetailedMergeStatus": {
+      "type": ["string", "null"],
+      "description": "Detailed merge status"
+    },
+    "mergeRequestTargetBranch": {
+      "type": "string",
+      "description": "Target branch name"
+    },
+    "mergeRequestSourceBranch": {
+      "type": "string",
+      "description": "Source branch name"
+    },
+    "mergeRequestSourceProjectId": {
+      "type": ["integer", "null"],
+      "description": "Source project ID"
+    },
+    "mergeRequestTargetProjectId": {
+      "type": "integer",
+      "description": "Target project ID"
+    },
+    "mergeRequestWebUrl": {
+      "type": "string",
+      "description": "Merge request web URL"
+    },
+    "mergeRequestCreatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Merge request creation timestamp"
+    },
+    "mergeRequestUpdatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Merge request last update timestamp"
+    },
+    "mergeRequestMergedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Merge request merge timestamp"
+    },
+    "mergeRequestClosedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Merge request close timestamp"
+    },
+    "mergeRequestAuthorId": {
+      "type": "integer",
+      "description": "Merge request author ID"
+    },
+    "mergeRequestAuthorUsername": {
+      "type": "string",
+      "description": "Merge request author username"
+    },
+    "mergeRequestAuthorName": {
+      "type": "string",
+      "description": "Merge request author name"
+    },
+    "mergeRequestAssigneeId": {
+      "type": ["integer", "null"],
+      "description": "Merge request assignee ID"
+    },
+    "mergeRequestAssigneeUsername": {
+      "type": ["string", "null"],
+      "description": "Merge request assignee username"
+    },
+    "mergeRequestAssigneeName": {
+      "type": ["string", "null"],
+      "description": "Merge request assignee name"
+    },
+    "mergeRequestDraft": {
+      "type": "boolean",
+      "description": "Whether the merge request is a draft"
+    },
+    "mergeRequestWorkInProgress": {
+      "type": "boolean",
+      "description": "Whether the merge request is work in progress"
+    },
+    "mergeRequestUserNotesCount": {
+      "type": "integer",
+      "description": "Number of user notes"
+    },
+    "mergeRequestUpvotes": {
+      "type": "integer",
+      "description": "Number of upvotes"
+    },
+    "mergeRequestDownvotes": {
+      "type": "integer",
+      "description": "Number of downvotes"
+    },
+    "mergeRequestSha": {
+      "type": ["string", "null"],
+      "description": "Merge request SHA"
+    },
+    "mergeRequestMergeCommitSha": {
+      "type": ["string", "null"],
+      "description": "Merge commit SHA"
+    },
+    "mergeRequestSquashCommitSha": {
+      "type": ["string", "null"],
+      "description": "Squash commit SHA"
+    },
+    "mergeRequestLabels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Merge request labels"
+    },
+    "mergeRequestMilestoneId": {
+      "type": ["integer", "null"],
+      "description": "Milestone ID"
+    },
+    "mergeRequestMilestoneTitle": {
+      "type": ["string", "null"],
+      "description": "Milestone title"
+    },
+    "mergeRequestHasConflicts": {
+      "type": "boolean",
+      "description": "Whether the merge request has conflicts"
+    },
+    "mergeRequestBlockingDiscussionsResolved": {
+      "type": "boolean",
+      "description": "Whether blocking discussions are resolved"
+    },
+    "projectId": {
+      "type": "integer",
+      "description": "Project ID"
+    },
+    "projectName": {
+      "type": "string",
+      "description": "Project name"
+    },
+    "projectFullName": {
+      "type": "string",
+      "description": "Project full name"
+    },
+    "projectWebUrl": {
+      "type": "string",
+      "description": "Project web URL"
+    },
+    "group": {
+      "type": ["string", "null"],
+      "description": "GitLab group"
+    },
+    "userLogin": {
+      "type": ["string", "null"],
+      "description": "Event user login"
+    },
+    "userId": {
+      "type": ["integer", "null"],
+      "description": "Event user ID"
+    },
+    "source": {
+      "type": "string",
+      "description": "Data source"
+    }
+  },
+  "required": [
+    
+    "mergeRequestId"
+  ]
+}

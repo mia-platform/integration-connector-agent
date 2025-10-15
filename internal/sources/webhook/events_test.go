@@ -16,6 +16,7 @@
 package webhook
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
@@ -172,7 +173,7 @@ func TestEvent(t *testing.T) {
 					OperationType: tc.expectedOperationType,
 					Type:          tc.expectedType,
 
-					OriginalRaw: tc.requestInfo.data,
+					OriginalRaw: getExpectedWebhookPayload(tc.requestInfo, tc.events),
 				}, event)
 			}
 		})
@@ -203,4 +204,35 @@ func TestGetEventTypeByPath(t *testing.T) {
 			Data: parsed,
 		}))
 	})
+}
+
+// getExpectedWebhookPayload determines if eventType should be injected based on the webhook configuration
+func getExpectedWebhookPayload(requestInfo RequestInfo, events *Events) []byte {
+	// Get event type from the events configuration
+	eventType := events.GetEventType(EventTypeParam{
+		Data:    gjson.ParseBytes(requestInfo.data),
+		Headers: requestInfo.headers,
+	})
+
+	// Check if the event type was extracted from the payload itself
+	// by comparing with what GetEventType returns when called with empty headers
+	eventTypeFromPayloadOnly := events.GetEventType(EventTypeParam{
+		Data:    gjson.ParseBytes(requestInfo.data),
+		Headers: http.Header{},
+	})
+
+	// Only inject eventType if it came from headers (not from payload)
+	if eventType != "" && eventTypeFromPayloadOnly == "" {
+		// Parse the existing JSON and add eventType field
+		var jsonData map[string]interface{}
+		if err := json.Unmarshal(requestInfo.data, &jsonData); err == nil {
+			jsonData["eventType"] = eventType
+			if enhancedBytes, err := json.Marshal(jsonData); err == nil {
+				return enhancedBytes
+			}
+		}
+	}
+
+	// Return original data if no injection needed
+	return requestInfo.data
 }

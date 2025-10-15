@@ -21,6 +21,7 @@ import (
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 
+	"github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
 )
 
@@ -29,15 +30,38 @@ type Mapper struct {
 }
 
 func (m Mapper) Process(event entities.PipelineEvent) (entities.PipelineEvent, error) {
+	logrus.WithFields(logrus.Fields{
+		"eventType":      event.GetType(),
+		"primaryKeys":    event.GetPrimaryKeys().Map(),
+		"operationCount": len(m.operations),
+	}).Debug("starting mapper processing")
+
 	output := []byte("{}")
 	var err error
-	for _, operation := range m.operations {
+	for i, operation := range m.operations {
+		logrus.WithFields(logrus.Fields{
+			"eventType":      event.GetType(),
+			"primaryKeys":    event.GetPrimaryKeys().Map(),
+			"operationIndex": i,
+		}).Trace("applying mapper operation")
+
 		output, err = operation.apply(event.Data(), output)
 		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"eventType":      event.GetType(),
+				"primaryKeys":    event.GetPrimaryKeys().Map(),
+				"operationIndex": i,
+			}).WithError(err).Error("mapper operation failed")
 			return nil, err
 		}
 	}
 	event.WithData(output)
+
+	logrus.WithFields(logrus.Fields{
+		"eventType":   event.GetType(),
+		"primaryKeys": event.GetPrimaryKeys().Map(),
+		"outputSize":  len(output),
+	}).Debug("mapper processing completed successfully")
 
 	return event, nil
 }
