@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Mia srl
+// Copyright Mia srl
 // SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
 // See LICENSE.md for more details
 
@@ -14,8 +14,10 @@ func _() {
 	_ = x[Delete-1]
 }
 
+//nolint:revive // Generated code
 const _Operation_name = "WriteDelete"
 
+//nolint:revive // Generated code
 var _Operation_index = [...]uint8{0, 5, 11}
 
 func (i Operation) String() string {

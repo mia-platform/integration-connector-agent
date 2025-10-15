@@ -11,7 +11,7 @@ You may choose to use this software under the terms of either:
 
 GNU AFFERO GENERAL PUBLIC LICENSE
 
-Copyright (C) 2025 Mia srl
+Copyright 2025 Mia srl
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published

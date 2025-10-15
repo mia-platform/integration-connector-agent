@@ -1,9 +1,9 @@
-//go:build integration
-// +build integration
-
-// Copyright (C) 2025 Mia srl
+// Copyright Mia srl
 // SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
 // See LICENSE.md for more details
+
+//go:build integration
+// +build integration
 
 package server
 
