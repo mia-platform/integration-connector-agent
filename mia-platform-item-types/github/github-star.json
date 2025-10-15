@@ -1,0 +1,141 @@
+{
+  "type": "object",
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "description": "Type of event that triggered this data"
+    },
+    "action": {
+      "type": "string",
+      "description": "Action performed",
+      "enum": ["created", "started"]
+    },
+    "starredAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When the repository was starred (for star event)"
+    },
+    "repositoryId": {
+      "type": "integer",
+      "description": "Repository ID"
+    },
+    "repositoryName": {
+      "type": "string",
+      "description": "Repository name"
+    },
+    "repositoryFullName": {
+      "type": "string",
+      "description": "Repository full name (owner/repo)"
+    },
+    "repositoryDescription": {
+      "type": ["string", "null"],
+      "description": "Repository description"
+    },
+    "repositoryPrivate": {
+      "type": "boolean",
+      "description": "Whether the repository is private"
+    },
+    "repositoryFork": {
+      "type": "boolean",
+      "description": "Whether the repository is a fork"
+    },
+    "repositoryHtmlUrl": {
+      "type": "string",
+      "description": "Repository HTML URL"
+    },
+    "repositoryCloneUrl": {
+      "type": "string",
+      "description": "Repository clone URL"
+    },
+    "repositoryLanguage": {
+      "type": ["string", "null"],
+      "description": "Repository primary language"
+    },
+    "repositoryDefaultBranch": {
+      "type": "string",
+      "description": "Repository default branch"
+    },
+    "repositoryStarsCount": {
+      "type": "integer",
+      "description": "Repository stars count"
+    },
+    "repositoryWatchersCount": {
+      "type": "integer",
+      "description": "Repository watchers count"
+    },
+    "repositoryForksCount": {
+      "type": "integer",
+      "description": "Repository forks count"
+    },
+    "repositoryOpenIssuesCount": {
+      "type": "integer",
+      "description": "Repository open issues count"
+    },
+    "repositorySize": {
+      "type": "integer",
+      "description": "Repository size in KB"
+    },
+    "repositoryCreatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Repository creation timestamp"
+    },
+    "repositoryUpdatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Repository last update timestamp"
+    },
+    "repositoryPushedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Repository last push timestamp"
+    },
+    "repositoryOwnerLogin": {
+      "type": "string",
+      "description": "Repository owner login"
+    },
+    "repositoryOwnerId": {
+      "type": "integer",
+      "description": "Repository owner ID"
+    },
+    "repositoryOwnerType": {
+      "type": "string",
+      "description": "Repository owner type"
+    },
+    "organizationLogin": {
+      "type": ["string", "null"],
+      "description": "Organization login"
+    },
+    "senderLogin": {
+      "type": "string",
+      "description": "Event sender login (person who starred/watched)"
+    },
+    "senderId": {
+      "type": "integer",
+      "description": "Event sender ID"
+    },
+    "senderType": {
+      "type": "string",
+      "description": "Event sender type"
+    },
+    "senderAvatarUrl": {
+      "type": "string",
+      "description": "Event sender avatar URL"
+    },
+    "senderHtmlUrl": {
+      "type": "string",
+      "description": "Event sender HTML URL"
+    },
+    "source": {
+      "type": "string",
+      "description": "Data source",
+      "enum": ["github-webhook", "github-import"]
+    }
+  },
+  "required": [
+    "eventType",
+    "repositoryId",
+    "repositoryName",
+    "senderLogin"
+  ]
+}

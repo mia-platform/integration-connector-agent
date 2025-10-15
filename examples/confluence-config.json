@@ -1,0 +1,16 @@
+{
+  "type": "confluence",
+  "webhookPath": "/confluence/webhook",
+  "authentication": {
+    "secret": "{{CONFLUENCE_WEBHOOK_SECRET}}",
+    "headerName": "X-Hub-Signature-256"
+  },
+  "importWebhookPath": "/confluence/import",
+  "importAuthentication": {
+    "secret": "{{CONFLUENCE_IMPORT_SECRET}}",
+    "headerName": "X-Hub-Signature-256"
+  },
+  "username": "{{CONFLUENCE_USERNAME}}",
+  "apiToken": "{{CONFLUENCE_API_TOKEN}}",
+  "baseUrl": "{{CONFLUENCE_BASE_URL}}"
+}

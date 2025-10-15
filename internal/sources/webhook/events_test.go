@@ -1,21 +1,11 @@
 // Copyright Mia srl
-// SPDX-License-Identifier: Apache-2.0
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// See LICENSE.md for more details
 
 package webhook
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
@@ -172,7 +162,7 @@ func TestEvent(t *testing.T) {
 					OperationType: tc.expectedOperationType,
 					Type:          tc.expectedType,
 
-					OriginalRaw: tc.requestInfo.data,
+					OriginalRaw: getExpectedWebhookPayload(tc.requestInfo, tc.events),
 				}, event)
 			}
 		})
@@ -203,4 +193,35 @@ func TestGetEventTypeByPath(t *testing.T) {
 			Data: parsed,
 		}))
 	})
+}
+
+// getExpectedWebhookPayload determines if eventType should be injected based on the webhook configuration
+func getExpectedWebhookPayload(requestInfo RequestInfo, events *Events) []byte {
+	// Get event type from the events configuration
+	eventType := events.GetEventType(EventTypeParam{
+		Data:    gjson.ParseBytes(requestInfo.data),
+		Headers: requestInfo.headers,
+	})
+
+	// Check if the event type was extracted from the payload itself
+	// by comparing with what GetEventType returns when called with empty headers
+	eventTypeFromPayloadOnly := events.GetEventType(EventTypeParam{
+		Data:    gjson.ParseBytes(requestInfo.data),
+		Headers: http.Header{},
+	})
+
+	// Only inject eventType if it came from headers (not from payload)
+	if eventType != "" && eventTypeFromPayloadOnly == "" {
+		// Parse the existing JSON and add eventType field
+		var jsonData map[string]interface{}
+		if err := json.Unmarshal(requestInfo.data, &jsonData); err == nil {
+			jsonData["eventType"] = eventType
+			if enhancedBytes, err := json.Marshal(jsonData); err == nil {
+				return enhancedBytes
+			}
+		}
+	}
+
+	// Return original data if no injection needed
+	return requestInfo.data
 }

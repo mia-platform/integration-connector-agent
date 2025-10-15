@@ -1,0 +1,189 @@
+{
+  "type": "object",
+  "properties": {
+    "eventType": {
+      "type": ["string", "null"],
+      "description": "Type of event that triggered this data"
+    },
+    "action": {
+      "type": ["string", "null"],
+      "description": "Action performed"
+    },
+    "workflowRunId": {
+      "type": ["integer", "null"],
+      "description": "Workflow run ID"
+    },
+    "workflowRunName": {
+      "type": ["string", "null"],
+      "description": "Workflow run name"
+    },
+    "workflowRunDisplayTitle": {
+      "type": ["string", "null"],
+      "description": "Workflow run display title"
+    },
+    "workflowRunStatus": {
+      "type": ["string", "null"],
+      "description": "Workflow run status"
+    },
+    "workflowRunConclusion": {
+      "type": ["string", "null"],
+      "description": "Workflow run conclusion"
+    },
+    "workflowRunUrl": {
+      "type": ["string", "null"],
+      "description": "Workflow run API URL"
+    },
+    "workflowRunHtmlUrl": {
+      "type": ["string", "null"],
+      "description": "Workflow run HTML URL"
+    },
+    "workflowRunJobsUrl": {
+      "type": ["string", "null"],
+      "description": "Workflow run jobs API URL"
+    },
+    "workflowRunLogsUrl": {
+      "type": ["string", "null"],
+      "description": "Workflow run logs API URL"
+    },
+    "workflowRunCheckSuiteUrl": {
+      "type": ["string", "null"],
+      "description": "Workflow run check suite API URL"
+    },
+    "workflowRunArtifactsUrl": {
+      "type": ["string", "null"],
+      "description": "Workflow run artifacts API URL"
+    },
+    "workflowRunCancelUrl": {
+      "type": ["string", "null"],
+      "description": "Workflow run cancel API URL"
+    },
+    "workflowRunRerunUrl": {
+      "type": ["string", "null"],
+      "description": "Workflow run rerun API URL"
+    },
+    "workflowRunWorkflowUrl": {
+      "type": ["string", "null"],
+      "description": "Workflow API URL"
+    },
+    "workflowRunHeadBranch": {
+      "type": ["string", "null"],
+      "description": "Head branch name"
+    },
+    "workflowRunHeadSha": {
+      "type": ["string", "null"],
+      "description": "Head commit SHA"
+    },
+    "workflowRunRunNumber": {
+      "type": ["integer", "null"],
+      "description": "Workflow run number"
+    },
+    "workflowRunRunAttempt": {
+      "type": ["integer", "null"],
+      "description": "Workflow run attempt number"
+    },
+    "workflowRunEvent": {
+      "type": ["string", "null"],
+      "description": "Event that triggered the workflow"
+    },
+    "workflowRunCreatedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Workflow run creation timestamp"
+    },
+    "workflowRunUpdatedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Workflow run last update timestamp"
+    },
+    "workflowRunRunStartedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Workflow run start timestamp"
+    },
+    "workflowId": {
+      "type": ["integer", "null"],
+      "description": "Workflow ID"
+    },
+    "workflowName": {
+      "type": ["string", "null"],
+      "description": "Workflow name"
+    },
+    "workflowPath": {
+      "type": ["string", "null"],
+      "description": "Workflow file path"
+    },
+    "workflowState": {
+      "type": ["string", "null"],
+      "description": "Workflow state"
+    },
+    "workflowUrl": {
+      "type": ["string", "null"],
+      "description": "Workflow API URL"
+    },
+    "workflowHtmlUrl": {
+      "type": ["string", "null"],
+      "description": "Workflow HTML URL"
+    },
+    "workflowBadgeUrl": {
+      "type": ["string", "null"],
+      "description": "Workflow badge URL"
+    },
+    "workflowCreatedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Workflow creation timestamp"
+    },
+    "workflowUpdatedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Workflow last update timestamp"
+    },
+    "repositoryId": {
+      "type": ["integer", "null"],
+      "description": "Repository ID"
+    },
+    "repositoryName": {
+      "type": ["string", "null"],
+      "description": "Repository name"
+    },
+    "repositoryFullName": {
+      "type": ["string", "null"],
+      "description": "Repository full name (owner/repo)"
+    },
+    "repositoryPrivate": {
+      "type": ["boolean", "null"],
+      "description": "Whether the repository is private"
+    },
+    "repositoryHtmlUrl": {
+      "type": ["string", "null"],
+      "description": "Repository HTML URL"
+    },
+    "repositoryOwnerLogin": {
+      "type": ["string", "null"],
+      "description": "Repository owner login"
+    },
+    "repositoryOwnerType": {
+      "type": ["string", "null"],
+      "description": "Repository owner type"
+    },
+    "organizationLogin": {
+      "type": ["string", "null"],
+      "description": "Organization login"
+    },
+    "senderLogin": {
+      "type": ["string", "null"],
+      "description": "Event sender login"
+    },
+    "senderType": {
+      "type": ["string", "null"],
+      "description": "Event sender type"
+    },
+    "source": {
+      "type": ["string", "null"],
+      "description": "Data source"
+    }
+  },
+  "required": [
+    "workflowRunId"
+  ]
+}

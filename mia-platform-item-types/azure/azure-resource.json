@@ -1,0 +1,194 @@
+{
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": ["string", "null"],
+      "description": "Azure resource name"
+    },
+    "runtimeData": {
+      "type": ["object", "null"],
+      "properties": {
+        "name": {
+          "type": ["string", "null"],
+          "description": "Azure resource name"
+        },
+        "type": {
+          "type": ["string", "null"],
+          "description": "Azure resource type (e.g., microsoft.compute/virtualmachines, microsoft.network/virtualnetworks, microsoft.containerservice/managedclusters)"
+        },
+        "provider": {
+          "type": ["string", "null"],
+          "description": "Cloud provider"
+        },
+        "location": {
+          "type": ["string", "null"],
+          "description": "Azure region where the resource is deployed"
+        },
+        "resourceGroup": {
+          "type": ["string", "null"],
+          "description": "Azure resource group name"
+        },
+        "subscriptionId": {
+          "type": ["string", "null"],
+          "description": "Azure subscription ID"
+        },
+        "relationships": {
+          "type": ["array", "null"],
+          "items": {
+            "type": ["string", "null"]
+          },
+          "description": "Array of relationship identifiers (subscription, resource group, dependencies, etc.)"
+        },
+        "tags": {
+          "type": ["object", "null"],
+          "additionalProperties": {
+            "type": ["string", "null"]
+          },
+          "description": "Azure resource tags as key-value pairs"
+        },
+        "properties": {
+          "type": ["object", "null"],
+          "additionalProperties": true,
+          "description": "Resource-specific properties (varies by resource type)"
+        },
+        "sku": {
+          "type": ["object", "null"],
+          "properties": {
+            "name": {
+              "type": ["string", "null"],
+              "description": "SKU name"
+            },
+            "tier": {
+              "type": ["string", "null"],
+              "description": "SKU tier"
+            },
+            "size": {
+              "type": ["string", "null"],
+              "description": "SKU size"
+            },
+            "family": {
+              "type": ["string", "null"],
+              "description": "SKU family"
+            },
+            "capacity": {
+              "type": ["integer", "null"],
+              "description": "SKU capacity"
+            }
+          },
+          "additionalProperties": true,
+          "description": "SKU information for the resource"
+        },
+        "identity": {
+          "type": ["object", "null"],
+          "properties": {
+            "type": {
+              "type": ["string", "null"],
+              "description": "Identity type"
+            },
+            "principalId": {
+              "type": ["string", "null"],
+              "description": "Principal ID of the managed identity"
+            },
+            "tenantId": {
+              "type": ["string", "null"],
+              "description": "Tenant ID of the managed identity"
+            },
+            "userAssignedIdentities": {
+              "type": ["object", "null"],
+              "additionalProperties": {
+                "type": ["object", "null"],
+                "properties": {
+                  "principalId": {
+                    "type": ["string", "null"]
+                  },
+                  "clientId": {
+                    "type": ["string", "null"]
+                  }
+                },
+                "additionalProperties": true
+              },
+              "description": "User assigned identities"
+            }
+          },
+          "additionalProperties": true,
+          "description": "Managed identity information"
+        },
+        "zones": {
+          "type": ["array", "null"],
+          "items": {
+            "type": ["string", "null"]
+          },
+          "description": "Availability zones for the resource"
+        },
+        "kind": {
+          "type": ["string", "null"],
+          "description": "Resource kind (used by some resource types)"
+        },
+        "resourceId": {
+          "type": ["string", "null"],
+          "description": "Full Azure resource ID"
+        },
+        "etag": {
+          "type": ["string", "null"],
+          "description": "Resource etag for concurrency control"
+        },
+        "managedBy": {
+          "type": ["string", "null"],
+          "description": "Resource that manages this resource"
+        },
+        "plan": {
+          "type": ["object", "null"],
+          "properties": {
+            "name": {
+              "type": ["string", "null"],
+              "description": "Plan name"
+            },
+            "publisher": {
+              "type": ["string", "null"],
+              "description": "Plan publisher"
+            },
+            "product": {
+              "type": ["string", "null"],
+              "description": "Plan product"
+            },
+            "promotionCode": {
+              "type": ["string", "null"],
+              "description": "Plan promotion code"
+            },
+            "version": {
+              "type": ["string", "null"],
+              "description": "Plan version"
+            }
+          },
+          "additionalProperties": true,
+          "description": "Plan information for marketplace resources"
+        },
+        "provisioningState": {
+          "type": ["string", "null"],
+          "description": "Resource provisioning state"
+        },
+        "createdTime": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Resource creation timestamp"
+        },
+        "changedTime": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Resource last modified timestamp"
+        },
+        "timestamp": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Timestamp when the data was collected"
+        }
+      },
+      "additionalProperties": true,
+      "description": "Runtime data containing Azure resource details"
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "name"
+  ]
+}

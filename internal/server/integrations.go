@@ -1,17 +1,6 @@
 // Copyright Mia srl
-// SPDX-License-Identifier: Apache-2.0
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+// See LICENSE.md for more details
 
 package server
 
@@ -33,8 +22,10 @@ import (
 	awssqs "github.com/mia-platform/integration-connector-agent/internal/sources/aws-sqs"
 	azureactivitylogeventhub "github.com/mia-platform/integration-connector-agent/internal/sources/azure-activity-log-event-hub"
 	azuredevops "github.com/mia-platform/integration-connector-agent/internal/sources/azure-devops"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/confluence"
 	gcppubsub "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/github"
+	"github.com/mia-platform/integration-connector-agent/internal/sources/gitlab"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jboss"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/jira"
 	console "github.com/mia-platform/integration-connector-agent/internal/sources/mia-platform-console"
@@ -84,8 +75,11 @@ func setupIntegrations(ctx context.Context, log *logrus.Logger, cfg *config.Conf
 
 		pg := pipeline.NewGroup(log, pipelines...)
 
-		// skip this source as it is only used for test
+		// skip this source as it is only used for test, but still add it to integrations
 		if cfgIntegration.Source.Type == "test" {
+			integrations = append(integrations, &Integration{
+				PipelineGroup: pg,
+			})
 			continue
 		}
 
@@ -205,24 +199,79 @@ func runIntegration(ctx context.Context, log *logrus.Logger, pg pipeline.IPipeli
 }
 
 func setupSource(ctx context.Context, log *logrus.Logger, source config.GenericConfig, pg pipeline.IPipelineGroup, oasRouter *swagger.Router[fiber.Handler, fiber.Router], integration *Integration) error {
+	log.WithFields(logrus.Fields{
+		"sourceType": source.Type,
+	}).Info("initializing source")
+
 	handlers := map[string]func() error{
-		sources.Jira:               func() error { return wrapSetupError(jira.AddSourceToRouter(ctx, source, pg, oasRouter)) },
-		sources.Console:            func() error { return wrapSetupError(console.AddSourceToRouter(ctx, source, pg, oasRouter)) },
+		sources.Jira:    func() error { return wrapSetupError(jira.AddSourceToRouter(ctx, source, pg, oasRouter)) },
+		sources.Console: func() error { return wrapSetupError(console.AddSourceToRouter(ctx, source, pg, oasRouter)) },
+		sources.Confluence: func() error {
+			s, err := confluence.NewConfluenceSource(ctx, log, source, pg, oasRouter)
+			if err != nil {
+				return err
+			}
+			integration.appendCloseableSource(s)
+			return nil
+		},
 		sources.GCPInventoryPubSub: func() error { return setupGCPInventorySource(ctx, log, source, pg, oasRouter, integration) },
 		sources.AWSCloudTrailSQS:   func() error { return setupAWSCloudTrailSource(ctx, log, source, pg, oasRouter, integration) },
 		sources.AzureActivityLogEventHub: func() error {
 			return wrapSetupError(azureactivitylogeventhub.AddSource(ctx, source, pg, log, oasRouter))
 		},
-		sources.AzureDevOps: func() error { return wrapSetupError(azuredevops.AddSourceToRouter(ctx, source, pg, oasRouter)) },
-		sources.Github:      func() error { return wrapSetupError(github.AddSourceToRouter(ctx, source, pg, oasRouter)) },
-		sources.JBoss:       func() error { return setupJBossSource(ctx, log, source, pg, oasRouter, integration) },
+		sources.AzureDevOps: func() error {
+			return wrapSetupError(azuredevops.AddSourceToRouter(ctx, source, pg, oasRouter))
+		},
+		sources.Github: func() error {
+			s, err := github.NewGitHubSource(ctx, log, source, pg, oasRouter)
+			if err != nil {
+				return err
+			}
+			integration.appendCloseableSource(s)
+			return nil
+		},
+		sources.JBoss: func() error {
+			s, err := jboss.NewJBossSource(ctx, log, source, pg, oasRouter)
+			if err != nil {
+				return err
+			}
+			integration.appendCloseableSource(s)
+			return nil
+		},
+		sources.Gitlab: func() error {
+			s, err := gitlab.NewGitLabSource(ctx, log, source, pg, oasRouter)
+			if err != nil {
+				return err
+			}
+			integration.appendCloseableSource(s)
+			return nil
+		},
 	}
 
-	if handler, exists := handlers[source.Type]; exists {
-		return handler()
+	handler, exists := handlers[source.Type]
+	if !exists {
+		log.WithFields(logrus.Fields{
+			"sourceType": source.Type,
+		}).Error("source type not supported")
+		return fmt.Errorf("unsupported integration type: %s", source.Type)
 	}
 
-	return fmt.Errorf("%w: %s", errUnsupportedIntegrationType, source.Type)
+	log.WithFields(logrus.Fields{
+		"sourceType": source.Type,
+	}).Debug("setting up source handler")
+
+	if err := handler(); err != nil {
+		log.WithFields(logrus.Fields{
+			"sourceType": source.Type,
+		}).WithError(err).Error("failed to setup source")
+		return err
+	}
+
+	log.WithFields(logrus.Fields{
+		"sourceType": source.Type,
+	}).Info("source successfully initialized")
+
+	return nil
 }
 
 func wrapSetupError(err error) error {
@@ -247,14 +296,5 @@ func setupAWSCloudTrailSource(ctx context.Context, log *logrus.Logger, source co
 		return fmt.Errorf("%w: %w", errSetupSource, err)
 	}
 	integration.appendCloseableSource(awsConsumer)
-	return nil
-}
-
-func setupJBossSource(ctx context.Context, log *logrus.Logger, source config.GenericConfig, pg pipeline.IPipelineGroup, oasRouter *swagger.Router[fiber.Handler, fiber.Router], integration *Integration) error {
-	jbossSource, err := jboss.NewJBossSource(ctx, log, source, pg, oasRouter)
-	if err != nil {
-		return fmt.Errorf("%w: %w", errSetupSource, err)
-	}
-	integration.appendCloseableSource(jbossSource)
 	return nil
 }

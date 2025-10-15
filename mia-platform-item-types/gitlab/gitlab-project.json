@@ -1,0 +1,183 @@
+{
+  "type": "object",
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "description": "Type of event that triggered this data"
+    },
+    "action": {
+      "type": "string",
+      "description": "Action performed"
+    },
+    "projectId": {
+      "type": "integer",
+      "description": "Project ID"
+    },
+    "projectName": {
+      "type": "string",
+      "description": "Project name"
+    },
+    "projectFullName": {
+      "type": "string",
+      "description": "Project full name (namespace/project)"
+    },
+    "projectPath": {
+      "type": "string",
+      "description": "Project path"
+    },
+    "projectPathWithNamespace": {
+      "type": "string",
+      "description": "Project path with namespace"
+    },
+    "projectDescription": {
+      "type": ["string", "null"],
+      "description": "Project description"
+    },
+    "projectReadmeContent": {
+      "type": ["string", "null"],
+      "description": "Project README content"
+    },
+    "projectDefaultBranch": {
+      "type": "string",
+      "description": "Default branch name"
+    },
+    "projectTagList": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Project tags"
+    },
+    "projectVisibility": {
+      "type": "string",
+      "description": "Project visibility"
+    },
+    "projectStarCount": {
+      "type": "integer",
+      "description": "Number of stars"
+    },
+    "projectForksCount": {
+      "type": "integer",
+      "description": "Number of forks"
+    },
+    "projectWebUrl": {
+      "type": "string",
+      "description": "Project web URL"
+    },
+    "projectHttpUrlToRepo": {
+      "type": "string",
+      "description": "Project HTTP clone URL"
+    },
+    "projectSshUrlToRepo": {
+      "type": "string",
+      "description": "Project SSH clone URL"
+    },
+    "projectReadmeUrl": {
+      "type": ["string", "null"],
+      "description": "Project README URL"
+    },
+    "projectAvatarUrl": {
+      "type": ["string", "null"],
+      "description": "Project avatar URL"
+    },
+    "projectLastActivityAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Project last activity timestamp"
+    },
+    "projectCreatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Project creation timestamp"
+    },
+    "projectUpdatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Project last update timestamp"
+    },
+    "projectIssuesEnabled": {
+      "type": "boolean",
+      "description": "Whether issues are enabled"
+    },
+    "projectMergeRequestsEnabled": {
+      "type": "boolean",
+      "description": "Whether merge requests are enabled"
+    },
+    "projectWikiEnabled": {
+      "type": "boolean",
+      "description": "Whether wiki is enabled"
+    },
+    "projectJobsEnabled": {
+      "type": "boolean",
+      "description": "Whether CI/CD jobs are enabled"
+    },
+    "projectSnippetsEnabled": {
+      "type": "boolean",
+      "description": "Whether snippets are enabled"
+    },
+    "projectContainerRegistryEnabled": {
+      "type": "boolean",
+      "description": "Whether container registry is enabled"
+    },
+    "projectArchived": {
+      "type": "boolean",
+      "description": "Whether the project is archived"
+    },
+    "projectEmptyRepo": {
+      "type": "boolean",
+      "description": "Whether the repository is empty"
+    },
+    "projectNamespaceId": {
+      "type": "integer",
+      "description": "Namespace ID"
+    },
+    "projectNamespaceName": {
+      "type": "string",
+      "description": "Namespace name"
+    },
+    "projectNamespacePath": {
+      "type": "string",
+      "description": "Namespace path"
+    },
+    "projectNamespaceKind": {
+      "type": "string",
+      "description": "Namespace kind",
+      "enum": ["user", "group"]
+    },
+    "projectNamespaceFullPath": {
+      "type": "string",
+      "description": "Namespace full path"
+    },
+    "projectOwnerId": {
+      "type": ["integer", "null"],
+      "description": "Project owner ID"
+    },
+    "projectOwnerUsername": {
+      "type": ["string", "null"],
+      "description": "Project owner username"
+    },
+    "projectOwnerName": {
+      "type": ["string", "null"],
+      "description": "Project owner name"
+    },
+    "group": {
+      "type": ["string", "null"],
+      "description": "GitLab group"
+    },
+    "userLogin": {
+      "type": ["string", "null"],
+      "description": "Event user login"
+    },
+    "userId": {
+      "type": ["integer", "null"],
+      "description": "Event user ID"
+    },
+    "source": {
+      "type": "string",
+      "description": "Data source"
+    }
+  },
+  "required": [
+    "projectId"
+  ]
+}

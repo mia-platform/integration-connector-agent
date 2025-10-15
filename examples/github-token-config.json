@@ -1,0 +1,29 @@
+{
+  "sources": [
+    {
+      "type": "github",
+      "webhookPath": "/github/webhook",
+      "authentication": {
+        "secret": {
+          "fromEnv": "GITHUB_WEBHOOK_SECRET"
+        }
+      },
+      "token": {
+        "fromEnv": "GITHUB_API_TOKEN"
+      },
+      "organization": "my-organization",
+      "importWebhookPath": "/github/import",
+      "importAuthentication": {
+        "secret": {
+          "fromEnv": "GITHUB_IMPORT_SECRET"
+        }
+      }
+    }
+  ],
+  "processors": [],
+  "sinks": [
+    {
+      "type": "console-catalog"
+    }
+  ]
+}

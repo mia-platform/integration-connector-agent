@@ -1,0 +1,162 @@
+{
+  "sources": [
+    {
+      "type": "gitlab",
+      "name": "gitlab-source",
+      "description": "GitLab source for projects, merge requests, pipelines, and releases using personal access token",
+      "configuration": {
+        "url": "https://gitlab.com/api/v4",
+        "token": "${GITLAB_TOKEN}",
+        "groups": ["group1", "group2"],
+        "projects": ["group1/project1", "group2/project2"],
+        "importConfiguration": {
+          "projects": {
+            "enabled": true,
+            "pageSize": 100
+          },
+          "mergeRequests": {
+            "enabled": true,
+            "pageSize": 50,
+            "states": ["opened", "merged", "closed"]
+          },
+          "pipelines": {
+            "enabled": true,
+            "pageSize": 50,
+            "statuses": ["success", "failed", "running", "pending", "canceled"]
+          },
+          "releases": {
+            "enabled": true,
+            "pageSize": 50
+          }
+        },
+        "webhookConfiguration": {
+          "secret": "${GITLAB_WEBHOOK_SECRET}",
+          "events": [
+            "push",
+            "merge_requests",
+            "pipeline",
+            "release"
+          ]
+        }
+      }
+    }
+  ],
+  "processors": [
+    {
+      "type": "mapper",
+      "name": "project-mapper",
+      "description": "Maps GitLab projects to Mia-Platform format",
+      "configuration": {
+        "mapping": {
+          "resourceId": "$.id",
+          "resourceType": "project",
+          "source": "gitlab",
+          "name": "$.name",
+          "namespace": "$.namespace.name",
+          "description": "$.description",
+          "visibility": "$.visibility",
+          "defaultBranch": "$.default_branch",
+          "webUrl": "$.web_url",
+          "sshUrl": "$.ssh_url_to_repo",
+          "httpUrl": "$.http_url_to_repo",
+          "createdAt": "$.created_at",
+          "updatedAt": "$.last_activity_at",
+          "readme": "$.readme_content"
+        }
+      }
+    },
+    {
+      "type": "mapper", 
+      "name": "merge-request-mapper",
+      "description": "Maps GitLab merge requests to Mia-Platform format",
+      "configuration": {
+        "mapping": {
+          "resourceId": "$.id",
+          "resourceType": "merge_request",
+          "source": "gitlab",
+          "iid": "$.iid",
+          "title": "$.title",
+          "description": "$.description",
+          "state": "$.state",
+          "sourceBranch": "$.source_branch",
+          "targetBranch": "$.target_branch",
+          "authorUsername": "$.author.username",
+          "authorName": "$.author.name",
+          "assigneeUsername": "$.assignee.username",
+          "webUrl": "$.web_url",
+          "createdAt": "$.created_at",
+          "updatedAt": "$.updated_at",
+          "mergedAt": "$.merged_at",
+          "projectId": "$.project_id"
+        }
+      }
+    },
+    {
+      "type": "mapper",
+      "name": "pipeline-mapper", 
+      "description": "Maps GitLab pipelines to Mia-Platform format",
+      "configuration": {
+        "mapping": {
+          "resourceId": "$.id",
+          "resourceType": "pipeline",
+          "source": "gitlab",
+          "status": "$.status",
+          "ref": "$.ref",
+          "sha": "$.sha",
+          "webUrl": "$.web_url",
+          "createdAt": "$.created_at",
+          "updatedAt": "$.updated_at",
+          "startedAt": "$.started_at",
+          "finishedAt": "$.finished_at",
+          "duration": "$.duration",
+          "projectId": "$.project_id"
+        }
+      }
+    },
+    {
+      "type": "mapper",
+      "name": "release-mapper",
+      "description": "Maps GitLab releases to Mia-Platform format", 
+      "configuration": {
+        "mapping": {
+          "resourceId": "$.tag_name",
+          "resourceType": "release",
+          "source": "gitlab",
+          "name": "$.name",
+          "tagName": "$.tag_name",
+          "description": "$.description",
+          "releasedAt": "$.released_at",
+          "createdAt": "$.created_at",
+          "webUrl": "$.web_url",
+          "projectId": "$.project_id"
+        }
+      }
+    }
+  ],
+  "sinks": [
+    {
+      "type": "console-catalog",
+      "name": "gitlab-catalog-sink",
+      "description": "Sends GitLab resources to Mia-Platform Console Catalog",
+      "configuration": {
+        "baseUrl": "${CONSOLE_BASE_URL}",
+        "authToken": "${CONSOLE_AUTH_TOKEN}",
+        "companyId": "${COMPANY_ID}",
+        "projectId": "${PROJECT_ID}",
+        "catalogName": "gitlab-resources"
+      }
+    }
+  ],
+  "pipeline": [
+    {
+      "sourceRef": "gitlab-source",
+      "processors": [
+        "project-mapper",
+        "merge-request-mapper",
+        "pipeline-mapper", 
+        "release-mapper"
+      ],
+      "sinkRef": "gitlab-catalog-sink"
+    }
+  ]
+}

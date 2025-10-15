@@ -1,0 +1,172 @@
+{
+  "type": "object",
+  "properties": {
+    "eventType": {
+      "type": ["string", "null"],
+      "description": "Type of event that triggered this data"
+    },
+    "action": {
+      "type": ["string", "null"],
+      "description": "Action performed on the issue"
+    },
+    "issueId": {
+      "type": ["integer", "null"],
+      "description": "Issue ID"
+    },
+    "issueNumber": {
+      "type": ["integer", "null"],
+      "description": "Issue number"
+    },
+    "issueTitle": {
+      "type": ["string", "null"],
+      "description": "Issue title"
+    },
+    "issueBody": {
+      "type": ["string", "null"],
+      "description": "Issue body/description"
+    },
+    "issueState": {
+      "type": ["string", "null"],
+      "description": "Issue state"
+    },
+    "issueStateReason": {
+      "type": ["string", "null"],
+      "description": "Reason for state change"
+    },
+    "issueLocked": {
+      "type": ["boolean", "null"],
+      "description": "Whether the issue is locked"
+    },
+    "issueHtmlUrl": {
+      "type": ["string", "null"],
+      "description": "Issue HTML URL"
+    },
+    "issueUrl": {
+      "type": ["string", "null"],
+      "description": "Issue API URL"
+    },
+    "issueCommentsUrl": {
+      "type": ["string", "null"],
+      "description": "Issue comments API URL"
+    },
+    "issueEventsUrl": {
+      "type": ["string", "null"],
+      "description": "Issue events API URL"
+    },
+    "issueLabelsUrl": {
+      "type": ["string", "null"],
+      "description": "Issue labels API URL"
+    },
+    "issueTimelineUrl": {
+      "type": ["string", "null"],
+      "description": "Issue timeline API URL"
+    },
+    "issueCreatedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Issue creation timestamp"
+    },
+    "issueUpdatedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Issue last update timestamp"
+    },
+    "issueClosedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Issue close timestamp"
+    },
+    "issueAuthorLogin": {
+      "type": ["string", "null"],
+      "description": "Issue author login"
+    },
+    "issueAuthorId": {
+      "type": ["integer", "null"],
+      "description": "Issue author ID"
+    },
+    "issueAuthorType": {
+      "type": ["string", "null"],
+      "description": "Issue author type"
+    },
+    "issueAuthorAssociation": {
+      "type": ["string", "null"],
+      "description": "Issue author association"
+    },
+    "issueAssigneeLogin": {
+      "type": ["string", "null"],
+      "description": "Issue assignee login"
+    },
+    "issueAssigneeId": {
+      "type": ["integer", "null"],
+      "description": "Issue assignee ID"
+    },
+    "issueLabels": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": ["integer", "null"]},
+          "name": {"type": ["string", "null"]},
+          "color": {"type": ["string", "null"]},
+          "description": {"type": ["string", "null"]}
+        }
+      },
+      "description": "Issue labels"
+    },
+    "issueMilestoneTitle": {
+      "type": ["string", "null"],
+      "description": "Issue milestone title"
+    },
+    "issueMilestoneId": {
+      "type": ["integer", "null"],
+      "description": "Issue milestone ID"
+    },
+    "repositoryId": {
+      "type": ["integer", "null"],
+      "description": "Repository ID"
+    },
+    "repositoryName": {
+      "type": ["string", "null"],
+      "description": "Repository name"
+    },
+    "repositoryFullName": {
+      "type": ["string", "null"],
+      "description": "Repository full name (owner/repo)"
+    },
+    "repositoryPrivate": {
+      "type": ["boolean", "null"],
+      "description": "Whether the repository is private"
+    },
+    "repositoryHtmlUrl": {
+      "type": ["string", "null"],
+      "description": "Repository HTML URL"
+    },
+    "repositoryOwnerLogin": {
+      "type": ["string", "null"],
+      "description": "Repository owner login"
+    },
+    "repositoryOwnerType": {
+      "type": ["string", "null"],
+      "description": "Repository owner type"
+    },
+    "organizationLogin": {
+      "type": ["string", "null"],
+      "description": "Organization login"
+    },
+    "senderLogin": {
+      "type": ["string", "null"],
+      "description": "Event sender login"
+    },
+    "senderType": {
+      "type": ["string", "null"],
+      "description": "Event sender type"
+    },
+    "source": {
+      "type": ["string", "null"],
+      "description": "Data source"
+    }
+  },
+  "required": [
+    "issueId"
+  ]
+}

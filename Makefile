@@ -1,6 +1,24 @@
 # Copyright Mia srl
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Ap# Set here the name of the package you want to build
+CMDNAME:= integration-connector-agent
+BUILD_PATH:= .
 
+# Version for pipeline builds
+VERSION ?= latest
+
+# Create a variable that contains the current date in UTC
+# Different flow if this script is running on Darwin or Linux machines.
+ifeq (Darwin,$(shell uname))
+	NOW_DATE = $(shell date -u +%d-%m-%Y)
+else
+	NOW_DATE = $(shell date -u -I)
+endif
+
+# enable modules
+GO111MODULE:= on
+GOOS:= $(shell go env GOOS)
+GOARCH:= $(shell go env GOARCH)
+GOARM:= $(shell go env GOARM)
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -105,3 +123,18 @@ $(TOOLS_BIN)/stringer: $(TOOLS_DIR)/STRINGER_VERSION
 	mkdir -p $(TOOLS_BIN)
 	$(info Installing stringer $(STRINGER_VERSION) bin in $(TOOLS_BIN))
 	GOBIN=$(TOOLS_BIN) go install golang.org/x/tools/cmd/stringer@$(STRINGER_VERSION)
+
+##@ Pipeline Targets
+
+.PHONY: test-pipeline
+test-pipeline: test/build-plugin
+	$(info Running tests for pipeline with coverage...)
+	go test ./... -coverprofile coverage.out
+
+.PHONY: version
+version:
+	sed -i.bck "s|SERVICE_VERSION=\"[0-9]*.[0-9]*.[0-9]*.*\"|SERVICE_VERSION=\"${VERSION}\"|" "Dockerfile"
+	rm -fr "Dockerfile.bck"
+	git add "Dockerfile"
+	git commit -m "bump v${VERSION}"
+	git tag v${VERSION}

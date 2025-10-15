@@ -16,6 +16,8 @@
                   "jira",
                   "console",
                   "github",
+                  "confluence",
+                  "gitlab",
                   "gcp-inventory-pubsub",
                   "azure-activity-log-event-hub",
                   "azure-devops",
@@ -35,6 +37,12 @@
                   "headerName": {
                     "type": "string"
                   }
+                }
+              },
+              "itemTypes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
                 }
               }
             },
