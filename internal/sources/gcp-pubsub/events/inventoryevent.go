@@ -1,5 +1,5 @@
-// Copyright Mia srl
-// SPDX-License-Identifier: Apache-2.0
+// Copyright (C) 2025 Mia srl
+// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
