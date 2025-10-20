@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### Chaged
+
+- update go to v1.25.3
+- update pubsub to v2.2.1
+- update run to v1.12.1
+- update storage to v1.57.0
+- update azcore to v1.19.1
+- update azidentity to v1.13.0
+- update azeventhubs to v2.0.1
+- update azblob to v1.6.3
+- update aws-sdk-go-v2 to v1.39.3
+- update config to v1.31.13
+- update credentials to v1.18.17
+- update lambda to v1.78.1
+- update s3 to v1.88.5
+- update sqs to v1.42.9
+- update confluent-kafka-go to v2.12.0
+- update gswagger to v0.10.1
+- update oauth2 to v0.32.0
+- update api to v0.252.0
+- update grpc to v1.76.0
+
 ## [0.5.5] - 2025-10-15
 
 ### Added
