@@ -61,3 +61,7 @@ If not specified, it defaults to 10 seconds.
 	"webhookPath": "/gcp/import"
 }
 ```
+
+## GCP Permissions
+
+It is fundamental to add the Cloud Asset Viewer permission that is needed for the asset/apiv1

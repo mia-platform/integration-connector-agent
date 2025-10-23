@@ -8,7 +8,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 
+	asset "cloud.google.com/go/asset/apiv1"
+	"cloud.google.com/go/asset/apiv1/assetpb"
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	run "cloud.google.com/go/run/apiv2"
@@ -28,6 +31,7 @@ type concrete struct {
 	p *pubsub.Client
 	s *storage.Client
 	f *run.ServicesClient
+	a *asset.Client
 }
 
 type GCPConfig struct {
@@ -36,6 +40,26 @@ type GCPConfig struct {
 	TopicName          string
 	SubscriptionID     string
 	CredentialsJSON    string
+}
+
+const (
+	BucketAPI      = "storage.googleapis.com/Bucket"
+	JobAPI         = "run.googleapis.com/Job"
+	RevisionAPI    = "run.googleapis.com/Revision"
+	ServiceAPI     = "run.googleapis.com/Service"
+	InstanceAPI    = "compute.googleapis.com/Instance"
+	DiskAPI        = "compute.googleapis.com/Disk"
+	NetworkAPI     = "compute.googleapis.com/Network"
+	FirewallAPI    = "compute.googleapis.com/Firewall"
+	ClusterAPI     = "container.googleapis.com/Cluster"
+	NodePoolAPI    = "container.googleapis.com/NodePool"
+	SQLInstanceAPI = "sqladmin.googleapis.com/Instance"
+	FolderAPI      = "cloudresourcemanager.googleapis.com/Folder"
+)
+
+var allAssetTypes = []string{
+	BucketAPI,
+	NetworkAPI,
 }
 
 func New(ctx context.Context, log *logrus.Logger, config GCPConfig) (GCP, error) {
@@ -60,12 +84,19 @@ func New(ctx context.Context, log *logrus.Logger, config GCPConfig) (GCP, error)
 		return nil, fmt.Errorf("failed to create GCP run service client: %w", err)
 	}
 
+	assetClient, err := asset.NewClient(ctx, options...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GCP asset client: %w", err)
+	}
+	fmt.Println("GCP clients created successfully")
+
 	return &concrete{
 		log:    log,
 		config: config,
 		p:      pubSubClient,
 		s:      storageClient,
 		f:      functionServiceClient,
+		a:      assetClient,
 	}, nil
 }
 
@@ -142,6 +173,32 @@ func (p *concrete) Close() error {
 		return fmt.Errorf("failed to close storage client: %w", err)
 	}
 	return nil
+}
+
+func (p *concrete) ListAssets(ctx context.Context) ([]*assetpb.Asset, error) {
+	req := &assetpb.ListAssetsRequest{
+		Parent:      fmt.Sprintf("projects/%s", p.config.ProjectID),
+		AssetTypes:  allAssetTypes,
+		ContentType: assetpb.ContentType_RESOURCE,
+	}
+
+	it := p.a.ListAssets(ctx, req)
+
+	assets := make([]*assetpb.Asset, 0)
+
+	for {
+		response, err := it.Next()
+		if err == iterator.Done {
+			fmt.Println("End of asset list. Import completed.")
+			break
+		}
+		if err != nil {
+			fmt.Println("MY FATAL ERROR")
+			log.Fatal(err)
+		}
+		assets = append(assets, response)
+	}
+	return assets, nil
 }
 
 func (p *concrete) ListBuckets(ctx context.Context) ([]*Bucket, error) {

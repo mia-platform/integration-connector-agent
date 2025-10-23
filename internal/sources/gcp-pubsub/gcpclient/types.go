@@ -4,7 +4,11 @@
 
 package gcpclient
 
-import "context"
+import (
+	"context"
+
+	"cloud.google.com/go/asset/apiv1/assetpb"
+)
 
 const (
 	InventoryEventBucketPrefix   = "//storage.googleapis.com/"
@@ -14,6 +18,7 @@ const (
 type ListenerFunc func(ctx context.Context, data []byte) error
 
 type GCP interface {
+	ListAssets(ctx context.Context) ([]*assetpb.Asset, error)
 	ListBuckets(ctx context.Context) ([]*Bucket, error)
 	ListFunctions(ctx context.Context) ([]*Function, error)
 	Listen(ctx context.Context, handler ListenerFunc) error

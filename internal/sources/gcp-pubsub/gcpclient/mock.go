@@ -7,6 +7,8 @@ package gcpclient
 import (
 	"context"
 	"sync"
+
+	"cloud.google.com/go/asset/apiv1/assetpb"
 )
 
 var _mockinterfaceimpltest GCP = &MockPubSub{} //nolint: unused
@@ -20,6 +22,11 @@ type MockPubSub struct {
 	CloseError       error
 	closeInvoked     bool
 	closrInvokedLock sync.Mutex
+
+	ListAssetsResult      []*assetpb.Asset
+	ListAssetsError       error
+	listAssetsInvoked     bool
+	listAssetsInvokedLock sync.Mutex
 
 	ListBucketsResult      []*Bucket
 	ListBucketsError       error
@@ -61,6 +68,20 @@ func (m *MockPubSub) CloseInvoked() bool {
 	m.closrInvokedLock.Lock()
 	defer m.closrInvokedLock.Unlock()
 	return m.closeInvoked
+}
+
+func (m *MockPubSub) ListAssets(_ context.Context) ([]*assetpb.Asset, error) {
+	m.listAssetsInvokedLock.Lock()
+	defer m.listAssetsInvokedLock.Unlock()
+
+	m.listAssetsInvoked = true
+	return m.ListAssetsResult, m.ListAssetsError
+}
+
+func (m *MockPubSub) ListAssetsInvoked() bool {
+	m.listAssetsInvokedLock.Lock()
+	defer m.listAssetsInvokedLock.Unlock()
+	return m.listAssetsInvoked
 }
 
 func (m *MockPubSub) ListBuckets(_ context.Context) ([]*Bucket, error) {
