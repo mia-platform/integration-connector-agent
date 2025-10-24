@@ -6,7 +6,6 @@ package gcpclient
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 
@@ -14,9 +13,6 @@ import (
 	"cloud.google.com/go/asset/apiv1/assetpb"
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
-	run "cloud.google.com/go/run/apiv2"
-	"cloud.google.com/go/run/apiv2/runpb"
-	"cloud.google.com/go/storage"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -29,8 +25,6 @@ type concrete struct {
 	log    *logrus.Logger
 
 	p *pubsub.Client
-	s *storage.Client
-	f *run.ServicesClient
 	a *asset.Client
 }
 
@@ -74,28 +68,15 @@ func New(ctx context.Context, log *logrus.Logger, config GCPConfig) (GCP, error)
 		return nil, fmt.Errorf("failed to create pubsub client: %w", err)
 	}
 
-	storageClient, err := storage.NewClient(ctx, options...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create storage client: %w", err)
-	}
-
-	functionServiceClient, err := run.NewServicesClient(ctx, options...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create GCP run service client: %w", err)
-	}
-
 	assetClient, err := asset.NewClient(ctx, options...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GCP asset client: %w", err)
 	}
-	fmt.Println("GCP clients created successfully")
 
 	return &concrete{
 		log:    log,
 		config: config,
 		p:      pubSubClient,
-		s:      storageClient,
-		f:      functionServiceClient,
 		a:      assetClient,
 	}, nil
 }
@@ -169,9 +150,9 @@ func (p *concrete) Close() error {
 		return fmt.Errorf("failed to close pubsub client: %w", err)
 	}
 
-	if err := p.s.Close(); err != nil {
-		return fmt.Errorf("failed to close storage client: %w", err)
-	}
+	// if err := p.a.Close(); err != nil {
+	// 	return fmt.Errorf("failed to close asset client: %w", err)
+	// }
 	return nil
 }
 
@@ -189,56 +170,12 @@ func (p *concrete) ListAssets(ctx context.Context) ([]*assetpb.Asset, error) {
 	for {
 		response, err := it.Next()
 		if err == iterator.Done {
-			fmt.Println("End of asset list. Import completed.")
 			break
 		}
 		if err != nil {
-			fmt.Println("MY FATAL ERROR")
 			log.Fatal(err)
 		}
 		assets = append(assets, response)
 	}
 	return assets, nil
-}
-
-func (p *concrete) ListBuckets(ctx context.Context) ([]*Bucket, error) {
-	buckets := make([]*Bucket, 0)
-
-	it := p.s.Buckets(ctx, p.config.ProjectID)
-	for {
-		bucket, err := it.Next()
-		if err != nil {
-			if errors.Is(err, iterator.Done) {
-				break
-			}
-			return nil, fmt.Errorf("failed to list buckets: %w", err)
-		}
-
-		buckets = append(buckets, &Bucket{
-			Name: bucket.Name,
-		})
-	}
-	return buckets, nil
-}
-
-func (p *concrete) ListFunctions(ctx context.Context) ([]*Function, error) {
-	functions := make([]*Function, 0)
-
-	it := p.f.ListServices(ctx, &runpb.ListServicesRequest{
-		Parent: fmt.Sprintf("projects/%s/locations/-", p.config.ProjectID),
-	})
-	for {
-		function, err := it.Next()
-		if err != nil {
-			if errors.Is(err, iterator.Done) {
-				break
-			}
-			return nil, fmt.Errorf("failed to list functions: %w", err)
-		}
-
-		functions = append(functions, &Function{
-			Name: function.GetName(),
-		})
-	}
-	return functions, nil
 }

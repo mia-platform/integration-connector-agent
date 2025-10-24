@@ -5,6 +5,7 @@
 package gcppubsubevents
 
 import (
+	"cloud.google.com/go/asset/apiv1/assetpb"
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
@@ -60,6 +61,7 @@ func (e InventoryEvent) Ancestors() []string {
 type InventoryImportEvent struct {
 	AssetName string
 	Type      string
+	Data      *assetpb.Asset
 }
 
 func (e InventoryImportEvent) Name() string {
@@ -67,6 +69,9 @@ func (e InventoryImportEvent) Name() string {
 }
 func (e InventoryImportEvent) AssetType() string {
 	return e.Type
+}
+func (e InventoryImportEvent) AssetData() *assetpb.Asset {
+	return e.Data
 }
 func (e InventoryImportEvent) Operation() entities.Operation {
 	return entities.Write

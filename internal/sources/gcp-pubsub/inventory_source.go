@@ -142,73 +142,12 @@ func (s *InventorySource) registerImportWebhook() error {
 	return err
 }
 
-func (s *InventorySource) webhookHandler_OLD(c *fiber.Ctx) error {
-	if err := s.config.Authentication.CheckSignature(c); err != nil {
-		s.log.WithError(err).Error("error validating webhook request")
-		return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
-	}
-
-	buckets, err := s.gcp.ListBuckets(c.UserContext())
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(utils.InternalServerError("failed to list buckets: " + err.Error()))
-	}
-
-	eventBuilder := gcppubsubevents.NewInventoryEventBuilder[gcppubsubevents.InventoryImportEvent]()
-
-	for _, bucket := range buckets {
-		importEvent := gcppubsubevents.InventoryImportEvent{
-			AssetName: bucket.AssetName(),
-			Type:      gcppubsubevents.InventoryEventStorageType,
-		}
-		data, err := json.Marshal(importEvent)
-		if err != nil {
-			s.log.WithField("bucketName", bucket.Name).WithError(err).Warn("failed to create import event data for bucket")
-			continue
-		}
-
-		event, err := eventBuilder.GetPipelineEvent(s.ctx, data)
-		if err != nil {
-			s.log.WithField("bucketName", bucket.Name).WithError(err).Warn("failed to create import event for bucket")
-			continue
-		}
-
-		s.pipeline.AddMessage(event)
-	}
-
-	functions, err := s.gcp.ListFunctions(c.UserContext())
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(utils.InternalServerError("failed to list functions: " + err.Error()))
-	}
-	for _, function := range functions {
-		importEvent := gcppubsubevents.InventoryImportEvent{
-			AssetName: function.AssetName(),
-			Type:      gcppubsubevents.InventoryEventFunctionType,
-		}
-		data, err := json.Marshal(importEvent)
-		if err != nil {
-			s.log.WithField("functionName", function.Name).WithError(err).Warn("failed to create import event data for function")
-			continue
-		}
-
-		event, err := eventBuilder.GetPipelineEvent(s.ctx, data)
-		if err != nil {
-			s.log.WithField("functionName", function.Name).WithError(err).Warn("failed to create import event for function")
-			continue
-		}
-
-		s.pipeline.AddMessage(event)
-	}
-
-	c.Status(http.StatusNoContent)
-	return nil
-}
-
 func (s *InventorySource) webhookHandler(c *fiber.Ctx) error {
 	if err := s.config.Authentication.CheckSignature(c); err != nil {
 		s.log.WithError(err).Error("error validating webhook request")
 		return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
 	}
-	s.log.Info("Import webhook triggered")
+
 	assets, err := s.gcp.ListAssets(c.UserContext())
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(utils.InternalServerError("failed to list assets: " + err.Error()))
@@ -220,6 +159,7 @@ func (s *InventorySource) webhookHandler(c *fiber.Ctx) error {
 		importEvent := gcppubsubevents.InventoryImportEvent{
 			AssetName: asset.Name,
 			Type:      gcppubsubevents.InventoryEventStorageType,
+			Data:      asset,
 		}
 		data, err := json.Marshal(importEvent)
 		if err != nil {
