@@ -132,3 +132,5 @@ integration-connector-agent
 server.log
 log.txt
 tests.test
+gcp-credentials.json
+test.config.json
