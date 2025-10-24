@@ -112,7 +112,7 @@ func (f *Writer) WriteData(ctx context.Context, data entities.PipelineEvent) err
 		"dataSize":    len(data.Data()),
 	}).Info("Fake sink received data")
 
-	// Log the actual data content for debugging
+	// Log the actual data content
 	if jsonData, err := data.JSON(); err == nil {
 		f.log.WithField("eventData", jsonData).Debug("Fake sink event data details")
 	}
