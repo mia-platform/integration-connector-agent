@@ -53,7 +53,6 @@ const (
 
 var allAssetTypes = []string{
 	BucketAPI,
-	NetworkAPI,
 }
 
 func New(ctx context.Context, log *logrus.Logger, config GCPConfig) (GCP, error) {
@@ -91,7 +90,9 @@ func (p *concrete) Listen(ctx context.Context, handler ListenerFunc) error {
 
 	err := subscriber.Receive(ctx, handlerPubSubMessage(p, handler))
 	if err != nil {
+		p.log.WithError(err).Error("error receiving Pub/Sub messages")
 		if st, ok := status.FromError(err); ok {
+			p.log.WithError(err).Error("gRPC status code:", st.Code())
 			if st.Code() == codes.NotFound {
 				// If the subscription does not exist, then create the subscription.
 				subscription, err := p.p.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
@@ -99,6 +100,7 @@ func (p *concrete) Listen(ctx context.Context, handler ListenerFunc) error {
 					Topic: p.config.TopicName,
 				})
 				if err != nil {
+					p.log.WithError(err).Error("error creating Pub/Sub subscription")
 					return err
 				}
 
@@ -149,10 +151,14 @@ func (p *concrete) Close() error {
 	if err := p.p.Close(); err != nil {
 		return fmt.Errorf("failed to close pubsub client: %w", err)
 	}
+	return nil
+}
 
-	// if err := p.a.Close(); err != nil {
-	// 	return fmt.Errorf("failed to close asset client: %w", err)
-	// }
+func (p *concrete) CloseAssetClient() error {
+	fmt.Println("Closing asset client:", p.a)
+	if err := p.a.Close(); err != nil {
+		return fmt.Errorf("failed to close asset client: %w", err)
+	}
 	return nil
 }
 
@@ -174,6 +180,7 @@ func (p *concrete) ListAssets(ctx context.Context) ([]*assetpb.Asset, error) {
 		}
 		if err != nil {
 			log.Fatal(err)
+			p.CloseAssetClient()
 		}
 		assets = append(assets, response)
 	}
