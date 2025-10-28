@@ -90,6 +90,7 @@ func (e Event) JSON() (map[string]any, error) {
 }
 
 func (e *Event) WithData(raw []byte) {
+	e.jsonData = nil
 	e.OriginalRaw = raw
 }
 

@@ -14,8 +14,6 @@ import (
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/config"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/gcp/clients/runservice"
 	storageclient "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/gcp/clients/storage"
-	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/gcp/services/service"
-	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/gcp/services/storage"
 	gcppubsubevents "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/events"
 
 	"github.com/sirupsen/logrus"
@@ -54,68 +52,110 @@ func New(logger *logrus.Logger, authOptions config.AuthOptions) (entities.Proces
 
 func (c *GCPCloudVendorAggregator) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
 	output := input.Clone()
+	if input.GetType() == gcppubsubevents.ImportEventType {
+		fmt.Println("gcppubsubevents.ImportEventType")
+		return output, nil
+	}
 
 	if input.Operation() == entities.Delete {
 		c.logger.Debug("Delete operation detected, skipping processing")
 		return output, nil
 	}
 
-	assetInventory, err := c.ParseEvent(input)
+	asset, assetType, err := getAssetInventoryEvent(input.Data())
 	if err != nil {
-		c.logger.WithError(err).Error("Failed to parse event")
-		return nil, fmt.Errorf("failed to parse event: %w", err)
+		return output, err
 	}
+	output.WithData(asset)
 
-	processor, err := c.EventDataProcessor(assetInventory)
-	if err != nil {
-		c.logger.WithError(err).Error("Failed to process event data")
-		return nil, fmt.Errorf("failed to process event data: %w", err)
-	}
-
-	newData, err := processor.GetData(context.Background(), assetInventory)
-	if err != nil {
-		c.logger.WithError(err).Error("Failed to get data from processor")
-		return nil, fmt.Errorf("failed to get data from processor: %w", err)
-	}
-
-	output.WithData(newData)
-	return output, nil
+	return &entities.Event{
+		PrimaryKeys:   output.GetPrimaryKeys(),
+		Type:          assetType,
+		OperationType: output.Operation(),
+		OriginalRaw:   output.Data(),
+	}, nil
 }
 
-func (c *GCPCloudVendorAggregator) EventDataProcessor(event gcppubsubevents.IInventoryEvent) (commons.DataAdapter[gcppubsubevents.IInventoryEvent], error) {
-	assetType := event.AssetType()
-
-	switch assetType {
-	case storage.StorageAssetType:
-		return storage.NewGCPRunServiceDataAdapter(c.s), nil
-	case service.RunServiceAssetType:
-		return service.NewGCPRunServiceDataAdapter(c.f), nil
-	default:
-		return nil, fmt.Errorf("unsupported asset type: %s", assetType)
+func getAssetInventoryEvent(rawData []byte) ([]byte, string, error) {
+	newRawData := new(gcppubsubevents.InventoryEvent)
+	if err := json.Unmarshal(rawData, &newRawData); err != nil {
+		fmt.Println("failed to unmarshal raw data", err)
+		return nil, "", err
 	}
+	newByteRawData, err := json.Marshal(newRawData.Asset)
+	if err != nil {
+		fmt.Println("failed to marshal raw data", err)
+		return nil, "", err
+	}
+	return newByteRawData, newRawData.AssetType(), nil
 }
 
-func (c *GCPCloudVendorAggregator) ParseEvent(event entities.PipelineEvent) (gcppubsubevents.IInventoryEvent, error) {
-	eventType := event.GetType()
-
-	switch eventType {
-	case gcppubsubevents.ImportEventType:
-
-		var assetInventory gcppubsubevents.InventoryImportEvent
-		if err := json.Unmarshal(event.Data(), &assetInventory); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
-		}
-		return assetInventory, nil
-
-	case gcppubsubevents.RealtimeSyncEventType:
-
-		var assetInventory gcppubsubevents.InventoryEvent
-		if err := json.Unmarshal(event.Data(), &assetInventory); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
-		}
-		return assetInventory, nil
-
-	default:
-		return nil, fmt.Errorf("unsupported event type: %s", eventType)
+func logRawDataInventoryEvent(rawData []byte) {
+	newRawData := new(gcppubsubevents.InventoryEvent)
+	if err := json.Unmarshal(rawData, &newRawData); err != nil {
+		fmt.Println("failed to unmarshal raw data", err)
+		return
 	}
+
+	pretty, err := json.MarshalIndent(newRawData.Asset, "", "  ")
+	if err != nil {
+		fmt.Println("failed to marshal raw data", err)
+		return
+	}
+
+	fmt.Println("logRawDataInventoryEvent:" + string(pretty))
+}
+
+func logRawDataInventoryImportEvent(rawData []byte) {
+	newRawData := new(gcppubsubevents.InventoryImportEvent)
+	if err := json.Unmarshal(rawData, &newRawData); err != nil {
+		fmt.Println("failed to unmarshal raw data", err)
+		return
+	}
+
+	pretty, err := json.MarshalIndent(newRawData, "", "  ")
+	if err != nil {
+		fmt.Println("failed to marshal raw data", err)
+		return
+	}
+
+	fmt.Println("logRawDataInventoryImportEvent: " + string(pretty))
+}
+
+func logRawData(newDataBytes []byte) {
+	newData := new(commons.Asset)
+	if err := json.Unmarshal(newDataBytes, &newData); err != nil {
+		fmt.Println("failed to unmarshal raw data", err)
+		return
+	}
+
+	newRawData := new(gcppubsubevents.InventoryImportEvent)
+	if err := json.Unmarshal(newData.RawData, &newRawData); err != nil {
+		fmt.Println("failed to unmarshal raw data", err)
+		return
+	}
+
+	pretty, err := json.MarshalIndent(newRawData, "", "  ")
+	if err != nil {
+		fmt.Println("failed to marshal raw data", err)
+		return
+	}
+
+	fmt.Println("Raw data:\n" + string(pretty))
+}
+
+func logEventData(event entities.PipelineEvent) error {
+	// Try to get the JSON representation of the event for debugging and
+	// pretty-print it with indentation so logs are easier to read.
+	if jsonData, err := event.JSON(); err != nil {
+		return fmt.Errorf("failed to get event JSON: %w", err)
+	} else {
+		if pretty, err := json.MarshalIndent(jsonData, "", "  "); err != nil {
+			// Fallback to logging the raw parsed map if MarshalIndent fails
+			return fmt.Errorf("failed to marshal event JSON: %w", err)
+		} else {
+			fmt.Println("Event data:\n" + string(pretty))
+		}
+	}
+	return nil
 }

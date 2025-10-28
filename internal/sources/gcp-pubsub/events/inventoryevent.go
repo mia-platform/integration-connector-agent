@@ -77,7 +77,7 @@ func (e InventoryImportEvent) Operation() entities.Operation {
 	return entities.Write
 }
 func (e InventoryImportEvent) EventType() string {
-	return ImportEventType
+	return e.Type
 }
 func (e InventoryImportEvent) Ancestors() []string {
 	// TODO: find a way to get ancestors for import events on each resource type

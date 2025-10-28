@@ -45,6 +45,7 @@ func (m Filter) Process(input entities.PipelineEvent) (entities.PipelineEvent, e
 			"eventType":   input.GetType(),
 			"primaryKeys": input.GetPrimaryKeys().Map(),
 			"expression":  m.expression,
+			"evalContext": evalContext,
 			"error":       err.Error(),
 		}).Error("filter expression evaluation failed")
 		return nil, fmt.Errorf("program evaluation failed: %s", err.Error())
