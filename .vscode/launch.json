@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch ICA",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/main.go",
+      "args": [],
+      "env": {
+        "CONFIGURATION_PATH": "test.config.json",
+        "HTTP_ADDRESS": "127.0.0.1",
+        "LOG_LEVEL": "debug"
+      },
+      "buildFlags": "",
+      "cwd": "${workspaceFolder}",
+      "showLog": true,
+      "trace": "verbose",
+    }
+  ]
+}
