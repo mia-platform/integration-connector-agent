@@ -25,6 +25,7 @@ type GraphLiveData struct {
 
 type GraphClientInterface interface {
 	Resources(ctx context.Context, typesToFilter []string) ([]*entities.Event, error)
+	ResourceContainers(ctx context.Context) ([]*entities.Event, error)
 }
 
 type GraphClient struct {
@@ -58,14 +59,27 @@ func typeQueryFilter(typesToFilter []string) string {
 }
 
 func (c *GraphClient) Resources(ctx context.Context, typesToFilter []string) ([]*entities.Event, error) {
-	listResourceQuery := fmt.Sprintf("Resources %s | project id, name, type, location, tags", typeQueryFilter(typesToFilter))
+	listResourceQuery := "Resources " + typeQueryFilter(typesToFilter)
 	queryRequest := armresourcegraph.QueryRequest{
 		Query: &listResourceQuery,
 	}
 
+	return c.entitiesFromGraphQuery(ctx, queryRequest)
+}
+
+func (c *GraphClient) ResourceContainers(ctx context.Context) ([]*entities.Event, error) {
+	listResourceContainersQuery := "ResourceContainers | where (type in~ ('microsoft.resources/subscriptions','microsoft.resources/subscriptions/resourcegroups'))"
+	queryRequest := armresourcegraph.QueryRequest{
+		Query: &listResourceContainersQuery,
+	}
+
+	return c.entitiesFromGraphQuery(ctx, queryRequest)
+}
+
+func (c *GraphClient) entitiesFromGraphQuery(ctx context.Context, query armresourcegraph.QueryRequest) ([]*entities.Event, error) {
 	returnedResults := make([]*entities.Event, 0)
 	for {
-		results, err := c.client.Resources(ctx, queryRequest, nil)
+		results, err := c.client.Resources(ctx, query, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to query Azure resources: %w", err)
 		}
@@ -88,7 +102,7 @@ func (c *GraphClient) Resources(ctx context.Context, typesToFilter []string) ([]
 
 			returnedResults = append(returnedResults, &entities.Event{
 				PrimaryKeys:   primaryKeys(resource["id"].(string)),
-				Type:          EventTypeFromLiveLoad.String(),
+				Type:          strings.ToLower(resource["type"].(string)),
 				OperationType: entities.Write,
 				OriginalRaw:   data,
 			})
@@ -97,7 +111,7 @@ func (c *GraphClient) Resources(ctx context.Context, typesToFilter []string) ([]
 		if results.ResultTruncated != nil && *results.ResultTruncated == armresourcegraph.ResultTruncatedFalse {
 			break
 		}
-		queryRequest.Options = &armresourcegraph.QueryRequestOptions{
+		query.Options = &armresourcegraph.QueryRequestOptions{
 			SkipToken: results.SkipToken,
 		}
 	}

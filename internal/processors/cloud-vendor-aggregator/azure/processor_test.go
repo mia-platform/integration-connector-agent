@@ -50,7 +50,7 @@ func TestProcessor(t *testing.T) {
 					Tags:     map[string]string{"env": "test"},
 					Location: "eastus",
 				},
-				apiVersion: "2025-01-01",
+				apiVersion: "2024-01-01",
 			},
 			input: &entities.Event{
 				PrimaryKeys: entities.PkFields{
@@ -89,7 +89,7 @@ func TestProcessor(t *testing.T) {
 					Tags:     map[string]string{"env": "test"},
 					Location: "eastus",
 				},
-				apiVersion: "2024-11-01",
+				apiVersion: "2025-03-01",
 			},
 			input: &entities.Event{
 				PrimaryKeys: entities.PkFields{
@@ -128,7 +128,7 @@ func TestProcessor(t *testing.T) {
 					Tags:     map[string]string{"env": "test"},
 					Location: "eastus",
 				},
-				apiVersion: "2024-11-01",
+				apiVersion: "2025-04-01",
 			},
 			input: &entities.Event{
 				PrimaryKeys: entities.PkFields{
@@ -167,7 +167,7 @@ func TestProcessor(t *testing.T) {
 					Tags:     map[string]string{"env": "test"},
 					Location: "eastus",
 				},
-				apiVersion: "2025-01-01",
+				apiVersion: "2024-10-01",
 			},
 			input: &entities.Event{
 				PrimaryKeys: entities.PkFields{
@@ -196,27 +196,6 @@ func TestProcessor(t *testing.T) {
 					return data
 				}(),
 				),
-		},
-		"event is from import event": {
-			input: &entities.Event{
-				PrimaryKeys: entities.PkFields{
-					{
-						Key:   "resourceId",
-						Value: "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group/providers/Microsoft.Storage/storageAccounts/account",
-					},
-				},
-				Type:          azure.EventTypeFromLiveLoad.String(),
-				OperationType: entities.Write,
-				OriginalRaw:   []byte(liveData),
-			},
-			expectedAsset: commons.NewAsset("account", "Microsoft.Storage/storageAccounts", commons.AzureAssetProvider).
-				WithLocation("eastus").
-				WithTags(map[string]string{"env": "test"}).
-				WithRelationships([]string{
-					"subscription/00000000-0000-0000-0000-000000000000",
-					"resourceGroup/group",
-				}).
-				WithRawData([]byte(liveData)),
 		},
 		"delete operation in success state": {
 			input: &entities.Event{
@@ -295,6 +274,79 @@ func TestProcessor(t *testing.T) {
 			require.NoError(t, err)
 			test.expectedAsset.Timestamp = eventAsset.Timestamp
 			require.Equal(t, test.expectedAsset, eventAsset)
+		})
+	}
+}
+
+func TestProcessorForOtherEventTypes(t *testing.T) {
+	t.Parallel()
+	l, _ := test.NewNullLogger()
+
+	testCases := map[string]struct {
+		client         azure.ClientInterface
+		input          entities.PipelineEvent
+		expectedOutput entities.PipelineEvent
+	}{
+		"event is from import event": {
+			input: &entities.Event{
+				PrimaryKeys: entities.PkFields{
+					{
+						Key:   "resourceId",
+						Value: "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group/providers/Microsoft.Storage/storageAccounts/account",
+					},
+				},
+				Type:          "microsoft.storage/storageaccounts",
+				OperationType: entities.Write,
+				OriginalRaw:   []byte(liveData),
+			},
+			expectedOutput: &entities.Event{
+				PrimaryKeys: entities.PkFields{
+					{
+						Key:   "resourceId",
+						Value: "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group/providers/Microsoft.Storage/storageAccounts/account",
+					},
+				},
+				Type:          "microsoft.storage/storageaccounts",
+				OperationType: entities.Write,
+				OriginalRaw:   []byte(liveData),
+			},
+		},
+		"unrelated event": {
+			input: &entities.Event{
+				PrimaryKeys: entities.PkFields{
+					{
+						Key:   "someKey",
+						Value: "someValue",
+					},
+				},
+				Type:          "some.event.type",
+				OperationType: entities.Delete,
+				OriginalRaw:   []byte(`{"some":"data"}`),
+			},
+			expectedOutput: &entities.Event{
+				PrimaryKeys: entities.PkFields{
+					{
+						Key:   "someKey",
+						Value: "someValue",
+					},
+				},
+				Type:          "some.event.type",
+				OperationType: entities.Delete,
+				OriginalRaw:   []byte(`{"some":"data"}`),
+			},
+		},
+	}
+
+	for testName, test := range testCases {
+		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
+			processor, err := New(l, config.AuthOptions{})
+			require.NoError(t, err)
+			processor.client = test.client
+			event, err := processor.Process(test.input)
+			require.NoError(t, err)
+			require.Equal(t, test.expectedOutput, event)
 		})
 	}
 }

@@ -22,16 +22,16 @@ Find out more about how to [export activity log to Azure Event Hubs](https://lea
 :::caution
 Currently, this source only supports the following resource types:
 
-- Storage Account (`Microsoft.Storage/storageAccounts`)
-- App Function and App Service (`Microsoft.Web/sites`)
-- Virtual Machine (`Microsoft.Compute/virtualMachines`)
-- Disk (`Microsoft.Compute/disks`)
-- Virtual Network (`Microsoft.Network/virtualNetworks`)
-- Network Interface (`Microsoft.Network/networkInterfaces`)
-- Network Security Group (`Microsoft.Network/networkSecurityGroups`)
-- Public IP Address (`Microsoft.Network/publicIPAddresses`)
-- Cognitive Services Accounts (`Microsoft.cognitiveservices/accounts`)
-- Cognitive Services Deployments (`Microsoft.cognitiveservices/accounts/deployments`)
+- [Subscription](./mappings/azure/10_subscription.md) (`microsoft.resources/subscriptions`)
+- [Resource Group](./mappings/azure/20_resource_group.md) (`microsoft.resources/subscriptions/resourcegroups` or `microsoft.resources/resourcegroups`)
+- [AKS](./mappings/azure/30_aks.md) (`microsoft.containerservice/managedclusters`)
+- [Cognitive Services Account](./mappings/azure/40_cognitive_services_account.md) (`Microsoft.cognitiveservices/accounts`)
+- [Container App](./mappings/azure/50_container_app.md) (`microsoft.app/containerapps`)
+- [PostgreSQL Server](./mappings/azure/60_postgresql.md) (`microsoft.dbforpostgresql/flexibleservers`)
+- [Storage Account](./mappings/azure/70_storage_account.md) (`microsoft.storage/storageaccounts`)
+- [Virtual Machine](./mappings/azure/80_virtual_machine.md) (`microsoft.compute/virtualmachines`)
+- [Virtual Network](./mappings/azure/90_virtual_network.md) (`microsoft.network/virtualnetworks`)
+- [Sites](./mappings/azure/100_site.md) (`microsoft.web/sites`)
 
 :::
 

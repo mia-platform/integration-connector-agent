@@ -11,23 +11,20 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 )
 
+type EventRecord string
+
 const (
-	StorageAccountEventSource = "microsoft.storage/storageaccounts"
-
-	WebSitesEventSource = "microsoft.web/sites"
-
-	ComputeVirtualMachineEventSource = "microsoft.compute/virtualmachines"
-	ComputeDiskEventSource           = "microsoft.compute/disks"
-
-	VirtualNetworkEventSource         = "microsoft.network/virtualnetworks"
-	NetworkInterfaceEventSource       = "microsoft.network/networkinterfaces"
-	NetworkSecurityGroupEventSource   = "microsoft.network/networksecuritygroups"
-	NetworkPublicIPAddressEventSource = "microsoft.network/publicipaddresses"
+	ManagedClusterEventSource           = "microsoft.containerservice/managedclusters"
+	CognitiveServicesAccountEventSource = "microsoft.cognitiveservices/accounts"
+	ContainerAppEventSource             = "microsoft.app/containerapps"
+	FlexibleServerEventSource           = "microsoft.dbforpostgresql/flexibleservers"
+	StorageAccountEventSource           = "microsoft.storage/storageaccounts"
+	ResourceGroupEventSource            = "microsoft.resources/resourcegroups"
+	ComputeVirtualMachineEventSource    = "microsoft.compute/virtualmachines"
+	VirtualNetworkEventSource           = "microsoft.network/virtualnetworks"
+	WebSitesEventSource                 = "microsoft.web/sites"
 
 	TagsEventSource = "microsoft.resources/tags"
-
-	CognitiveServicesAccountEventSource    = "microsoft.cognitiveservices/accounts"
-	CognitiveServicesDeploymentEventSource = "microsoft.cognitiveservices/accounts/deployments"
 )
 
 func RelationshipFromID(id string) []string {
@@ -60,16 +57,15 @@ func EventIsForSource(event *ActivityLogEventRecord, resourceType string) bool {
 
 func EventSourceFromEvent(event *ActivityLogEventRecord) string {
 	allSources := []string{
-		StorageAccountEventSource,
-		WebSitesEventSource,
-		ComputeVirtualMachineEventSource,
-		ComputeDiskEventSource,
-		VirtualNetworkEventSource,
-		NetworkInterfaceEventSource,
-		NetworkSecurityGroupEventSource,
-		NetworkPublicIPAddressEventSource,
+		ManagedClusterEventSource,
 		CognitiveServicesAccountEventSource,
-		CognitiveServicesDeploymentEventSource,
+		ContainerAppEventSource,
+		FlexibleServerEventSource,
+		StorageAccountEventSource,
+		ResourceGroupEventSource,
+		ComputeVirtualMachineEventSource,
+		VirtualNetworkEventSource,
+		WebSitesEventSource,
 	}
 
 	eventSource := strings.ToLower(event.OperationName)

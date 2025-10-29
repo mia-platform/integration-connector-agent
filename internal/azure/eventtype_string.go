@@ -9,12 +9,11 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[EventTypeRecordFromEventHub-0]
-	_ = x[EventTypeFromLiveLoad-1]
 }
 
-const _EventType_name = "RecordFromEventHubFromLiveLoad"
+const _EventType_name = "RecordFromEventHub"
 
-var _EventType_index = [...]uint8{0, 18, 30}
+var _EventType_index = [...]uint8{0, 18}
 
 func (i EventType) String() string {
 	idx := int(i) - 0

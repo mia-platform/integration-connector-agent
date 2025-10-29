@@ -15,7 +15,6 @@ type EventType int
 
 const (
 	EventTypeRecordFromEventHub EventType = iota
-	EventTypeFromLiveLoad
 )
 
 func EventFromRecord(record *ActivityLogEventRecord) *entities.Event {

@@ -42,18 +42,12 @@ func New(logger *logrus.Logger, authOptions config.AuthOptions) (*Processor, err
 }
 
 func (p *Processor) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
-	output := input.Clone()
-
-	if input.GetType() == azure.EventTypeFromLiveLoad.String() {
-		newData, err := p.GetDataFromLiveEvent(input)
-		if err != nil {
-			p.logger.WithError(err).Error("Failed to get data from Azure service")
-			return nil, fmt.Errorf("failed to get data from Azure service: %w", err)
-		}
-		output.WithData(newData)
-		return output, nil
+	if input.GetType() != azure.EventTypeRecordFromEventHub.String() {
+		p.logger.WithField("eventType", input.GetType()).Debug("Event type not supported by Azure processor, skipping processing")
+		return input.Clone(), nil
 	}
 
+	output := input.Clone()
 	activityLogEvent := new(azure.ActivityLogEventRecord)
 	if err := json.Unmarshal(input.Data(), &activityLogEvent); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal input data: %w", err)
