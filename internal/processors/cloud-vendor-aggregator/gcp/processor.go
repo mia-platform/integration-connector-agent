@@ -53,8 +53,21 @@ func New(logger *logrus.Logger, authOptions config.AuthOptions) (entities.Proces
 func (c *GCPCloudVendorAggregator) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
 	output := input.Clone()
 	if input.GetType() != gcppubsubevents.RealtimeSyncEventType {
-		return output, nil
+		c.logger.Debug("Non-RealtimeSyncEventType detected")
+		asset, assetType, err := getAssetInventoryImportEvent(input.Data())
+		if err != nil {
+			return output, err
+		}
+		output.WithData(asset)
+		return &entities.Event{
+			PrimaryKeys:   output.GetPrimaryKeys(),
+			Type:          assetType,
+			OperationType: output.Operation(),
+			OriginalRaw:   output.Data(),
+		}, nil
 	}
+
+	c.logger.Debug("RealtimeSyncEventType detected")
 
 	if input.Operation() == entities.Delete {
 		c.logger.Debug("Delete operation detected, skipping processing")
@@ -82,6 +95,20 @@ func getAssetInventoryEvent(rawData []byte) ([]byte, string, error) {
 		return nil, "", err
 	}
 	newByteRawData, err := json.Marshal(newRawData.Asset)
+	if err != nil {
+		fmt.Println("failed to marshal raw data", err)
+		return nil, "", err
+	}
+	return newByteRawData, newRawData.AssetType(), nil
+}
+
+func getAssetInventoryImportEvent(rawData []byte) ([]byte, string, error) {
+	newRawData := new(gcppubsubevents.InventoryImportEvent)
+	if err := json.Unmarshal(rawData, &newRawData); err != nil {
+		fmt.Println("failed to unmarshal raw data", err)
+		return nil, "", err
+	}
+	newByteRawData, err := json.Marshal(newRawData.Data)
 	if err != nil {
 		fmt.Println("failed to marshal raw data", err)
 		return nil, "", err
