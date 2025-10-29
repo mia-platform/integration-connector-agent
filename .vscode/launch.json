@@ -15,8 +15,8 @@
       },
       "buildFlags": "",
       "cwd": "${workspaceFolder}",
-      "showLog": true,
-      "trace": "verbose",
+      "showLog": false,
+      "trace": "trace",
     }
   ]
 }
