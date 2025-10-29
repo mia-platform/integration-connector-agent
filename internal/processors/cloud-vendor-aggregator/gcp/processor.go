@@ -52,8 +52,7 @@ func New(logger *logrus.Logger, authOptions config.AuthOptions) (entities.Proces
 
 func (c *GCPCloudVendorAggregator) Process(input entities.PipelineEvent) (entities.PipelineEvent, error) {
 	output := input.Clone()
-	if input.GetType() == gcppubsubevents.ImportEventType {
-		fmt.Println("gcppubsubevents.ImportEventType")
+	if input.GetType() != gcppubsubevents.RealtimeSyncEventType {
 		return output, nil
 	}
 
