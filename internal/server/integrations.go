@@ -177,7 +177,7 @@ func setupSinks(ctx context.Context, log *logrus.Logger, writers config.Sinks) (
 			if err != nil {
 				return nil, fmt.Errorf("%w: %w", errSetupWriter, err)
 			}
-			w = append(w, fakewriter.New(config))
+			w = append(w, fakewriter.New(config, log))
 		default:
 			return nil, fmt.Errorf("%w: %s", errUnsupportedWriter, configuredWriter.Type)
 		}

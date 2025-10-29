@@ -581,7 +581,7 @@ func setup(t *testing.T, serverURL string) (*fiber.App, *fakewriter.Writer, pipe
 	app, router := testutils.GetTestRouter(t)
 
 	proc := &processors.Processors{}
-	sink := fakewriter.New(nil)
+	sink := fakewriter.New(nil, logger)
 	p, err := pipeline.New(logger, proc, sink)
 	require.NoError(t, err)
 	pg := pipeline.NewGroup(logger, p)

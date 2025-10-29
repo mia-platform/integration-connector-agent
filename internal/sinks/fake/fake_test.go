@@ -11,6 +11,7 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/sinks"
 
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,11 +19,13 @@ func TestImplementWriter(t *testing.T) {
 	config := &Config{}
 
 	t.Run("implement writer", func(t *testing.T) {
-		require.Implements(t, (*sinks.Sink[entities.PipelineEvent])(nil), New(config))
+		log, _ := test.NewNullLogger()
+		require.Implements(t, (*sinks.Sink[entities.PipelineEvent])(nil), New(config, log))
 	})
 
 	t.Run("stub write", func(t *testing.T) {
-		f := New(config)
+		log, _ := test.NewNullLogger()
+		f := New(config, log)
 
 		event := &entities.Event{
 			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
@@ -39,7 +42,8 @@ func TestImplementWriter(t *testing.T) {
 	})
 
 	t.Run("stub delete", func(t *testing.T) {
-		f := New(config)
+		log, _ := test.NewNullLogger()
+		f := New(config, log)
 
 		event := &entities.Event{
 			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
@@ -56,7 +60,8 @@ func TestImplementWriter(t *testing.T) {
 	})
 
 	t.Run("ResetCalls clean calls", func(t *testing.T) {
-		f := New(config)
+		log, _ := test.NewNullLogger()
+		f := New(config, log)
 
 		event := &entities.Event{
 			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
@@ -71,7 +76,8 @@ func TestImplementWriter(t *testing.T) {
 	})
 
 	t.Run("mock error write", func(t *testing.T) {
-		f := New(config)
+		log, _ := test.NewNullLogger()
+		f := New(config, log)
 
 		event := &entities.Event{
 			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},
@@ -91,7 +97,8 @@ func TestImplementWriter(t *testing.T) {
 	})
 
 	t.Run("mock error delete", func(t *testing.T) {
-		f := New(config)
+		log, _ := test.NewNullLogger()
+		f := New(config, log)
 
 		event := &entities.Event{
 			PrimaryKeys:   entities.PkFields{{Key: "key", Value: "id"}},

@@ -26,7 +26,7 @@ func TestPipeline(t *testing.T) {
 	proc := &processors.Processors{}
 
 	t.Run("message pipelines is correctly managed adding messages", func(t *testing.T) {
-		w := fakesink.New(model)
+		w := fakesink.New(model, log)
 		p, err := New(log, proc, w)
 		require.NoError(t, err)
 
@@ -85,7 +85,7 @@ func TestPipeline(t *testing.T) {
 	})
 
 	t.Run("on channel closed, the pipeline stops", func(t *testing.T) {
-		w := fakesink.New(model)
+		w := fakesink.New(model, log)
 		p, err := New(log, proc, w)
 		require.NoError(t, err)
 
@@ -105,7 +105,7 @@ func TestPipeline(t *testing.T) {
 
 	t.Run("on context done, close channel", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(t.Context())
-		w := fakesink.New(model)
+		w := fakesink.New(model, log)
 		p, err := New(log, proc, w)
 		require.NoError(t, err)
 
@@ -124,7 +124,7 @@ func TestPipeline(t *testing.T) {
 			Mocks: []fakesink.Mock{
 				{Error: errors.New("fake error")},
 			},
-		})
+		}, log)
 
 		log, hook := test.NewNullLogger()
 
@@ -161,7 +161,7 @@ func TestPipeline(t *testing.T) {
 			Mocks: []fakesink.Mock{
 				{Error: errors.New("fake error")},
 			},
-		})
+		}, log)
 
 		log, hook := test.NewNullLogger()
 
@@ -191,7 +191,7 @@ func TestPipeline(t *testing.T) {
 
 	t.Run("filter event when filter returns false", func(t *testing.T) {
 		log, hook := test.NewNullLogger()
-		w := fakesink.New(model)
+		w := fakesink.New(model, log)
 		proc, err := processors.New(log, config.Processors{
 			{
 				Type: processors.Filter,

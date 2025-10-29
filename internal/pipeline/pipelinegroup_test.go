@@ -37,8 +37,8 @@ func TestPipelineGroup(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("multiple pipeline", func(t *testing.T) {
-		sink1 := fakesink.New(&fakesink.Config{})
-		sink2 := fakesink.New(&fakesink.Config{})
+		sink1 := fakesink.New(&fakesink.Config{}, logger)
+		sink2 := fakesink.New(&fakesink.Config{}, logger)
 
 		p1, err := New(logger, proc1, sink1)
 		require.NoError(t, err)

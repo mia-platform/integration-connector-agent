@@ -142,7 +142,7 @@ func TestSetupServiceWithConfig(t *testing.T) {
 			app, router := testutils.GetTestRouter(t)
 
 			proc := &processors.Processors{}
-			s := fakesink.New(nil)
+			s := fakesink.New(nil, logger)
 			p1, err := pipeline.New(logger, proc, s)
 			require.NoError(t, err)
 

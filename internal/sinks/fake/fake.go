@@ -8,8 +8,9 @@ import (
 	"context"
 	"sync"
 
-	glogrus "github.com/mia-platform/glogger/v4/loggers/logrus"
 	"github.com/mia-platform/integration-connector-agent/entities"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -49,12 +50,13 @@ func (m *Mocks) ReadAndPop() Mock {
 
 type Writer struct {
 	mtx sync.Mutex
+	log *logrus.Logger
 
 	stub  Calls
 	mocks Mocks
 }
 
-func New(config *Config) *Writer {
+func New(config *Config, log *logrus.Logger) *Writer {
 	if config == nil {
 		config = &Config{}
 	}
@@ -62,6 +64,7 @@ func New(config *Config) *Writer {
 	w := &Writer{
 		stub:  Calls{},
 		mocks: config.Mocks,
+		log:   log,
 	}
 
 	if w.mocks == nil {
@@ -93,8 +96,6 @@ func (f *Writer) AddMock(mock Mock) {
 }
 
 func (f *Writer) WriteData(ctx context.Context, data entities.PipelineEvent) error {
-	log := glogrus.FromContext(ctx)
-
 	f.mtx.Lock()
 	defer f.mtx.Unlock()
 
@@ -104,7 +105,7 @@ func (f *Writer) WriteData(ctx context.Context, data entities.PipelineEvent) err
 	})
 
 	// Log the data being written to fake sink
-	log.WithFields(map[string]interface{}{
+	f.log.WithFields(map[string]interface{}{
 		"operation":   data.Operation().String(),
 		"primaryKeys": data.GetPrimaryKeys(),
 		"eventType":   data.GetType(),
@@ -113,7 +114,7 @@ func (f *Writer) WriteData(ctx context.Context, data entities.PipelineEvent) err
 
 	// Log the actual data content for debugging
 	if jsonData, err := data.JSON(); err == nil {
-		log.WithField("eventData", jsonData).Debug("Fake sink event data details")
+		f.log.WithField("eventData", jsonData).Debug("Fake sink event data details")
 	}
 
 	if len(f.mocks) > 0 {

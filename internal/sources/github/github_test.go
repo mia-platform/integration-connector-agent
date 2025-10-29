@@ -143,7 +143,7 @@ func TestAddSourceToRouter(t *testing.T) {
 	app, router := testutils.GetTestRouter(t)
 
 	proc := &processors.Processors{}
-	s := fakewriter.New(nil)
+	s := fakewriter.New(nil, logger)
 	p1, err := pipeline.New(logger, proc, s)
 	require.NoError(t, err)
 
