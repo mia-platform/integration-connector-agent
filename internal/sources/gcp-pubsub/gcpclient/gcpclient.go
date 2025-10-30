@@ -53,6 +53,7 @@ const (
 
 var allAssetTypes = []string{
 	BucketAPI,
+	NetworkAPI,
 }
 
 func New(ctx context.Context, log *logrus.Logger, config GCPConfig) (GCP, error) {
