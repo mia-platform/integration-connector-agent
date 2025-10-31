@@ -5,12 +5,12 @@
 			"folders/456456456456",
 			"organizations/789789789789"
 		],
-		"assetType": "storage.googleapis.com/Bucket",
-		"name": "//storage.googleapis.com/test-bucket",
+		"assetType": "compute.googleapis.com/Network",
+		"name": "//compute.googleapis.com/test-network",
 		"resource": {
       "data": {
-        "id": "test-bucket",
-        "name": "test-bucket",
+        "id": "test-network",
+        "name": "test-network",
         "labels": {
           "label1": "value1",
           "label2": "value2"

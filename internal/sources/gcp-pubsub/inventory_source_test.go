@@ -15,7 +15,6 @@ import (
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
-	gcppubsubevents "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/events"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/gcpclient"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook/hmac"
 	"github.com/mia-platform/integration-connector-agent/internal/testutils"
@@ -135,15 +134,15 @@ func TestImportWebhook(t *testing.T) {
 		pg := &pipeline.PipelineGroupMock{
 			AssertAddMessage: func(data entities.PipelineEvent) {
 				require.NotNil(t, data)
-				require.Equal(t, gcppubsubevents.ImportEventType, data.GetType())
+				require.Equal(t, gcpclient.BucketAPI, data.GetType())
 			},
 		}
 
 		app, router := testutils.GetTestRouter(t)
 		client := &gcpclient.MockPubSub{
 			ListAssetsResult: []*assetpb.Asset{
-				{Name: "//storage.googleapis.com/bucket1"},
-				{Name: "//storage.googleapis.com/bucket2"},
+				{Name: "//storage.googleapis.com/bucket1", AssetType: gcpclient.BucketAPI},
+				{Name: "//storage.googleapis.com/bucket2", AssetType: gcpclient.BucketAPI},
 			},
 		}
 
@@ -161,18 +160,18 @@ func TestImportWebhook(t *testing.T) {
 
 		require.Len(t, pg.Messages, 2)
 
-		require.Equal(t, gcppubsubevents.ImportEventType, pg.Messages[0].GetType())
+		require.Equal(t, gcpclient.BucketAPI, pg.Messages[0].GetType())
 		require.Equal(t, entities.Write, pg.Messages[0].Operation())
 		require.Equal(t, entities.PkFields{
 			entities.PkField{Key: "resourceName", Value: "//storage.googleapis.com/bucket1"},
-			entities.PkField{Key: "resourceType", Value: gcppubsubevents.InventoryEventStorageType},
+			entities.PkField{Key: "resourceType", Value: gcpclient.BucketAPI},
 		}, pg.Messages[0].GetPrimaryKeys())
 
-		require.Equal(t, gcppubsubevents.ImportEventType, pg.Messages[1].GetType())
+		require.Equal(t, gcpclient.BucketAPI, pg.Messages[1].GetType())
 		require.Equal(t, entities.Write, pg.Messages[1].Operation())
 		require.Equal(t, entities.PkFields{
 			entities.PkField{Key: "resourceName", Value: "//storage.googleapis.com/bucket2"},
-			entities.PkField{Key: "resourceType", Value: gcppubsubevents.InventoryEventStorageType},
+			entities.PkField{Key: "resourceType", Value: gcpclient.BucketAPI},
 		}, pg.Messages[1].GetPrimaryKeys())
 	})
 }

@@ -5,15 +5,12 @@
 package gcpaggregator
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/config"
-	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/gcp/clients/runservice"
-	storageclient "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/gcp/clients/storage"
 	gcppubsubevents "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/events"
 
 	"github.com/sirupsen/logrus"
@@ -23,30 +20,14 @@ import (
 type GCPCloudVendorAggregator struct {
 	logger  *logrus.Logger
 	options gcpOptions.ClientOption
-
-	s storageclient.Client
-	f runservice.Client
 }
 
 func New(logger *logrus.Logger, authOptions config.AuthOptions) (entities.Processor, error) {
 	options := gcpOptions.WithCredentialsJSON([]byte(authOptions.CredenialsJSON.String()))
 
-	storageClient, err := storageclient.NewClient(context.Background(), options)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create GCP storage client: %w", err)
-	}
-
-	runServiceClient, err := runservice.NewClient(context.Background(), options)
-	if err != nil {
-		return nil, err
-	}
-
 	return &GCPCloudVendorAggregator{
 		logger:  logger,
 		options: options,
-
-		s: storageClient,
-		f: runServiceClient,
 	}, nil
 }
 
