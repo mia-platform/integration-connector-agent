@@ -30,6 +30,8 @@ func TestConfigValidate(t *testing.T) {
 					Secret:     config.SecretSource("test-secret"),
 					HeaderName: "X-Gitlab-Token",
 				},
+				Group: "group-name",
+				Token: config.SecretSource("token"),
 			},
 		},
 	}

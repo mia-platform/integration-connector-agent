@@ -1,7 +1,7 @@
-````markdown
 # GitLab
 
-The GitLab source allows the integration-connector-agent to receive events from GitLab via webhooks and supports full import of GitLab resources.
+The GitLab source allows the integration-connector-agent to receive events from GitLab via webhooks
+and supports full import of GitLab resources.
 
 ## Webhook Integration
 
@@ -17,11 +17,12 @@ When a webhook event is received, the following steps are performed:
 ## Full Import
 
 This source supports a full import of all GitLab resources in the configured group.
-To trigger a full import, you can send a `POST` request to the import webhook path configured in the service configuration.
-
+To trigger a full import, you can send a `POST` request to the import webhook path configured in the
+service configuration.  
 The full import includes:
+
 - **Projects**: All projects in the group
-- **Merge Requests**: All merge requests across all projects  
+- **Merge Requests**: All merge requests across all projects
 - **Pipelines**: All CI/CD pipelines across all projects
 - **Releases**: All releases across all projects
 
@@ -33,7 +34,8 @@ The following configuration options are supported by the GitLab source:
 - **authentication** (*object*) *optional*: The authentication configuration for webhook events
   - **secret** ([*SecretSource*](../20_install.md#secretsource)): The secret used to validate incoming webhook requests
 - **webhookPath** (*string*) *optional*: The path where to receive the webhook events. Defaults to `/gitlab/webhook`.
-- **token** ([*SecretSource*](../20_install.md#secretsource)) *optional*: GitLab personal access token for API access (required for import functionality)
+- **token** ([*SecretSource*](../20_install.md#secretsource)) *optional*: GitLab personal access token for API access
+  (required for import functionality)
 - **baseUrl** (*string*) *optional*: GitLab instance base URL. Defaults to `https://gitlab.com`
 - **group** (*string*) *optional*: GitLab group name (required for import functionality)
 - **importWebhookPath** (*string*) *optional*: The path for the webhook exposed to trigger a full import
@@ -110,61 +112,61 @@ The following configuration options are supported by the GitLab source:
 To configure a webhook in GitLab, follow these steps:
 
 1. **Group-level Webhook** (recommended for organization-wide events):
-   - Navigate to your GitLab group
-   - Go to Settings > Webhooks
-   - Add webhook URL: `http://<your-agent-host>[/optional-base-path]/gitlab/webhook`
-   - Set Secret Token (must match your configuration)
-   - Select trigger events (see supported events below)
-
-2. **Project-level Webhook** (for specific project events):
-   - Navigate to your GitLab project
-   - Go to Settings > Webhooks  
-   - Add webhook URL: `http://<your-agent-host>[/optional-base-path]/gitlab/webhook`
-   - Set Secret Token (must match your configuration)
-   - Select trigger events (see supported events below)
+    - Navigate to your GitLab group
+    - Go to Settings > Webhooks
+    - Add webhook URL: `http://<your-agent-host>[/optional-base-path]/gitlab/webhook`
+    - Set Secret Token (must match your configuration)
+    - Select trigger events (see supported events below)
+1. **Project-level Webhook** (for specific project events):
+    - Navigate to your GitLab project
+    - Go to Settings > Webhooks  
+    - Add webhook URL: `http://<your-agent-host>[/optional-base-path]/gitlab/webhook`
+    - Set Secret Token (must match your configuration)
+    - Select trigger events (see supported events below)
 
 Set the following fields:
 
 - **URL**: The URL where the webhook will send events. For the GitLab integration, use `http://<your-agent-host>[/optional-base-path]/gitlab/webhook`.
-- **Secret Token**: The secret used to validate incoming webhook requests. This must match the one set in the authentication configuration.
+- **Secret Token**: The secret used to validate incoming webhook requests. This must match the one
+  set in the authentication configuration.
 - **Trigger Events**: Select the events you want to subscribe to (see supported events section).
 - **Enable SSL verification**: Enable if using HTTPS endpoints.
 
 For full import functionality:
 
 1. Create a GitLab Personal Access Token:
-   - Go to User Settings > Access Tokens (or Group Settings > Access Tokens for group tokens)
-   - Create token with appropriate scopes:
-     - `read_api` scope for API access
-     - `read_repository` scope for repository access
-     - `read_user` scope for user information
-2. Set the `token` in your configuration
-3. Configure the group name in your configuration
+    - Go to User Settings > Access Tokens (or Group Settings > Access Tokens for group tokens)
+    - Create token with appropriate scopes:
+      - `read_api` scope for API access
+      - `read_repository` scope for repository access
+      - `read_user` scope for user information
+1. Set the `token` in your configuration
+1. Configure the group name in your configuration
 
 ## Supported Events
 
 The GitLab source currently supports the following webhook events:
 
-| Event                    | Event Type              | Example Payload                         | Operation |
-|--------------------------|-------------------------|-----------------------------------------|-----------|
-| Project Hook             | `Project Hook`          | [link](#project-event-payload)          | Write     |
-| Merge Request Hook       | `Merge Request Hook`    | [link](#merge-request-event-payload)    | Write     |
-| Pipeline Hook            | `Pipeline Hook`         | [link](#pipeline-event-payload)         | Write     |
-| Release Hook             | `Release Hook`          | [link](#release-event-payload)          | Write     |
-| Push Hook                | `Push Hook`             | [link](#push-event-payload)             | Write     |
-| Tag Push Hook            | `Tag Push Hook`         | [link](#tag-push-event-payload)         | Write     |
-| Issue Hook               | `Issue Hook`            | [link](#issue-event-payload)            | Write     |
-| Note Hook                | `Note Hook`             | [link](#note-event-payload)             | Write     |
-| Wiki Page Hook           | `Wiki Page Hook`        | [link](#wiki-page-event-payload)        | Write     |
+| Event              | Event Type           | Example Payload                                     | Operation |
+|--------------------|----------------------|-----------------------------------------------------|-----------|
+| Project Hook       | `Project Hook`       | [Project Event](#project-event-payload)             | Write     |
+| Merge Request Hook | `Merge Request Hook` | [Merge Request Event](#merge-request-event-payload) | Write     |
+| Pipeline Hook      | `Pipeline Hook`      | [Pipeline Event](#pipeline-event-payload)           | Write     |
+| Release Hook       | `Release Hook`       | [Release Event](#release-event-payload)             | Write     |
+| Push Hook          | `Push Hook`          | [Push Event](#push-event-payload)                   | Write     |
+| Tag Push Hook      | `Tag Push Hook`      | [Tag Push Event](#tag-push-event-payload)           | Write     |
+| Issue Hook         | `Issue Hook`         | [Issue Event](#issue-event-payload)                 | Write     |
+| Note Hook          | `Note Hook`          | [Note Event](#note-event-payload)                   | Write     |
+| Wiki Page Hook     | `Wiki Page Hook`     | [Wiki Page Event](#wiki-page-event-payload)         | Write     |
 
 The GitLab source supports the following resources for full import:
 
-| Resource Type      | Import Type        | Description                                |
-|--------------------|--------------------|--------------------------------------------|
-| Project            | `project`          | All projects in the group                  |
-| Merge Request      | `merge_request`    | All merge requests across projects         |
-| Pipeline           | `pipeline`         | All CI/CD pipelines across projects       |
-| Release            | `release`          | All releases across projects               |
+| Resource Type | Import Type     | Description                         |
+|---------------|---------------- |-------------------------------------|
+| Project       | `project`       | All projects in the group           |
+| Merge Request | `merge_request` | All merge requests across projects  |
+| Pipeline      | `pipeline`      | All CI/CD pipelines across projects |
+| Release       | `release`       | All releases across projects        |
 
 :::info
 The **event type** is extracted from the `X-Gitlab-Event` header and injected into the payload as `eventType` for
@@ -280,5 +282,3 @@ Refer to the [GitLab webhook events documentation](https://docs.gitlab.com/ee/us
 for a full list of available events.
 To add support to another event, open a pull request to [this repo](https://github.com/mia-platform/integration-connector-agent),
 changing the [supported events mapping](https://github.com/mia-platform/integration-connector-agent/blob/main/internal/sources/gitlab/events.go).
-
-````

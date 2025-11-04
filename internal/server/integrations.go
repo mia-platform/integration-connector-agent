@@ -239,12 +239,7 @@ func setupSource(ctx context.Context, log *logrus.Logger, source config.GenericC
 			return nil
 		},
 		sources.Gitlab: func() error {
-			s, err := gitlab.NewGitLabSource(ctx, log, source, pg, oasRouter)
-			if err != nil {
-				return err
-			}
-			integration.appendCloseableSource(s)
-			return nil
+			return wrapSetupError(gitlab.AddSourceToRouter(ctx, source, pg, oasRouter))
 		},
 	}
 
