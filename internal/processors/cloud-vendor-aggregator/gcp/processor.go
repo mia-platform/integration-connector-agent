@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
-	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/config"
 	gcppubsubevents "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/events"
 
@@ -95,74 +94,4 @@ func getAssetInventoryImportEvent(rawData []byte) ([]byte, string, error) {
 		return nil, "", err
 	}
 	return newByteRawData, newRawData.AssetType(), nil
-}
-
-func logRawDataInventoryEvent(rawData []byte) {
-	newRawData := new(gcppubsubevents.InventoryEvent)
-	if err := json.Unmarshal(rawData, &newRawData); err != nil {
-		fmt.Println("failed to unmarshal raw data", err)
-		return
-	}
-
-	pretty, err := json.MarshalIndent(newRawData.Asset, "", "  ")
-	if err != nil {
-		fmt.Println("failed to marshal raw data", err)
-		return
-	}
-
-	fmt.Println("logRawDataInventoryEvent:" + string(pretty))
-}
-
-func logRawDataInventoryImportEvent(rawData []byte) {
-	newRawData := new(gcppubsubevents.InventoryImportEvent)
-	if err := json.Unmarshal(rawData, &newRawData); err != nil {
-		fmt.Println("failed to unmarshal raw data", err)
-		return
-	}
-
-	pretty, err := json.MarshalIndent(newRawData, "", "  ")
-	if err != nil {
-		fmt.Println("failed to marshal raw data", err)
-		return
-	}
-
-	fmt.Println("logRawDataInventoryImportEvent: " + string(pretty))
-}
-
-func logRawData(newDataBytes []byte) {
-	newData := new(commons.Asset)
-	if err := json.Unmarshal(newDataBytes, &newData); err != nil {
-		fmt.Println("failed to unmarshal raw data", err)
-		return
-	}
-
-	newRawData := new(gcppubsubevents.InventoryImportEvent)
-	if err := json.Unmarshal(newData.RawData, &newRawData); err != nil {
-		fmt.Println("failed to unmarshal raw data", err)
-		return
-	}
-
-	pretty, err := json.MarshalIndent(newRawData, "", "  ")
-	if err != nil {
-		fmt.Println("failed to marshal raw data", err)
-		return
-	}
-
-	fmt.Println("Raw data:\n" + string(pretty))
-}
-
-func logEventData(event entities.PipelineEvent) error {
-	// Try to get the JSON representation of the event for debugging and
-	// pretty-print it with indentation so logs are easier to read.
-	if jsonData, err := event.JSON(); err != nil {
-		return fmt.Errorf("failed to get event JSON: %w", err)
-	} else {
-		if pretty, err := json.MarshalIndent(jsonData, "", "  "); err != nil {
-			// Fallback to logging the raw parsed map if MarshalIndent fails
-			return fmt.Errorf("failed to marshal event JSON: %w", err)
-		} else {
-			fmt.Println("Event data:\n" + string(pretty))
-		}
-	}
-	return nil
 }
