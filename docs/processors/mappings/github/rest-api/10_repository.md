@@ -38,7 +38,7 @@ The possible values a repository can have are:
           "processors": [
             {
               "type": "filter",
-              "celExpression": "eventType == 'repository'"
+              "celExpression": "eventType == 'github-import-repository'"
             },
             {
               "type": "mapper",

@@ -32,7 +32,7 @@ The possible values a workflow run can have are:
           "processors": [
             {
               "type": "filter",
-              "celExpression": "eventType == 'workflow_run'"
+              "celExpression": "eventType == 'github-import-workflow_run'"
             },
             {
               "type": "mapper",

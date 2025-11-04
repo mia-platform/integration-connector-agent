@@ -34,7 +34,7 @@ The possible values an issue can have are:
           "processors": [
             {
               "type": "filter",
-              "celExpression": "eventType == 'issue'"
+              "celExpression": "eventType == 'github-import-issue'"
             },
             {
               "type": "mapper",

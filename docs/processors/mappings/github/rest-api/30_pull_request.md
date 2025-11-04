@@ -33,7 +33,7 @@ The possible values a pull request can have are:
           "processors": [
             {
               "type": "filter",
-              "celExpression": "eventType == 'pull_request'"
+              "celExpression": "eventType == 'github-import-pull_request'"
             },
             {
               "type": "mapper",
