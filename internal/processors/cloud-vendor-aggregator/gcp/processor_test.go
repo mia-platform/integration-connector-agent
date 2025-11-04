@@ -95,18 +95,18 @@ func TestProcessWithStandardAssetInventoryEvent(t *testing.T) {
 			require.NoError(t, protojson.Unmarshal(result.Data(), &asset))
 
 			assetData := asset.GetResource().GetData()
-			idField, _ := assetData.GetFields()["id"]
-			nameField, _ := assetData.GetFields()["name"]
-			labelsField, _ := assetData.GetFields()["labels"]
+			idField := assetData.GetFields()["id"]
+			nameField := assetData.GetFields()["name"]
+			labelsField := assetData.GetFields()["labels"]
 
 			expectedAssetData := tc.expectedAsset.GetResource().GetData()
-			expectedIdField, _ := expectedAssetData.GetFields()["id"]
-			expectedNameField, _ := expectedAssetData.GetFields()["name"]
-			expectedLabelsField, _ := expectedAssetData.GetFields()["labels"]
+			expectedIDField := expectedAssetData.GetFields()["id"]
+			expectedNameField := expectedAssetData.GetFields()["name"]
+			expectedLabelsField := expectedAssetData.GetFields()["labels"]
 
-			require.Equal(t, tc.expectedAsset.Name, asset.Name)
-			require.Equal(t, tc.expectedAsset.AssetType, asset.AssetType)
-			require.Equal(t, expectedIdField.GetStringValue(), idField.GetStringValue())
+			require.Equal(t, tc.expectedAsset.GetName(), asset.GetName())
+			require.Equal(t, tc.expectedAsset.GetAssetType(), asset.GetAssetType())
+			require.Equal(t, expectedIDField.GetStringValue(), idField.GetStringValue())
 			require.Equal(t, expectedNameField.GetStringValue(), nameField.GetStringValue())
 			require.Equal(t, expectedLabelsField.GetStructValue().AsMap(), labelsField.GetStructValue().AsMap())
 		})
@@ -232,18 +232,18 @@ func TestProcessWithImportAssetInventoryEvent(t *testing.T) {
 			require.NoError(t, json.Unmarshal(result.Data(), &asset))
 
 			assetData := asset.GetResource().GetData()
-			idField, _ := assetData.GetFields()["id"]
-			nameField, _ := assetData.GetFields()["name"]
-			labelsField, _ := assetData.GetFields()["labels"]
+			idField := assetData.GetFields()["id"]
+			nameField := assetData.GetFields()["name"]
+			labelsField := assetData.GetFields()["labels"]
 
 			expectedAssetData := tc.expectedAsset.GetResource().GetData()
-			expectedIdField, _ := expectedAssetData.GetFields()["id"]
-			expectedNameField, _ := expectedAssetData.GetFields()["name"]
-			expectedLabelsField, _ := expectedAssetData.GetFields()["labels"]
+			expectedIDField := expectedAssetData.GetFields()["id"]
+			expectedNameField := expectedAssetData.GetFields()["name"]
+			expectedLabelsField := expectedAssetData.GetFields()["labels"]
 
-			require.Equal(t, tc.expectedAsset.Name, asset.Name)
-			require.Equal(t, tc.expectedAsset.AssetType, asset.AssetType)
-			require.Equal(t, expectedIdField.GetStringValue(), idField.GetStringValue())
+			require.Equal(t, tc.expectedAsset.GetName(), asset.GetName())
+			require.Equal(t, tc.expectedAsset.GetAssetType(), asset.GetAssetType())
+			require.Equal(t, expectedIDField.GetStringValue(), idField.GetStringValue())
 			require.Equal(t, expectedNameField.GetStringValue(), nameField.GetStringValue())
 			require.Equal(t, expectedLabelsField.GetStructValue().AsMap(), labelsField.GetStructValue().AsMap())
 		})

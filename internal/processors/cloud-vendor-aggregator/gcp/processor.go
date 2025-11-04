@@ -6,7 +6,6 @@ package gcpaggregator
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/config"
@@ -34,7 +33,7 @@ func (c *GCPCloudVendorAggregator) Process(input entities.PipelineEvent) (entiti
 	output := input.Clone()
 	if input.GetType() != gcppubsubevents.RealtimeSyncEventType {
 		c.logger.Debug("Non-RealtimeSyncEventType detected")
-		asset, assetType, err := getAssetInventoryImportEvent(input.Data())
+		asset, assetType, err := getAssetInventoryImportEvent(input.Data(), c.logger)
 		if err != nil {
 			return output, err
 		}
@@ -54,7 +53,7 @@ func (c *GCPCloudVendorAggregator) Process(input entities.PipelineEvent) (entiti
 		return output, nil
 	}
 
-	asset, assetType, err := getAssetInventoryEvent(input.Data())
+	asset, assetType, err := getAssetInventoryEvent(input.Data(), c.logger)
 	if err != nil {
 		return output, err
 	}
@@ -68,29 +67,29 @@ func (c *GCPCloudVendorAggregator) Process(input entities.PipelineEvent) (entiti
 	}, nil
 }
 
-func getAssetInventoryEvent(rawData []byte) ([]byte, string, error) {
+func getAssetInventoryEvent(rawData []byte, logger *logrus.Logger) ([]byte, string, error) {
 	newRawData := new(gcppubsubevents.InventoryEvent)
 	if err := json.Unmarshal(rawData, &newRawData); err != nil {
-		fmt.Println("failed to unmarshal raw data", err)
+		logger.WithError(err).Error("failed to unmarshal raw data")
 		return nil, "", err
 	}
 	newByteRawData, err := json.Marshal(newRawData.Asset)
 	if err != nil {
-		fmt.Println("failed to marshal raw data", err)
+		logger.WithError(err).Error("failed to marshal raw data")
 		return nil, "", err
 	}
 	return newByteRawData, newRawData.AssetType(), nil
 }
 
-func getAssetInventoryImportEvent(rawData []byte) ([]byte, string, error) {
+func getAssetInventoryImportEvent(rawData []byte, logger *logrus.Logger) ([]byte, string, error) {
 	newRawData := new(gcppubsubevents.InventoryImportEvent)
 	if err := json.Unmarshal(rawData, &newRawData); err != nil {
-		fmt.Println("failed to unmarshal raw data", err)
+		logger.WithError(err).Error("failed to unmarshal raw data")
 		return nil, "", err
 	}
 	newByteRawData, err := json.Marshal(newRawData.Data)
 	if err != nil {
-		fmt.Println("failed to marshal raw data", err)
+		logger.WithError(err).Error("failed to marshal raw data")
 		return nil, "", err
 	}
 	return newByteRawData, newRawData.AssetType(), nil

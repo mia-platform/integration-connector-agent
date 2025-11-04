@@ -6,8 +6,8 @@ package gcpclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
 
 	asset "cloud.google.com/go/asset/apiv1"
 	"cloud.google.com/go/asset/apiv1/assetpb"
@@ -157,7 +157,6 @@ func (p *concrete) Close() error {
 }
 
 func (p *concrete) CloseAssetClient() error {
-	fmt.Println("Closing asset client:", p.a)
 	if err := p.a.Close(); err != nil {
 		return fmt.Errorf("failed to close asset client: %w", err)
 	}
@@ -166,7 +165,7 @@ func (p *concrete) CloseAssetClient() error {
 
 func (p *concrete) ListAssets(ctx context.Context) ([]*assetpb.Asset, error) {
 	req := &assetpb.ListAssetsRequest{
-		Parent:      fmt.Sprintf("projects/%s", p.config.ProjectID),
+		Parent:      "projects/" + p.config.ProjectID,
 		AssetTypes:  allAssetTypes,
 		ContentType: assetpb.ContentType_RESOURCE,
 	}
@@ -177,12 +176,8 @@ func (p *concrete) ListAssets(ctx context.Context) ([]*assetpb.Asset, error) {
 
 	for {
 		response, err := it.Next()
-		if err == iterator.Done {
+		if errors.Is(err, iterator.Done) {
 			break
-		}
-		if err != nil {
-			log.Fatal(err)
-			p.CloseAssetClient()
 		}
 		assets = append(assets, response)
 	}

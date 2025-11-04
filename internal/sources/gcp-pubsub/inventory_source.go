@@ -157,19 +157,19 @@ func (s *InventorySource) webhookHandler(c *fiber.Ctx) error {
 
 	for _, asset := range assets {
 		importEvent := gcppubsubevents.InventoryImportEvent{
-			AssetName: asset.Name,
-			Type:      asset.AssetType,
+			AssetName: asset.GetName(),
+			Type:      asset.GetAssetType(),
 			Data:      asset,
 		}
 		data, err := json.Marshal(importEvent)
 		if err != nil {
-			s.log.WithField("assetName", asset.Name).WithError(err).Warn("failed to create import event data for asset")
+			s.log.WithField("assetName", asset.GetName()).WithError(err).Warn("failed to create import event data for asset")
 			continue
 		}
 
 		event, err := eventBuilder.GetPipelineEvent(s.ctx, data)
 		if err != nil {
-			s.log.WithField("assetName", asset.Name).WithError(err).Warn("failed to create import event for asset")
+			s.log.WithField("assetName", asset.GetName()).WithError(err).Warn("failed to create import event for asset")
 			continue
 		}
 
