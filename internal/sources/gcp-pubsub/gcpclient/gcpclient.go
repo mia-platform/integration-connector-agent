@@ -38,22 +38,23 @@ type GCPConfig struct {
 
 const (
 	BucketAPI      = "storage.googleapis.com/Bucket"
+	ClusterAPI     = "container.googleapis.com/Cluster"
+	DiskAPI        = "compute.googleapis.com/Disk"
+	FirewallAPI    = "compute.googleapis.com/Firewall"
+	FolderAPI      = "cloudresourcemanager.googleapis.com/Folder"
+	FunctionAPI    = "cloudfunctions.googleapis.com/Function"
+	InstanceAPI    = "compute.googleapis.com/Instance"
 	JobAPI         = "run.googleapis.com/Job"
+	NetworkAPI     = "compute.googleapis.com/Network"
+	NodePoolAPI    = "container.googleapis.com/NodePool"
 	RevisionAPI    = "run.googleapis.com/Revision"
 	ServiceAPI     = "run.googleapis.com/Service"
-	InstanceAPI    = "compute.googleapis.com/Instance"
-	DiskAPI        = "compute.googleapis.com/Disk"
-	NetworkAPI     = "compute.googleapis.com/Network"
-	FirewallAPI    = "compute.googleapis.com/Firewall"
-	ClusterAPI     = "container.googleapis.com/Cluster"
-	NodePoolAPI    = "container.googleapis.com/NodePool"
 	SQLInstanceAPI = "sqladmin.googleapis.com/Instance"
-	FolderAPI      = "cloudresourcemanager.googleapis.com/Folder"
 )
 
 var allAssetTypes = []string{
 	BucketAPI,
-	NetworkAPI,
+	FunctionAPI,
 }
 
 func New(ctx context.Context, log *logrus.Logger, config GCPConfig) (GCP, error) {
