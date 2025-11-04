@@ -1,4 +1,3 @@
-````markdown
 # GitHub
 
 The GitHub source allows the integration-connector-agent to receive events from GitHub via webhooks and supports full import of GitHub resources.
@@ -20,6 +19,7 @@ This source supports a full import of all GitHub resources in the configured org
 To trigger a full import, you can send a `POST` request to the import webhook path configured in the service configuration.
 
 The full import includes:
+
 - **Repositories**: All repositories in the organization
 - **Pull Requests**: All pull requests across all repositories  
 - **GitHub Actions**: All workflow runs across all repositories
@@ -145,8 +145,8 @@ For full import functionality, you can use either:
 
 The GitHub source currently supports the following webhook event:
 
-| Event         | Event Type         | Example Payload                | Operation |
-|---------------|--------------------|-------------------------------|-----------|
+| Event         | Event Type         | Example Payload                     | Operation |
+|---------------|--------------------|-------------------------------------|-----------|
 | pull request  | `pull_request`     | [link](#pull-request-event-payload) | Write     |
 
 The GitHub source supports the following resources for full import:
@@ -242,5 +242,3 @@ Refer to the [GitHub webhook event types documentation](https://docs.github.com/
 for a full list of available events.
 To add support to another event, open a pull request to [this repo](https://github.com/mia-platform/integration-connector-agent),
 changing the [supported events mapping](https://github.com/mia-platform/integration-connector-agent/blob/main/internal/sources/github/events.go).
-
-````
