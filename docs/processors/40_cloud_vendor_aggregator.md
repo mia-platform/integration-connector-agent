@@ -38,8 +38,8 @@ Each vendor has currently a limited set of supported resources.
 
 #### Google Cloud Platform (GCP)
 
-- Bucket storage (`storage.googleapis.com/Bucket`)
-- Cloud Run function (`run.googleapis.com/Service`)
+- [Bucket](./mappings/gcp/10_bucket.md): API definition (`storage.googleapis.com/Bucket`)
+- [Network](./mappings/gcp/20_network.md): API definition (`run.googleapis.com/Service`)
 
 #### AWS
 

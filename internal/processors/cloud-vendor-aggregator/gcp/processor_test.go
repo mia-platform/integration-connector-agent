@@ -5,90 +5,79 @@
 package gcpaggregator
 
 import (
-	"context"
 	"encoding/json"
 	"os"
 	"testing"
 
-	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/commons"
-	"github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/gcp/clients/runservice"
-	storageclient "github.com/mia-platform/integration-connector-agent/internal/processors/cloud-vendor-aggregator/gcp/clients/storage"
+	"cloud.google.com/go/asset/apiv1/assetpb"
 	gcppubsubevents "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/events"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func TestProcessWithStandardAssetInventoryEvent(t *testing.T) {
 	l, _ := test.NewNullLogger()
 
 	testCases := []struct {
-		name                 string
-		eventFilePath        string
-		expectedAsset        commons.Asset
-		mockRunServiceClient runservice.Client
-		mockStorageClient    storageclient.Client
+		name          string
+		eventFilePath string
+		expectedAsset assetpb.Asset
 	}{
 		{
-			name:          "Create run service event",
-			eventFilePath: "testdata/func-create.json",
-			expectedAsset: commons.Asset{
-				Name:     "test-function",
-				Type:     "run.googleapis.com/Service",
-				Provider: commons.GCPAssetProvider,
-				Location: "europe-west1",
-				Relationships: []string{
-					"projects/123123123123",
-					"folders/456456456456",
-					"organizations/789789789789",
-				},
-				Tags: commons.Tags{"label1": "value1", "label2": "value2"},
-			},
-			mockRunServiceClient: &MockFnService{
-				GetServiceResult: &runservice.Service{
-					Name:   "projects/the-project/locations/europe-west1/services/test-function",
-					Labels: map[string]string{"label1": "value1", "label2": "value2"},
-				},
-				GetServiceAssert: func(_ context.Context, name string) {
-					require.Equal(t, "projects/the-project/locations/europe-west1/services/test-function", name)
+			name:          "Create bucket event",
+			eventFilePath: "testdata/bucket-create.json",
+			expectedAsset: assetpb.Asset{
+				Name:      "//storage.googleapis.com/test-bucket",
+				AssetType: "storage.googleapis.com/Bucket",
+				Resource: &assetpb.Resource{
+					Data: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"id":   structpb.NewStringValue("test-bucket"),
+							"name": structpb.NewStringValue("test-bucket"),
+							"labels": structpb.NewStructValue(&structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"label1": structpb.NewStringValue("value1"),
+									"label2": structpb.NewStringValue("value2"),
+								},
+							}),
+						},
+					},
 				},
 			},
 		},
 		{
-			name:          "Create bucket event",
-			eventFilePath: "testdata/bucket-create.json",
-			expectedAsset: commons.Asset{
-				Name:     "test-bucket",
-				Type:     "storage.googleapis.com/Bucket",
-				Provider: commons.GCPAssetProvider,
-				Location: "europe-west1",
-				Relationships: []string{
-					"projects/123123123123",
-					"folders/456456456456",
-					"organizations/789789789789",
-				},
-				Tags: commons.Tags{"label1": "value1", "label2": "value2"},
-			},
-			mockStorageClient: &MockStorageClient{
-				GetBucketResult: &storageclient.Bucket{
-					Name:     "test-bucket",
-					Location: "europe-west1",
-					Labels:   map[string]string{"label1": "value1", "label2": "value2"},
-				},
-				GetBucketAssert: func(_ context.Context, name string) {
-					require.Equal(t, "//storage.googleapis.com/test-bucket", name)
+			name:          "Create network event",
+			eventFilePath: "testdata/network-create.json",
+			expectedAsset: assetpb.Asset{
+				Name:      "//compute.googleapis.com/test-network",
+				AssetType: "compute.googleapis.com/Network",
+				Resource: &assetpb.Resource{
+					Data: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"id":   structpb.NewStringValue("test-network"),
+							"name": structpb.NewStringValue("test-network"),
+							"labels": structpb.NewStructValue(&structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"label1": structpb.NewStringValue("value1"),
+									"label2": structpb.NewStringValue("value2"),
+								},
+							}),
+						},
+					},
 				},
 			},
 		},
 	}
 
-	for _, tc := range testCases {
+	for i := range testCases {
+		tc := &testCases[i]
 		t.Run(tc.name, func(t *testing.T) {
 			p := &GCPCloudVendorAggregator{
 				logger:  l,
 				options: nil,
-				s:       tc.mockStorageClient,
-				f:       tc.mockRunServiceClient,
 			}
 
 			d, err := os.ReadFile(tc.eventFilePath)
@@ -102,18 +91,24 @@ func TestProcessWithStandardAssetInventoryEvent(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, result)
 
-			var asset commons.Asset
-			require.NoError(t, json.Unmarshal(result.Data(), &asset))
+			var asset assetpb.Asset
+			require.NoError(t, protojson.Unmarshal(result.Data(), &asset))
 
-			require.Equal(t, tc.expectedAsset.Name, asset.Name)
-			require.Equal(t, tc.expectedAsset.Type, asset.Type)
-			require.Equal(t, tc.expectedAsset.Provider, asset.Provider)
-			require.Equal(t, tc.expectedAsset.Location, asset.Location)
-			require.Len(t, asset.Relationships, len(tc.expectedAsset.Relationships))
-			for i, rel := range tc.expectedAsset.Relationships {
-				require.Equal(t, rel, asset.Relationships[i])
-			}
-			require.Equal(t, tc.expectedAsset.Tags, asset.Tags)
+			assetData := asset.GetResource().GetData()
+			idField := assetData.GetFields()["id"]
+			nameField := assetData.GetFields()["name"]
+			labelsField := assetData.GetFields()["labels"]
+
+			expectedAssetData := tc.expectedAsset.GetResource().GetData()
+			expectedIDField := expectedAssetData.GetFields()["id"]
+			expectedNameField := expectedAssetData.GetFields()["name"]
+			expectedLabelsField := expectedAssetData.GetFields()["labels"]
+
+			require.Equal(t, tc.expectedAsset.GetName(), asset.GetName())
+			require.Equal(t, tc.expectedAsset.GetAssetType(), asset.GetAssetType())
+			require.Equal(t, expectedIDField.GetStringValue(), idField.GetStringValue())
+			require.Equal(t, expectedNameField.GetStringValue(), nameField.GetStringValue())
+			require.Equal(t, expectedLabelsField.GetStructValue().AsMap(), labelsField.GetStructValue().AsMap())
 		})
 	}
 }
@@ -122,68 +117,104 @@ func TestProcessWithImportAssetInventoryEvent(t *testing.T) {
 	l, _ := test.NewNullLogger()
 
 	testCases := []struct {
-		name                 string
-		importEvent          gcppubsubevents.InventoryImportEvent
-		expectedAsset        commons.Asset
-		mockRunServiceClient runservice.Client
-		mockStorageClient    storageclient.Client
+		name          string
+		importEvent   gcppubsubevents.InventoryImportEvent
+		expectedAsset assetpb.Asset
 	}{
 		{
-			name: "import run service event",
+			name: "import bucket event",
 			importEvent: gcppubsubevents.InventoryImportEvent{
-				AssetName: "//run.googleapis.com/projects/test-project/locations/europe-west1/services/test-function",
-				Type:      "run.googleapis.com/Service",
-			},
-			expectedAsset: commons.Asset{
-				Name:     "test-function",
-				Type:     "run.googleapis.com/Service",
-				Provider: commons.GCPAssetProvider,
-				Location: "europe-west1",
-				Tags:     commons.Tags{"label1": "value1", "label2": "value2"},
-			},
-			mockRunServiceClient: &MockFnService{
-				GetServiceResult: &runservice.Service{
-					Name:   "projects/test-project/locations/europe-west1/services/test-function",
-					Labels: map[string]string{"label1": "value1", "label2": "value2"},
+				AssetName: "//storage.googleapis.com/test-bucket",
+				Type:      "storage.googleapis.com/Bucket",
+				Data: &assetpb.Asset{
+					Name:      "//storage.googleapis.com/test-bucket",
+					AssetType: "storage.googleapis.com/Bucket",
+					Resource: &assetpb.Resource{
+						Data: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"id":   structpb.NewStringValue("test-bucket"),
+								"name": structpb.NewStringValue("test-bucket"),
+								"labels": structpb.NewStructValue(&structpb.Struct{
+									Fields: map[string]*structpb.Value{
+										"label1": structpb.NewStringValue("value1"),
+										"label2": structpb.NewStringValue("value2"),
+									},
+								}),
+							},
+						},
+					},
 				},
-				GetServiceAssert: func(_ context.Context, name string) {
-					require.Equal(t, "projects/test-project/locations/europe-west1/services/test-function", name)
+			},
+			expectedAsset: assetpb.Asset{
+				Name:      "//storage.googleapis.com/test-bucket",
+				AssetType: "storage.googleapis.com/Bucket",
+				Resource: &assetpb.Resource{
+					Data: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"id":   structpb.NewStringValue("test-bucket"),
+							"name": structpb.NewStringValue("test-bucket"),
+							"labels": structpb.NewStructValue(&structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"label1": structpb.NewStringValue("value1"),
+									"label2": structpb.NewStringValue("value2"),
+								},
+							}),
+						},
+					},
 				},
 			},
 		},
 		{
-			name: "import bucket event",
+			name: "import network event",
 			importEvent: gcppubsubevents.InventoryImportEvent{
-				AssetName: "//storage.googleapis.com/bucket1",
-				Type:      "storage.googleapis.com/Bucket",
-			},
-			expectedAsset: commons.Asset{
-				Name:     "bucket1",
-				Type:     "storage.googleapis.com/Bucket",
-				Provider: commons.GCPAssetProvider,
-				Location: "europe-west1",
-				Tags:     commons.Tags{"label1": "value1", "label2": "value2"},
-			},
-			mockStorageClient: &MockStorageClient{
-				GetBucketResult: &storageclient.Bucket{
-					Name:     "bucket1",
-					Location: "europe-west1",
-					Labels:   map[string]string{"label1": "value1", "label2": "value2"},
+				AssetName: "//compute.googleapis.com/test-network",
+				Type:      "compute.googleapis.com/Network",
+				Data: &assetpb.Asset{
+					Name:      "//compute.googleapis.com/test-network",
+					AssetType: "compute.googleapis.com/Network",
+					Resource: &assetpb.Resource{
+						Data: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"id":   structpb.NewStringValue("test-network"),
+								"name": structpb.NewStringValue("test-network"),
+								"labels": structpb.NewStructValue(&structpb.Struct{
+									Fields: map[string]*structpb.Value{
+										"label1": structpb.NewStringValue("value1"),
+										"label2": structpb.NewStringValue("value2"),
+									},
+								}),
+							},
+						},
+					},
 				},
-				GetBucketAssert: func(_ context.Context, name string) {
-					require.Equal(t, "//storage.googleapis.com/bucket1", name)
+			},
+			expectedAsset: assetpb.Asset{
+				Name:      "//compute.googleapis.com/test-network",
+				AssetType: "compute.googleapis.com/Network",
+				Resource: &assetpb.Resource{
+					Data: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"id":   structpb.NewStringValue("test-network"),
+							"name": structpb.NewStringValue("test-network"),
+							"labels": structpb.NewStructValue(&structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"label1": structpb.NewStringValue("value1"),
+									"label2": structpb.NewStringValue("value2"),
+								},
+							}),
+						},
+					},
 				},
 			},
 		},
 	}
 
-	for _, tc := range testCases {
+	for i := range testCases {
+		tc := &testCases[i]
 		t.Run(tc.name, func(t *testing.T) {
 			p := &GCPCloudVendorAggregator{
 				logger:  l,
 				options: nil,
-				s:       tc.mockStorageClient,
-				f:       tc.mockRunServiceClient,
 			}
 
 			data, err := json.Marshal(tc.importEvent)
@@ -197,18 +228,24 @@ func TestProcessWithImportAssetInventoryEvent(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, result)
 
-			var asset commons.Asset
+			var asset assetpb.Asset
 			require.NoError(t, json.Unmarshal(result.Data(), &asset))
 
-			require.Equal(t, tc.expectedAsset.Name, asset.Name)
-			require.Equal(t, tc.expectedAsset.Type, asset.Type)
-			require.Equal(t, tc.expectedAsset.Provider, asset.Provider)
-			require.Equal(t, tc.expectedAsset.Location, asset.Location)
-			require.Len(t, asset.Relationships, len(tc.expectedAsset.Relationships))
-			for i, rel := range tc.expectedAsset.Relationships {
-				require.Equal(t, rel, asset.Relationships[i])
-			}
-			require.Equal(t, tc.expectedAsset.Tags, asset.Tags)
+			assetData := asset.GetResource().GetData()
+			idField := assetData.GetFields()["id"]
+			nameField := assetData.GetFields()["name"]
+			labelsField := assetData.GetFields()["labels"]
+
+			expectedAssetData := tc.expectedAsset.GetResource().GetData()
+			expectedIDField := expectedAssetData.GetFields()["id"]
+			expectedNameField := expectedAssetData.GetFields()["name"]
+			expectedLabelsField := expectedAssetData.GetFields()["labels"]
+
+			require.Equal(t, tc.expectedAsset.GetName(), asset.GetName())
+			require.Equal(t, tc.expectedAsset.GetAssetType(), asset.GetAssetType())
+			require.Equal(t, expectedIDField.GetStringValue(), idField.GetStringValue())
+			require.Equal(t, expectedNameField.GetStringValue(), nameField.GetStringValue())
+			require.Equal(t, expectedLabelsField.GetStructValue().AsMap(), labelsField.GetStructValue().AsMap())
 		})
 	}
 }

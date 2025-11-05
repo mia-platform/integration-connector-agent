@@ -148,51 +148,28 @@ func (s *InventorySource) webhookHandler(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(utils.ValidationError(err.Error()))
 	}
 
-	buckets, err := s.gcp.ListBuckets(c.UserContext())
+	assets, err := s.gcp.ListAssets(c.UserContext())
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(utils.InternalServerError("failed to list buckets: " + err.Error()))
+		return c.Status(http.StatusInternalServerError).JSON(utils.InternalServerError("failed to list assets: " + err.Error()))
 	}
 
 	eventBuilder := gcppubsubevents.NewInventoryEventBuilder[gcppubsubevents.InventoryImportEvent]()
 
-	for _, bucket := range buckets {
+	for _, asset := range assets {
 		importEvent := gcppubsubevents.InventoryImportEvent{
-			AssetName: bucket.AssetName(),
-			Type:      gcppubsubevents.InventoryEventStorageType,
+			AssetName: asset.GetName(),
+			Type:      asset.GetAssetType(),
+			Data:      asset,
 		}
 		data, err := json.Marshal(importEvent)
 		if err != nil {
-			s.log.WithField("bucketName", bucket.Name).WithError(err).Warn("failed to create import event data for bucket")
+			s.log.WithField("assetName", asset.GetName()).WithError(err).Warn("failed to create import event data for asset")
 			continue
 		}
 
 		event, err := eventBuilder.GetPipelineEvent(s.ctx, data)
 		if err != nil {
-			s.log.WithField("bucketName", bucket.Name).WithError(err).Warn("failed to create import event for bucket")
-			continue
-		}
-
-		s.pipeline.AddMessage(event)
-	}
-
-	functions, err := s.gcp.ListFunctions(c.UserContext())
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(utils.InternalServerError("failed to list functions: " + err.Error()))
-	}
-	for _, function := range functions {
-		importEvent := gcppubsubevents.InventoryImportEvent{
-			AssetName: function.AssetName(),
-			Type:      gcppubsubevents.InventoryEventFunctionType,
-		}
-		data, err := json.Marshal(importEvent)
-		if err != nil {
-			s.log.WithField("functionName", function.Name).WithError(err).Warn("failed to create import event data for function")
-			continue
-		}
-
-		event, err := eventBuilder.GetPipelineEvent(s.ctx, data)
-		if err != nil {
-			s.log.WithField("functionName", function.Name).WithError(err).Warn("failed to create import event for function")
+			s.log.WithField("assetName", asset.GetName()).WithError(err).Warn("failed to create import event for asset")
 			continue
 		}
 

@@ -7,6 +7,8 @@ package gcpclient
 import (
 	"context"
 	"sync"
+
+	"cloud.google.com/go/asset/apiv1/assetpb"
 )
 
 var _mockinterfaceimpltest GCP = &MockPubSub{} //nolint: unused
@@ -21,15 +23,10 @@ type MockPubSub struct {
 	closeInvoked     bool
 	closrInvokedLock sync.Mutex
 
-	ListBucketsResult      []*Bucket
-	ListBucketsError       error
-	listBucketsInvoked     bool
-	listBucketsInvokedLock sync.Mutex
-
-	ListFunctionsResult      []*Function
-	ListFunctionsError       error
-	listFunctionsInvoked     bool
-	listFunctionsInvokedLock sync.Mutex
+	ListAssetsResult      []*assetpb.Asset
+	ListAssetsError       error
+	listAssetsInvoked     bool
+	listAssetsInvokedLock sync.Mutex
 }
 
 func (m *MockPubSub) Listen(ctx context.Context, handler ListenerFunc) error {
@@ -63,30 +60,16 @@ func (m *MockPubSub) CloseInvoked() bool {
 	return m.closeInvoked
 }
 
-func (m *MockPubSub) ListBuckets(_ context.Context) ([]*Bucket, error) {
-	m.listBucketsInvokedLock.Lock()
-	defer m.listBucketsInvokedLock.Unlock()
+func (m *MockPubSub) ListAssets(_ context.Context) ([]*assetpb.Asset, error) {
+	m.listAssetsInvokedLock.Lock()
+	defer m.listAssetsInvokedLock.Unlock()
 
-	m.listBucketsInvoked = true
-	return m.ListBucketsResult, m.ListBucketsError
+	m.listAssetsInvoked = true
+	return m.ListAssetsResult, m.ListAssetsError
 }
 
-func (m *MockPubSub) ListBucketsInvoked() bool {
-	m.listBucketsInvokedLock.Lock()
-	defer m.listBucketsInvokedLock.Unlock()
-	return m.listBucketsInvoked
-}
-
-func (m *MockPubSub) ListFunctions(_ context.Context) ([]*Function, error) {
-	m.listFunctionsInvokedLock.Lock()
-	defer m.listFunctionsInvokedLock.Unlock()
-
-	m.listFunctionsInvoked = true
-	return m.ListFunctionsResult, m.ListFunctionsError
-}
-
-func (m *MockPubSub) ListFunctionsInvoked() bool {
-	m.listFunctionsInvokedLock.Lock()
-	defer m.listFunctionsInvokedLock.Unlock()
-	return m.listFunctionsInvoked
+func (m *MockPubSub) ListAssetsInvoked() bool {
+	m.listAssetsInvokedLock.Lock()
+	defer m.listAssetsInvokedLock.Unlock()
+	return m.listAssetsInvoked
 }

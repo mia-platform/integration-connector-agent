@@ -11,10 +11,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"cloud.google.com/go/asset/apiv1/assetpb"
 	"github.com/mia-platform/integration-connector-agent/entities"
 	"github.com/mia-platform/integration-connector-agent/internal/config"
 	"github.com/mia-platform/integration-connector-agent/internal/pipeline"
-	gcppubsubevents "github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/events"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/gcp-pubsub/gcpclient"
 	"github.com/mia-platform/integration-connector-agent/internal/sources/webhook/hmac"
 	"github.com/mia-platform/integration-connector-agent/internal/testutils"
@@ -134,19 +134,15 @@ func TestImportWebhook(t *testing.T) {
 		pg := &pipeline.PipelineGroupMock{
 			AssertAddMessage: func(data entities.PipelineEvent) {
 				require.NotNil(t, data)
-				require.Equal(t, gcppubsubevents.ImportEventType, data.GetType())
+				require.Equal(t, gcpclient.BucketAPI, data.GetType())
 			},
 		}
 
 		app, router := testutils.GetTestRouter(t)
 		client := &gcpclient.MockPubSub{
-			ListBucketsResult: []*gcpclient.Bucket{
-				{Name: "bucket1"},
-				{Name: "bucket2"},
-			},
-			ListFunctionsResult: []*gcpclient.Function{
-				{Name: "projects/test-project/locations/eu-west-1/services/function1"},
-				{Name: "projects/test-project/locations/eu-west-1/services/function2"},
+			ListAssetsResult: []*assetpb.Asset{
+				{Name: "//storage.googleapis.com/bucket1", AssetType: gcpclient.BucketAPI},
+				{Name: "//storage.googleapis.com/bucket2", AssetType: gcpclient.BucketAPI},
 			},
 		}
 
@@ -160,38 +156,23 @@ func TestImportWebhook(t *testing.T) {
 
 		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-		require.True(t, client.ListBucketsInvoked())
-		require.True(t, client.ListFunctionsInvoked())
+		require.True(t, client.ListAssetsInvoked())
 
-		require.Len(t, pg.Messages, 4)
+		require.Len(t, pg.Messages, 2)
 
-		require.Equal(t, gcppubsubevents.ImportEventType, pg.Messages[0].GetType())
+		require.Equal(t, gcpclient.BucketAPI, pg.Messages[0].GetType())
 		require.Equal(t, entities.Write, pg.Messages[0].Operation())
 		require.Equal(t, entities.PkFields{
 			entities.PkField{Key: "resourceName", Value: "//storage.googleapis.com/bucket1"},
-			entities.PkField{Key: "resourceType", Value: gcppubsubevents.InventoryEventStorageType},
+			entities.PkField{Key: "resourceType", Value: gcpclient.BucketAPI},
 		}, pg.Messages[0].GetPrimaryKeys())
 
-		require.Equal(t, gcppubsubevents.ImportEventType, pg.Messages[1].GetType())
+		require.Equal(t, gcpclient.BucketAPI, pg.Messages[1].GetType())
 		require.Equal(t, entities.Write, pg.Messages[1].Operation())
 		require.Equal(t, entities.PkFields{
 			entities.PkField{Key: "resourceName", Value: "//storage.googleapis.com/bucket2"},
-			entities.PkField{Key: "resourceType", Value: gcppubsubevents.InventoryEventStorageType},
+			entities.PkField{Key: "resourceType", Value: gcpclient.BucketAPI},
 		}, pg.Messages[1].GetPrimaryKeys())
-
-		require.Equal(t, gcppubsubevents.ImportEventType, pg.Messages[2].GetType())
-		require.Equal(t, entities.Write, pg.Messages[2].Operation())
-		require.Equal(t, entities.PkFields{
-			entities.PkField{Key: "resourceName", Value: "//run.googleapis.com/projects/test-project/locations/eu-west-1/services/function1"},
-			entities.PkField{Key: "resourceType", Value: gcppubsubevents.InventoryEventFunctionType},
-		}, pg.Messages[2].GetPrimaryKeys())
-
-		require.Equal(t, gcppubsubevents.ImportEventType, pg.Messages[3].GetType())
-		require.Equal(t, entities.Write, pg.Messages[3].Operation())
-		require.Equal(t, entities.PkFields{
-			entities.PkField{Key: "resourceName", Value: "//run.googleapis.com/projects/test-project/locations/eu-west-1/services/function2"},
-			entities.PkField{Key: "resourceType", Value: gcppubsubevents.InventoryEventFunctionType},
-		}, pg.Messages[3].GetPrimaryKeys())
 	})
 }
 

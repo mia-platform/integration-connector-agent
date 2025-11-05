@@ -132,3 +132,10 @@ integration-connector-agent
 server.log
 log.txt
 tests.test
+gcp-credentials.json
+test.config.json
+test.gcp.config.json
+test.github.config.json
+test.github.token
+test.github.webhook.secret
+
