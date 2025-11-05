@@ -2,30 +2,65 @@
 
 The GitHub source allows the integration-connector-agent to receive events from GitHub via webhooks and supports full import of GitHub resources.
 
-## Webhook Integration
+## How to Configure GitHub
 
-The GitHub source integrates with webhooks by exposing an endpoint at `/github/webhook` (configurable).
-When a webhook event is received, the following steps are performed:
+To configure a webhook in GitHub, follow the steps described in [GitHub's webhook documentation](https://docs.github.com/en/developers/webhooks-and-events/webhooks/creating-webhooks).
 
-1. **Validation**: The request is validated using the secret passed by the Webhook (HMAC SHA256 signature, as per
-  GitHub's requirements).
-1. **Event Handling**: The event type is extracted from the `X-GitHub-Event` header and injected into the event payload
-  for routing. The event is then sent to the pipeline. The operation (e.g., `Write`) is determined based on the event
-  type and action.
+Set the following fields:
 
-## Full Import
+- **Payload URL**: The URL where the webhook will send events. For the GitHub integration, use `http://<your-agent-host>[/optional-base-path]/github/webhook`.
+- **Content type**: `application/json` (recommended) or `application/x-www-form-urlencoded` (both are supported).
+- **Secret**: The secret used to validate incoming webhook requests. This must match the one set in the authentication configuration.
+- **Events**: Select the events you want to subscribe to.
 
-This source supports a full import of all GitHub resources in the configured organization.
-To trigger a full import, you can send a `POST` request to the import webhook path configured in the service configuration.
+For full import functionality, you can use either:
 
-The full import includes:
+### Option 1: GitHub App Authentication (Recommended)
 
-- **Repositories**: All repositories in the organization
-- **Pull Requests**: All pull requests across all repositories  
-- **GitHub Actions**: All workflow runs across all repositories
-- **Issues**: All issues across all repositories
+- Create a GitHub App in your organization:
+  - Go to GitHub Settings > Developer settings > GitHub Apps
+  - Click "New GitHub App"
+  - Set the required permissions:
+    - Repository permissions: Contents (Read), Metadata (Read), Pull requests (Read), Issues (Read), Actions (Read)
+    - Organization permissions: Members (Read)
+- Get the Client ID and Client Secret from your GitHub App
+- Set the `clientId` and `clientSecret` in your configuration
+- Configure the organization name in your configuration
 
-### Service Configuration
+### Option 2: Fine-Grained Access Token
+
+- Create a GitHub Fine-Grained Access Token with appropriate access and permission:
+  - Repository **access** `All repositories` scope for all future repositories owned. Also includes public repositories (read-only).
+  - Repositories **permission** `Contents: Read-only` scope for repository contents, commits, branches, downloads, releases, and merges
+  - Repositories **permission** `Metadata: Read-only` scope for search repositories, list collaborators, and access repository metadata
+- Set the `token` in your configuration
+- Configure the organization name in your configuration
+
+## Supported Modes
+
+### Webhook Events
+
+The GitHub source currently supports the following webhook event that can be found in this [documentation](../processors/mappings/github/webhoook-event/5_supported_events.md).
+
+### Full Import
+
+The GitHub source supports the following resources for full import:
+
+| Resource Type    | Import Type        | Description                          |
+|------------------|--------------------|--------------------------------------|
+| Repository       | `repository`       | All repositories in the organization |
+| Pull Request     | `pull_request`     | All pull requests across repositories|
+| Workflow Run     | `workflow_run`     | All GitHub Actions workflow runs     |
+| Issue            | `issue`            | All issues across repositories       |
+
+:::info
+The **event type** is extracted from the `X-GitHub-Event` header and injected into the payload as `eventType` for
+downstream processing.
+:::
+
+The operation is used by the sink to determine if the event should be inserted/updated or deleted.
+
+## Service Configuration
 
 The following configuration options are supported by the GitHub source:
 
@@ -35,14 +70,25 @@ The following configuration options are supported by the GitHub source:
 - **webhookPath** (*string*) *optional*: The path where to receive the webhook events. Defaults to `/github/webhook`.
 - **clientId** ([*SecretSource*](../20_install.md#secretsource)) *optional*: GitHub App Client ID for API access (recommended for import functionality)
 - **clientSecret** ([*SecretSource*](../20_install.md#secretsource)) *optional*: GitHub App Client Secret for API access (recommended for import functionality)
-- **token** ([*SecretSource*](../20_install.md#secretsource)) *optional*: GitHub personal access token for API access (legacy, use clientId/clientSecret instead)
+- **token** ([*SecretSource*](../20_install.md#secretsource)) *optional*: GitHub fine-grained access token for API access (better use clientId/clientSecret instead)
 - **organization** (*string*) *optional*: GitHub organization name (required for import functionality)
 - **importWebhookPath** (*string*) *optional*: The path for the webhook exposed to trigger a full import
 - **importAuthentication** (*object*) *optional*: The authentication configuration for import webhook
   - **secret** ([*SecretSource*](../20_install.md#secretsource)): The secret used to validate incoming import webhook requests
   - **headerName** (*string*) *optional*: The name of the header used to validate incoming import webhook requests
 
-#### Example - Basic Webhook Only
+## Webhook Integration
+
+The GitHub source integrates with webhooks by exposing an endpoint at `/github/webhook` (configurable).
+When a webhook event is received, the following steps are performed:
+
+- **Validation**: The request is validated using the secret passed by the Webhook (HMAC SHA256 signature, as per
+  GitHub's requirements).
+- **Event Handling**: The event type is extracted from the `X-GitHub-Event` header and injected into the event payload
+  for routing. The event is then sent to the pipeline. The operation (e.g., `Write`) is determined based on the event
+  type and action.
+
+### Source Example - Basic Webhook Only
 
 ```json
 {
@@ -56,7 +102,19 @@ The following configuration options are supported by the GitHub source:
 }
 ```
 
-#### Example - With Full Import Support (GitHub App)
+## Full Import
+
+This source supports a full import of all GitHub resources in the configured organization.
+To trigger a full import, you can send a `POST` request to the import webhook path configured in the service configuration.
+
+The full import includes:
+
+- **Repositories**: All repositories in the organization
+- **Pull Requests**: All pull requests across all repositories  
+- **GitHub Actions**: All workflow runs across all repositories
+- **Issues**: All issues across all repositories
+
+### Source Example - With Full Import Support (GitHub App)
 
 ```json
 {
@@ -83,7 +141,7 @@ The following configuration options are supported by the GitHub source:
 }
 ```
 
-#### Example - With Full Import Support (Legacy Token)
+### Source Example - With Full Import Support (Fine-Grained Token)
 
 ```json
 {
@@ -107,74 +165,13 @@ The following configuration options are supported by the GitHub source:
 }
 ```
 
-### How to Configure GitHub
-
-To configure a webhook in GitHub, follow the steps described in [GitHub's webhook documentation](https://docs.github.com/en/developers/webhooks-and-events/webhooks/creating-webhooks).
-
-Set the following fields:
-
-- **Payload URL**: The URL where the webhook will send events. For the GitHub integration, use `http://<your-agent-host>[/optional-base-path]/github/webhook`.
-- **Content type**: `application/json` (recommended) or `application/x-www-form-urlencoded` (both are supported).
-- **Secret**: The secret used to validate incoming webhook requests. This must match the one set in the authentication configuration.
-- **Events**: Select the events you want to subscribe to (currently, only `pull_request` is supported).
-
-For full import functionality, you can use either:
-
-#### Option 1: GitHub App Authentication (Recommended)
-
-1. Create a GitHub App in your organization:
-   - Go to GitHub Settings > Developer settings > GitHub Apps
-   - Click "New GitHub App"
-   - Set the required permissions:
-     - Repository permissions: Contents (Read), Metadata (Read), Pull requests (Read), Issues (Read), Actions (Read)
-     - Organization permissions: Members (Read)
-2. Get the Client ID and Client Secret from your GitHub App
-3. Set the `clientId` and `clientSecret` in your configuration
-4. Configure the organization name in your configuration
-
-#### Option 2: Personal Access Token (Legacy)
-
-1. Create a GitHub Personal Access Token with appropriate permissions:
-   - `repo` scope for private repositories
-   - `public_repo` scope for public repositories
-   - `read:org` scope for organization access
-2. Set the `token` in your configuration
-3. Configure the organization name in your configuration
-
-## Supported Events
-
-The GitHub source currently supports the following webhook event:
-
-| Event         | Event Type         | Example Payload                     | Operation |
-|---------------|--------------------|-------------------------------------|-----------|
-| pull request  | `pull_request`     | [link](#pull-request-event-payload) | Write     |
-
-The GitHub source supports the following resources for full import:
-
-| Resource Type    | Import Type        | Description                          |
-|------------------|--------------------|--------------------------------------|
-| Repository       | `repository`       | All repositories in the organization |
-| Pull Request     | `pull_request`     | All pull requests across repositories|
-| Workflow Run     | `workflow_run`     | All GitHub Actions workflow runs     |
-| Issue            | `issue`            | All issues across repositories       |
-
-:::info
-The **event type** is extracted from the `X-GitHub-Event` header and injected into the payload as `eventType` for
-downstream processing.
-:::
-
-The operation is used by the sink to determine if the event should be inserted/updated or deleted.
-
 ### Example Payloads
 
-#### Pull Request Event Payload
+#### Webhook Event Payload
 
 The **event ID** used in the webhook payload is extracted from the `pull_request.id` field.
 
 The following is an example of a `pull_request` event payload:
-
-<details>
-<summary>Pull Request Event Payload</summary>
 
 ```json
 {
@@ -201,14 +198,9 @@ The following is an example of a `pull_request` event payload:
 }
 ```
 
-</details>
-
 #### Import Event Payload
 
 Import events have a standardized structure for all resource types:
-
-<details>
-<summary>Import Event Payload</summary>
 
 ```json
 {
@@ -234,7 +226,27 @@ Import events have a standardized structure for all resource types:
 }
 ```
 
-</details>
+### Example mappings
+
+#### Webhook Events
+
+There are some already prepared mappings for resources that can be used to import resources:
+
+- [repository](../processors/mappings/github/webhoook-event/10_repository.md)
+- [issue](../processors/mappings/github/webhoook-event/20_issue.md)
+- [pull_request](../processors/mappings/github/webhoook-event/30_pull_request.md)
+- [workflow_run](../processors/mappings/github/webhoook-event/40_workflow_run.md)
+- [push](../processors/mappings/github/webhoook-event/50_push.md)
+- [release](../processors/mappings/github/webhoook-event/60_release.md)
+
+#### Full Import
+
+There are some already prepared mappings for resources that can be used to import resources:
+
+- [repository](../processors/mappings/github/rest-api/10_repository.md)
+- [issue](../processors/mappings/github/rest-api/20_issue.md)
+- [pull_request](../processors/mappings/github/rest-api/30_pull_request.md)
+- [workflow_run](../processors/mappings/github/rest-api/40_workflow_run.md)
 
 ### Extending Event Support
 
