@@ -27,7 +27,8 @@ The possible values an issue can have are:
   "integrations": [
     {
       "source": {
-        "type": "github"
+        "type": "github",
+        "importWebhookPath": "/github/import"
       },
       "pipelines": [
         {

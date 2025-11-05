@@ -31,7 +31,8 @@ The possible values a repository can have are:
   "integrations": [
     {
       "source": {
-        "type": "github"
+        "type": "github",
+        "importWebhookPath": "/github/import"
       },
       "pipelines": [
         {

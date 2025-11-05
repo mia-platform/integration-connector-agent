@@ -26,7 +26,8 @@ The possible values a pull request can have are:
   "integrations": [
     {
       "source": {
-        "type": "github"
+        "type": "github",
+        "importWebhookPath": "/github/import"
       },
       "pipelines": [
         {

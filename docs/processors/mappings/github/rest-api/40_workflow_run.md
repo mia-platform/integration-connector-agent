@@ -25,7 +25,8 @@ The possible values a workflow run can have are:
   "integrations": [
     {
       "source": {
-        "type": "github"
+        "type": "github",
+        "importWebhookPath": "/github/import"
       },
       "pipelines": [
         {
