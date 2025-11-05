@@ -59,6 +59,6 @@ func TestConfigWithDefault(t *testing.T) {
 
 	assert.Equal(t, defaultWebhookPath, cfg.WebhookPath)
 	assert.Equal(t, authHeaderName, cfg.Authentication.HeaderName)
-	assert.Equal(t, SupportedEvents, cfg.Events)
+	assert.Equal(t, supportedEvents("https://gitlab.com"), cfg.Events)
 	assert.Equal(t, "https://gitlab.com", cfg.BaseURL)
 }

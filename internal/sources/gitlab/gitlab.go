@@ -72,8 +72,8 @@ func (c *Config) Validate() error {
 func (c *Config) withDefault() *Config {
 	c.WebhookPath = cmp.Or(c.WebhookPath, defaultWebhookPath)
 	c.Authentication.HeaderName = cmp.Or(c.Authentication.HeaderName, authHeaderName)
-	c.Events = cmp.Or(c.Events, SupportedEvents)
 	c.BaseURL = cmp.Or(c.BaseURL, "https://gitlab.com")
+	c.Events = cmp.Or(c.Events, supportedEvents(c.BaseURL))
 	return c
 }
 
@@ -173,7 +173,7 @@ func importProjects(ctx context.Context, client *GitLabClient, pg pipeline.IPipe
 				{Key: "id", Value: projectID},
 				{Key: "url", Value: client.baseURL.String()},
 			},
-			Type:          "project",
+			Type:          "gitlab:project:import",
 			OperationType: entities.Write,
 			OriginalRaw:   data,
 		}
@@ -209,11 +209,11 @@ func importMergeRequests(ctx context.Context, client *GitLabClient, projectIDs [
 			data, _ := json.Marshal(mr)
 			event := &entities.Event{
 				PrimaryKeys: entities.PkFields{
-					{Key: "id", Value: mrID},
 					{Key: "projectId", Value: projectID},
+					{Key: "id", Value: mrID},
 					{Key: "url", Value: client.baseURL.String()},
 				},
-				Type:          "merge_request",
+				Type:          "gitlab:merge_request:import",
 				OperationType: entities.Write,
 				OriginalRaw:   data,
 			}
@@ -248,11 +248,11 @@ func importPipelines(ctx context.Context, client *GitLabClient, projectIDs []str
 			data, _ := json.Marshal(pipeline)
 			event := &entities.Event{
 				PrimaryKeys: entities.PkFields{
-					{Key: "id", Value: pipelineID},
 					{Key: "projectId", Value: projectID},
+					{Key: "id", Value: pipelineID},
 					{Key: "url", Value: client.baseURL.String()},
 				},
-				Type:          "merge_request",
+				Type:          "gitlab:pipeline:import",
 				OperationType: entities.Write,
 				OriginalRaw:   data,
 			}
@@ -287,10 +287,10 @@ func importReleases(ctx context.Context, client *GitLabClient, projectIDs []stri
 			event := &entities.Event{
 				PrimaryKeys: entities.PkFields{
 					{Key: "projectId", Value: projectID},
-					{Key: "url", Value: client.baseURL.String()},
 					{Key: "tagName", Value: release["tag_name"].(string)},
+					{Key: "url", Value: client.baseURL.String()},
 				},
-				Type:          "merge_request",
+				Type:          "gitlab:relase:import",
 				OperationType: entities.Write,
 				OriginalRaw:   data,
 			}
