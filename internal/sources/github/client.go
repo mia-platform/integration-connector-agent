@@ -316,7 +316,7 @@ func (c *GitHubClient) ListRepositories(ctx context.Context) ([]Repository, erro
 
 func (c *GitHubClient) ListPullRequests(ctx context.Context, repoName string) ([]PullRequest, error) {
 	var pullRequests []PullRequest
-	endpoint := fmt.Sprintf("/repos/%s/%s/pulls?state=all&per_page=100", c.organization, repoName)
+	endpoint := fmt.Sprintf("/repos/%s/%s/pulls?state=open&per_page=100", c.organization, repoName)
 
 	if err := c.makeRequest(ctx, endpoint, &pullRequests); err != nil {
 		return nil, fmt.Errorf("failed to list pull requests for %s: %w", repoName, err)
@@ -341,7 +341,7 @@ func (c *GitHubClient) ListWorkflowRuns(ctx context.Context, repoName string) ([
 
 func (c *GitHubClient) ListIssues(ctx context.Context, repoName string) ([]Issue, error) {
 	var issues []Issue
-	endpoint := fmt.Sprintf("/repos/%s/%s/issues?state=all&per_page=100", c.organization, repoName)
+	endpoint := fmt.Sprintf("/repos/%s/%s/issues?state=open&per_page=100", c.organization, repoName)
 
 	if err := c.makeRequest(ctx, endpoint, &issues); err != nil {
 		return nil, fmt.Errorf("failed to list issues for %s: %w", repoName, err)

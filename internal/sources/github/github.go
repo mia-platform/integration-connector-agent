@@ -136,6 +136,7 @@ func (s *GitHubSource) init() error {
 	s.pipeline.Start(s.ctx)
 
 	// Setup webhook endpoint
+	s.log.WithField("webhookPath", s.config.WebhookPath).Info("Registering GitHub webhook")
 	if err := webhook.SetupService(s.ctx, s.router, s.config.Configuration, s.pipeline); err != nil {
 		return fmt.Errorf("failed to setup webhook service: %w", err)
 	}
@@ -175,7 +176,8 @@ func (s *GitHubSource) importWebhookHandler(c *fiber.Ctx) error {
 	}).Info("starting GitHub full import via webhook")
 
 	// Import repositories
-	if err := s.importRepositories(c.UserContext()); err != nil {
+	repositories, err := s.importRepositories(c.UserContext())
+	if err != nil {
 		s.log.WithError(err).WithFields(logrus.Fields{
 			"sourceType":  "github",
 			"eventSource": "import-webhook",
@@ -185,7 +187,7 @@ func (s *GitHubSource) importWebhookHandler(c *fiber.Ctx) error {
 	}
 
 	// Import pull requests
-	if err := s.importPullRequests(c.UserContext()); err != nil {
+	if err := s.importPullRequests(c.UserContext(), repositories); err != nil {
 		s.log.WithError(err).WithFields(logrus.Fields{
 			"sourceType":  "github",
 			"eventSource": "import-webhook",
@@ -195,7 +197,7 @@ func (s *GitHubSource) importWebhookHandler(c *fiber.Ctx) error {
 	}
 
 	// Import workflow runs
-	if err := s.importWorkflowRuns(c.UserContext()); err != nil {
+	if err := s.importWorkflowRuns(c.UserContext(), repositories); err != nil {
 		s.log.WithError(err).WithFields(logrus.Fields{
 			"sourceType":  "github",
 			"eventSource": "import-webhook",
@@ -205,7 +207,7 @@ func (s *GitHubSource) importWebhookHandler(c *fiber.Ctx) error {
 	}
 
 	// Import issues
-	if err := s.importIssues(c.UserContext()); err != nil {
+	if err := s.importIssues(c.UserContext(), repositories); err != nil {
 		s.log.WithError(err).WithFields(logrus.Fields{
 			"sourceType":  "github",
 			"eventSource": "import-webhook",
@@ -222,7 +224,7 @@ func (s *GitHubSource) importWebhookHandler(c *fiber.Ctx) error {
 	return c.Status(http.StatusNoContent).SendString("")
 }
 
-func (s *GitHubSource) importRepositories(ctx context.Context) error {
+func (s *GitHubSource) importRepositories(ctx context.Context) ([]Repository, error) {
 	s.log.WithFields(logrus.Fields{
 		"sourceType":   "github",
 		"eventSource":  "import",
@@ -232,7 +234,7 @@ func (s *GitHubSource) importRepositories(ctx context.Context) error {
 
 	repositories, err := s.client.ListRepositories(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to list repositories: %w", err)
+		return nil, fmt.Errorf("failed to list repositories: %w", err)
 	}
 
 	s.log.WithFields(logrus.Fields{
@@ -253,27 +255,8 @@ func (s *GitHubSource) importRepositories(ctx context.Context) error {
 			"progress":       fmt.Sprintf("%d/%d", i+1, len(repositories)),
 		}).Debug("importing repository")
 
-		// Fetch README content for the repository
-		readmeContent, err := s.client.GetRepositoryReadme(ctx, repo.Name)
-		if err != nil {
-			s.log.WithFields(logrus.Fields{
-				"sourceType":     "github",
-				"eventSource":    "import",
-				"repositoryName": repo.Name,
-				"repositoryId":   repo.ID,
-			}).WithError(err).Warn("failed to fetch README content, using repository description as fallback")
-			// Use repository description as fallback
-			readmeContent = repo.Description
-		} else if readmeContent == "" {
-			// If README is empty, use repository description as fallback
-			readmeContent = repo.Description
-		}
-
-		// Set the README content in the repository struct
-		repo.ReadmeContent = readmeContent
-
 		importEvent := GitHubImportEvent{
-			Type:         "repository",
+			Type:         "github-import-repository",
 			ID:           repo.ID,
 			Name:         repo.Name,
 			FullName:     repo.FullName,
@@ -298,15 +281,10 @@ func (s *GitHubSource) importRepositories(ctx context.Context) error {
 		"repositoryCount": len(repositories),
 	}).Info("completed repository import")
 
-	return nil
+	return repositories, nil
 }
 
-func (s *GitHubSource) importPullRequests(ctx context.Context) error {
-	repositories, err := s.client.ListRepositories(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to list repositories for PR import: %w", err)
-	}
-
+func (s *GitHubSource) importPullRequests(ctx context.Context, repositories []Repository) error {
 	for _, repo := range repositories {
 		pullRequests, err := s.client.ListPullRequests(ctx, repo.Name)
 		if err != nil {
@@ -316,7 +294,7 @@ func (s *GitHubSource) importPullRequests(ctx context.Context) error {
 
 		for _, pr := range pullRequests {
 			importEvent := GitHubImportEvent{
-				Type:         "pull_request",
+				Type:         "github-import-pull_request",
 				ID:           pr.ID,
 				Name:         fmt.Sprintf("PR #%d", pr.Number),
 				FullName:     fmt.Sprintf("%s#%d", repo.FullName, pr.Number),
@@ -327,6 +305,7 @@ func (s *GitHubSource) importPullRequests(ctx context.Context) error {
 
 			if err := s.sendImportEvent(importEvent); err != nil {
 				s.log.WithField("pullRequest", pr.Number).WithError(err).Warn("failed to send pull request import event")
+				return err
 			}
 		}
 	}
@@ -334,12 +313,7 @@ func (s *GitHubSource) importPullRequests(ctx context.Context) error {
 	return nil
 }
 
-func (s *GitHubSource) importWorkflowRuns(ctx context.Context) error {
-	repositories, err := s.client.ListRepositories(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to list repositories for workflow runs import: %w", err)
-	}
-
+func (s *GitHubSource) importWorkflowRuns(ctx context.Context, repositories []Repository) error {
 	for _, repo := range repositories {
 		workflowRuns, err := s.client.ListWorkflowRuns(ctx, repo.Name)
 		if err != nil {
@@ -349,7 +323,7 @@ func (s *GitHubSource) importWorkflowRuns(ctx context.Context) error {
 
 		for _, run := range workflowRuns {
 			importEvent := GitHubImportEvent{
-				Type:         "workflow_run",
+				Type:         "github-import-workflow_run",
 				ID:           run.ID,
 				Name:         run.Name,
 				FullName:     fmt.Sprintf("%s/%s", repo.FullName, run.Name),
@@ -360,6 +334,7 @@ func (s *GitHubSource) importWorkflowRuns(ctx context.Context) error {
 
 			if err := s.sendImportEvent(importEvent); err != nil {
 				s.log.WithField("workflowRun", run.ID).WithError(err).Warn("failed to send workflow run import event")
+				return err
 			}
 		}
 	}
@@ -367,12 +342,7 @@ func (s *GitHubSource) importWorkflowRuns(ctx context.Context) error {
 	return nil
 }
 
-func (s *GitHubSource) importIssues(ctx context.Context) error {
-	repositories, err := s.client.ListRepositories(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to list repositories for issues import: %w", err)
-	}
-
+func (s *GitHubSource) importIssues(ctx context.Context, repositories []Repository) error {
 	for _, repo := range repositories {
 		issues, err := s.client.ListIssues(ctx, repo.Name)
 		if err != nil {
@@ -382,7 +352,7 @@ func (s *GitHubSource) importIssues(ctx context.Context) error {
 
 		for _, issue := range issues {
 			importEvent := GitHubImportEvent{
-				Type:         "issue",
+				Type:         "github-import-issue",
 				ID:           issue.ID,
 				Name:         fmt.Sprintf("Issue #%d", issue.Number),
 				FullName:     fmt.Sprintf("%s#%d", repo.FullName, issue.Number),
@@ -393,6 +363,7 @@ func (s *GitHubSource) importIssues(ctx context.Context) error {
 
 			if err := s.sendImportEvent(importEvent); err != nil {
 				s.log.WithField("issue", issue.Number).WithError(err).Warn("failed to send issue import event")
+				return err
 			}
 		}
 	}
