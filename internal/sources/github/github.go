@@ -305,6 +305,7 @@ func (s *GitHubSource) importPullRequests(ctx context.Context, repositories []Re
 
 			if err := s.sendImportEvent(importEvent); err != nil {
 				s.log.WithField("pullRequest", pr.Number).WithError(err).Warn("failed to send pull request import event")
+				return err
 			}
 		}
 	}
@@ -333,6 +334,7 @@ func (s *GitHubSource) importWorkflowRuns(ctx context.Context, repositories []Re
 
 			if err := s.sendImportEvent(importEvent); err != nil {
 				s.log.WithField("workflowRun", run.ID).WithError(err).Warn("failed to send workflow run import event")
+				return err
 			}
 		}
 	}
@@ -361,6 +363,7 @@ func (s *GitHubSource) importIssues(ctx context.Context, repositories []Reposito
 
 			if err := s.sendImportEvent(importEvent); err != nil {
 				s.log.WithField("issue", issue.Number).WithError(err).Warn("failed to send issue import event")
+				return err
 			}
 		}
 	}
