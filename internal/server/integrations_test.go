@@ -3,7 +3,6 @@
 // See LICENSE.md for more details
 
 //go:build integration
-// +build integration
 
 package server
 

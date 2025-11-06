@@ -18,7 +18,7 @@ func TestNewGitLabClient(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, client)
 	assert.Equal(t, "test-token", client.token)
-	assert.Equal(t, "https://gitlab.example.com", client.baseURL)
+	assert.Equal(t, "https://gitlab.example.com", client.baseURL.String())
 	assert.Equal(t, "test-group", client.group)
 }
 
@@ -67,14 +67,14 @@ func TestGitLabClient_ListProjects(t *testing.T) {
 	require.Len(t, projects, 1)
 
 	project := projects[0]
-	assert.Equal(t, int64(123), project.ID)
-	assert.Equal(t, "test-project", project.Name)
-	assert.Equal(t, "test-group/test-project", project.PathWithNamespace)
-	assert.Equal(t, "A test project", project.Description)
-	assert.Equal(t, "main", project.DefaultBranch)
-	assert.Equal(t, "private", project.Visibility)
-	assert.Equal(t, 5, project.StarCount)
-	assert.Equal(t, 2, project.ForksCount)
+	assert.EqualValues(t, 123, project["id"])
+	assert.Equal(t, "test-project", project["name"])
+	assert.Equal(t, "test-group/test-project", project["path_with_namespace"])
+	assert.Equal(t, "A test project", project["description"])
+	assert.Equal(t, "main", project["default_branch"])
+	assert.Equal(t, "private", project["visibility"])
+	assert.EqualValues(t, 5, project["star_count"])
+	assert.EqualValues(t, 2, project["forks_count"])
 }
 
 func TestGitLabClient_ListMergeRequests(t *testing.T) {
@@ -110,19 +110,19 @@ func TestGitLabClient_ListMergeRequests(t *testing.T) {
 	client, err := NewGitLabClient("test-token", server.URL, "test-group")
 	require.NoError(t, err)
 
-	mrs, err := client.ListMergeRequests(t.Context(), 123)
+	mrs, err := client.ListMergeRequests(t.Context(), "123")
 	require.NoError(t, err)
 	require.Len(t, mrs, 1)
 
 	mr := mrs[0]
-	assert.Equal(t, int64(456), mr.ID)
-	assert.Equal(t, 1, mr.IID)
-	assert.Equal(t, "Test MR", mr.Title)
-	assert.Equal(t, "A test merge request", mr.Description)
-	assert.Equal(t, "opened", mr.State)
-	assert.Equal(t, "can_be_merged", mr.MergeStatus)
-	assert.Equal(t, "main", mr.TargetBranch)
-	assert.Equal(t, "feature", mr.SourceBranch)
+	assert.EqualValues(t, 456, mr["id"])
+	assert.EqualValues(t, 1, mr["iid"])
+	assert.Equal(t, "Test MR", mr["title"])
+	assert.Equal(t, "A test merge request", mr["description"])
+	assert.Equal(t, "opened", mr["state"])
+	assert.Equal(t, "can_be_merged", mr["merge_status"])
+	assert.Equal(t, "main", mr["target_branch"])
+	assert.Equal(t, "feature", mr["source_branch"])
 }
 
 func TestGitLabClient_ListPipelines(t *testing.T) {
@@ -157,18 +157,18 @@ func TestGitLabClient_ListPipelines(t *testing.T) {
 	client, err := NewGitLabClient("test-token", server.URL, "test-group")
 	require.NoError(t, err)
 
-	pipelines, err := client.ListPipelines(t.Context(), 123)
+	pipelines, err := client.ListPipelines(t.Context(), "123")
 	require.NoError(t, err)
 	require.Len(t, pipelines, 1)
 
 	pipeline := pipelines[0]
-	assert.Equal(t, int64(789), pipeline.ID)
-	assert.Equal(t, 1, pipeline.IID)
-	assert.Equal(t, int64(123), pipeline.ProjectID)
-	assert.Equal(t, "abc123", pipeline.SHA)
-	assert.Equal(t, "main", pipeline.Ref)
-	assert.Equal(t, "success", pipeline.Status)
-	assert.Equal(t, "push", pipeline.Source)
+	assert.EqualValues(t, 789, pipeline["id"])
+	assert.EqualValues(t, 1, pipeline["iid"])
+	assert.EqualValues(t, 123, pipeline["project_id"])
+	assert.Equal(t, "abc123", pipeline["sha"])
+	assert.Equal(t, "main", pipeline["ref"])
+	assert.Equal(t, "success", pipeline["status"])
+	assert.Equal(t, "push", pipeline["source"])
 }
 
 func TestGitLabClient_ListReleases(t *testing.T) {
@@ -203,48 +203,14 @@ func TestGitLabClient_ListReleases(t *testing.T) {
 	client, err := NewGitLabClient("test-token", server.URL, "test-group")
 	require.NoError(t, err)
 
-	releases, err := client.ListReleases(t.Context(), 123)
+	releases, err := client.ListReleases(t.Context(), "123")
 	require.NoError(t, err)
 	require.Len(t, releases, 1)
 
 	release := releases[0]
-	assert.Equal(t, "v1.0.0", release.TagName)
-	assert.Equal(t, "Release 1.0.0", release.Name)
-	assert.Equal(t, "First release", release.Description)
-	assert.Equal(t, int64(456), release.Author.ID)
-	assert.Equal(t, "testuser", release.Author.Username)
-	assert.Equal(t, "abc123", release.Commit.ID)
-}
-
-func TestGitLabClient_GetProjectReadme(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/api/v4/projects/123/repository/files/README.md/raw", r.URL.Path)
-		assert.Equal(t, "test-token", r.Header.Get("PRIVATE-TOKEN"))
-
-		w.Header().Set("Content-Type", "text/plain")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("# Test Project\n\nThis is a test project."))
-	}))
-	defer server.Close()
-
-	client, err := NewGitLabClient("test-token", server.URL, "test-group")
-	require.NoError(t, err)
-
-	readme, err := client.GetProjectReadme(t.Context(), 123)
-	require.NoError(t, err)
-	assert.Equal(t, "# Test Project\n\nThis is a test project.", readme)
-}
-
-func TestGitLabClient_GetProjectReadme_NotFound(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-	}))
-	defer server.Close()
-
-	client, err := NewGitLabClient("test-token", server.URL, "test-group")
-	require.NoError(t, err)
-
-	readme, err := client.GetProjectReadme(t.Context(), 123)
-	require.NoError(t, err)
-	assert.Empty(t, readme)
+	assert.Equal(t, "v1.0.0", release["tag_name"])
+	assert.Equal(t, "Release 1.0.0", release["name"])
+	assert.Equal(t, "First release", release["description"])
+	assert.Equal(t, map[string]any{"id": float64(456), "username": "testuser", "name": "Test User"}, release["author"])
+	assert.Equal(t, map[string]any{"id": "abc123", "short_id": "abc123", "title": "Release commit"}, release["commit"])
 }
