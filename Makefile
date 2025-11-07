@@ -1,35 +1,6 @@
 # Copyright Mia srl
-# SPDX-License-Identifier: Ap# Set here the name of the package you want to build
-CMDNAME:= integration-connector-agent
-BUILD_PATH:= .
-
-# Version for pipeline builds
-VERSION ?= latest
-
-# Create a variable that contains the current date in UTC
-# Different flow if this script is running on Darwin or Linux machines.
-ifeq (Darwin,$(shell uname))
-	NOW_DATE = $(shell date -u +%d-%m-%Y)
-else
-	NOW_DATE = $(shell date -u -I)
-endif
-
-# enable modules
-GO111MODULE:= on
-GOOS:= $(shell go env GOOS)
-GOARCH:= $(shell go env GOARCH)
-GOARM:= $(shell go env GOARM)
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
+# See LICENSE.md for more details
 
 DEBUG_MAKEFILE?=
 ifeq ($(DEBUG_MAKEFILE),1)
@@ -65,9 +36,14 @@ ifeq ($(origin TOOLS_BIN),undefined)
 TOOLS_BIN:= $(TOOLS_DIR)/bin
 endif
 
+ifeq ($(origin BUILD_OUTPUT),undefined)
+BUILD_OUTPUT:= $(PROJECT_DIR)/bin
+endif
+
 # Set here the name of the package you want to build
 CMDNAME:= integration-connector-agent
 BUILD_PATH:= .
+CONFORMANCE_TEST_PATH:= $(PROJECT_DIR)/tests/e2e
 
 # enable modules
 GO111MODULE:= on
@@ -75,40 +51,22 @@ GOOS:= $(shell go env GOOS)
 GOARCH:= $(shell go env GOARCH)
 GOARM:= $(shell go env GOARM)
 
-# supported platforms for container creation, these are a subset of the supported
-# platforms of the base image.
-# Or if you start from scratch the platforms you want to support in your image
-# This link contains the rules on how the strings must be formed https://github.com/containerd/containerd/blob/v1.4.3/platforms/platforms.go#L63
-SUPPORTED_PLATFORMS:= linux/amd64 linux/arm64
-# Default platform for which building the docker image (darwin can run linux images for the same arch)
-# as SUPPORTED_PLATFORMS it highly depends on which platform are supported by the base image
-DEFAULT_DOCKER_PLATFORM:= linux/$(GOARCH)/$(GOARM)
-# List of one or more container registries for tagging the resulting docker images
-CONTAINER_REGISTRIES:= docker.io/miaplatform ghcr.io/mia-platform nexus.mia-platform.eu/plugins
-# The description used on the org.opencontainers.description label of the container
-DESCRIPTION:=
-# The vendor name used on the org.opencontainers.image.vendor label of the container
-VENDOR_NAME:= Mia s.r.l.
-# The license used on the org.opencontainers.image.license label of the container
-LICENSE:= Apache-2.0
-# The documentation url used on the org.opencontainers.image.documentation label of the container
-DOCUMENTATION_URL:= https://docs.mia-platform.eu
-# The source url used on the org.opencontainers.image.source label of the container
-SOURCE_URL:= https://github.com/mia-platform/integration-connector-agent
-BUILDX_CONTEXT?= integration-connector-agent-build-context
+## Build Variables
+GIT_REV:= $(shell git rev-parse --short HEAD 2>/dev/null)
+VERSION:= $(shell git describe --tags --exact-match 2>/dev/null || (echo $(GIT_REV) | cut -c1-12))
+# insert here the go module where to add the version metadata
+VERSION_MODULE_NAME:= main
 
 # Add additional targets that you want to run when calling make without arguments
 .PHONY: all
 all: lint test
 
 ## Includes
+include tools/make/build.mk
 include tools/make/clean.mk
+include tools/make/generate.mk
 include tools/make/lint.mk
 include tools/make/test.mk
-include tools/make/generate.mk
-include tools/make/build.mk
-include tools/make/container.mk
-include tools/make/release.mk
 
 # Uncomment the correct test suite to run during CI
 .PHONY: ci
@@ -124,17 +82,28 @@ $(TOOLS_BIN)/stringer: $(TOOLS_DIR)/STRINGER_VERSION
 	$(info Installing stringer $(STRINGER_VERSION) bin in $(TOOLS_BIN))
 	GOBIN=$(TOOLS_BIN) go install golang.org/x/tools/cmd/stringer@$(STRINGER_VERSION)
 
-##@ Pipeline Targets
+test/build-plugin:
+	$(info Building RPC mock plugin for tests...)
+	go build -o ./internal/processors/hcgp/testdata/mockplugin/mockplugin ./internal/processors/hcgp/testdata/mockplugin/*.go
 
-.PHONY: test-pipeline
-test-pipeline: test/build-plugin
-	$(info Running tests for pipeline with coverage...)
-	go test ./... -coverprofile coverage.out
+test/unit: test/build-plugin
+test/coverage: test/build-plugin
+test/integration: test/build-plugin
 
-.PHONY: version
-version:
-	sed -i.bck "s|SERVICE_VERSION=\"[0-9]*.[0-9]*.[0-9]*.*\"|SERVICE_VERSION=\"${VERSION}\"|" "Dockerfile"
-	rm -fr "Dockerfile.bck"
-	git add "Dockerfile"
-	git commit -m "bump v${VERSION}"
-	git tag v${VERSION}
+test/integration/setup:
+	$(info Setup mongo...)
+	docker run --rm --name mongo -p 27017:27017 -d mongo
+	$(info Setup gcloud pubsub emulator...)
+	docker run --rm --name gcloud-pubsub-emulator -p 8085:8085 -d gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators gcloud beta emulators pubsub start --project=test-project-id
+	$(eval PUBSUB_EMULATOR_HOST:= localhost:8085)
+
+test/integration/teardown:
+	$(info Teardown integration tests...)
+	docker rm mongo --force
+	docker rm gcloud-pubsub-emulator --force
+
+clean-mockplugin:
+	$(info Cleaning up mock plugin binary...)
+	rm -f ./internal/processors/hcgp/testdata/mockplugin/mockplugin
+
+clean: clean-mockplugin

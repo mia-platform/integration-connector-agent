@@ -14,7 +14,7 @@ on:
     - examples/**
 
 env:
-  GOLANGCI_LINT_VERSION: v2.5.0
+  GOLANGCI_LINT_VERSION: v2.6.1
 jobs:
   lint:
     name: Lint Code
