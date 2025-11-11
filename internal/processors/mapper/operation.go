@@ -112,8 +112,7 @@ func (o operation) setData(input, output []byte) ([]byte, error) {
 	}
 
 	valueToSet := o.getValueToSet(input)
-	
-	// Apply casting if configured
+
 	if o.castTo != castToNone {
 		castedValue, err := o.castValue(valueToSet)
 		if err != nil {
@@ -141,12 +140,10 @@ func newOperation(keyToUpdate string, template gjson.Result) (operation, error) 
 	if template.IsObject() {
 		valueField := template.Get("value")
 		castToField := template.Get("castTo")
-		
+
 		if valueField.Exists() && castToField.Exists() {
-			// Extract the castTo value
 			castToStr := castToField.String()
 			if castToStr != "" {
-				// Validate castTo value
 				if castToStr != string(castToString) && castToStr != string(castToNumber) {
 					return operation{}, fmt.Errorf("%w: invalid castTo value '%s', must be 'string' or 'number'", errOperation, castToStr)
 				}
@@ -154,7 +151,8 @@ func newOperation(keyToUpdate string, template gjson.Result) (operation, error) 
 			}
 			templateValue = valueField
 		} else {
-			// If it's an object but doesn't have the value/castTo structure, treat it as a regular template
+			// If it's an object but doesn't have the value/castTo structure,
+			// treat it as a regular template
 			templateValue = template
 		}
 	} else {
