@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### Added
+- Add string and number cast feature in the mapper
+
 ### Chaged
 
 - update go to v1.25.3
