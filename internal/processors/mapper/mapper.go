@@ -83,7 +83,10 @@ func generateOperations(jsonData gjson.Result) ([]operation, error) {
 				keyToUpdate = strings.Join([]string{keyPrefix, key.String()}, ".")
 			}
 
-			if value.IsObject() || value.IsArray() {
+			// Check if this is a casting configuration object
+			isCastConfig := value.IsObject() && value.Get("value").Exists() && value.Get("castTo").Exists()
+
+			if !isCastConfig && (value.IsObject() || value.IsArray()) {
 				walk(value, keyToUpdate)
 				return true
 			}

@@ -1,0 +1,31 @@
+{
+  "type": "mapper",
+  "outputEvent": {
+    "key": "{{ issue.key }}",
+    "issueId": {
+      "value": "{{ issue.id }}",
+      "castTo": "string"
+    },
+    "issueLinkId": {
+      "value": "{{ issueLink.id }}",
+      "castTo": "string"
+    },
+    "sourceIssueId": {
+      "value": "{{ issueLink.sourceIssueId }}",
+      "castTo": "string"
+    },
+    "destinationIssueId": {
+      "value": "{{ issueLink.destinationIssueId }}",
+      "castTo": "string"
+    },
+    "linkTypeId": {
+      "value": "{{ issueLink.issueLinkType.id }}",
+      "castTo": "number"
+    },
+    "linkTypeName": "{{ issueLink.issueLinkType.name }}",
+    "createdAt": {
+      "value": "{{ issue.fields.created }}",
+      "castTo": "string"
+    }
+  }
+}

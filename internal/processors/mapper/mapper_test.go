@@ -119,6 +119,101 @@ func TestMapper(t *testing.T) {
 				},
 			},
 		},
+		"with castTo string": {
+			model: `{
+	"key":"{{ key }}",
+	"id": {
+		"value": "{{ fields.id }}",
+		"castTo": "string"
+	},
+	"numericField": {
+		"value": "{{ fields.numericField }}",
+		"castTo": "string"
+	}
+}`,
+			dataToTransform: `{
+	"key":"123",
+	"fields": {
+		"id": 456,
+		"numericField": 789.5
+	}
+}`,
+			expectedTransformedData: map[string]any{
+				"key":          "123",
+				"id":           "456",
+				"numericField": "789.5",
+			},
+		},
+		"with castTo number": {
+			model: `{
+	"key":"{{ key }}",
+	"id": {
+		"value": "{{ fields.id }}",
+		"castTo": "number"
+	},
+	"numericField": {
+		"value": "{{ fields.numericField }}",
+		"castTo": "number"
+	}
+}`,
+			dataToTransform: `{
+	"key":"123",
+	"fields": {
+		"id": "456",
+		"numericField": "789.5"
+	}
+}`,
+			expectedTransformedData: map[string]any{
+				"key":          "123",
+				"id":           float64(456),
+				"numericField": float64(789.5),
+			},
+		},
+		"castTo number with boolean": {
+			model: `{
+	"trueValue": {
+		"value": "{{ fields.trueFlag }}",
+		"castTo": "number"
+	},
+	"falseValue": {
+		"value": "{{ fields.falseFlag }}",
+		"castTo": "number"
+	}
+}`,
+			dataToTransform: `{
+	"fields": {
+		"trueFlag": true,
+		"falseFlag": false
+	}
+}`,
+			expectedTransformedData: map[string]any{
+				"trueValue":  float64(1),
+				"falseValue": float64(0),
+			},
+		},
+		"invalid castTo value": {
+			model: `{
+	"key": {
+		"value": "{{ key }}",
+		"castTo": "invalid"
+	}
+}`,
+			expectNewError: "error creating operation: invalid castTo value 'invalid', must be 'string' or 'number'",
+		},
+		"castTo number fails with invalid string": {
+			model: `{
+	"key": {
+		"value": "{{ fields.invalidNumber }}",
+		"castTo": "number"
+	}
+}`,
+			dataToTransform: `{
+	"fields": {
+		"invalidNumber": "not-a-number"
+	}
+}`,
+			expectTransformError: "error transforming data: failed to cast value for key 'key': error casting value: cannot cast string 'not-a-number' to number: strconv.ParseFloat: parsing \"not-a-number\": invalid syntax",
+		},
 	}
 
 	for name, tc := range testCases {
