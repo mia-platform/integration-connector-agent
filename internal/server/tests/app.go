@@ -1,5 +1,4 @@
 // Copyright Mia srl
-// SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
-// See LICENSE.md for more details
+// SPDX-License-Identifier: AGPL-3.0-only or Commercial
 
 package tests

@@ -224,3 +224,8 @@ To test the application use:
 ```go
 make test
 ```
+
+## License
+
+`integration-connector-agent` is licensed under [AGPL-3.0-only](./LICENSE). For Commercial and other
+exceptions please read [LICENSING.md](./LICENSING.md)

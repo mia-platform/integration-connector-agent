@@ -62,8 +62,7 @@ linters:
           MY COMPANY: Mia srl
       template: |-
         Copyright {{ MY COMPANY }}
-        SPDX-License-Identifier: AGPL-3.0-or-later OR Commercial
-        See LICENSE.md for more details
+        SPDX-License-Identifier: AGPL-3.0-only or Commercial
     mnd:
       checks:
       - case
@@ -106,15 +105,13 @@ linters:
     rules:
     - linters:
       - errcheck
+      - goconst
       - gocyclo
       - gosec
       - unparam
       - contextcheck
       - tagliatelle
       path: _test\.go
-    - linters:
-      - goconst
-      path: (.+)_test\.go
     paths:
     - third_party$
     - builtin$
