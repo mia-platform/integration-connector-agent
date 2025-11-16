@@ -54,6 +54,87 @@ It is also possible to set static data, for example:
 
 In this case, the `key` field will always have the value `static-value`.
 
+### Type Casting
+
+The Mapper processor supports type casting to ensure that field values are stored in the correct data type. 
+This is particularly useful when working with databases like MongoDB that don't enforce type constraints.
+
+To cast a field value, use an object with `value` and `castTo` properties instead of a simple template string:
+
+```json
+{
+  "type": "mapper",
+  "outputEvent": {
+    "key": "{{ issue.key }}",
+    "issueId": {
+      "value": "{{ issue.id }}",
+      "castTo": "string"
+    },
+    "priority": {
+      "value": "{{ issue.fields.priority }}",
+      "castTo": "number"
+    }
+  }
+}
+```
+
+#### Supported Cast Types
+
+- **`string`**: Converts any value to its string representation
+- **`number`**: Converts strings, integers, and booleans to numbers (float64)
+  - Booleans: `true` becomes `1`, `false` becomes `0`
+  - Strings: Must be valid numeric strings, otherwise an error is thrown
+
+#### Error Handling
+
+If a cast operation fails (e.g., trying to cast "not-a-number" to a number), the processor will return an error 
+and the event will not be saved to the sink. This ensures data integrity.
+
+#### Example with Casting
+
+Given an input event where numeric IDs are sent as numbers but need to be stored as strings:
+
+```json
+{
+  "issue": {
+    "id": 155331,
+    "key": "ISSUE-123",
+    "fields": {
+      "priority": "3"
+    }
+  }
+}
+```
+
+With this configuration:
+
+```json
+{
+  "type": "mapper",
+  "outputEvent": {
+    "key": "{{ issue.key }}",
+    "issueId": {
+      "value": "{{ issue.id }}",
+      "castTo": "string"
+    },
+    "priority": {
+      "value": "{{ issue.fields.priority }}",
+      "castTo": "number"
+    }
+  }
+}
+```
+
+The output will be:
+
+```json
+{
+  "key": "ISSUE-123",
+  "issueId": "155331",
+  "priority": 3
+}
+```
+
 ### Limitation
 
 It is not possible combine multiple fields in a single output field.
