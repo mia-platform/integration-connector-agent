@@ -13,7 +13,7 @@ RUN make build
 
 RUN mkdir /app && cp -r LICENSE bin/${TARGETPLATFORM}/integration-connector-agent /app
 
-FROM gcr.io/distroless/base-debian13:nonroot@sha256:4179ca36333695b889c9e6664ba26a627775a7978a8d5b6cd95d5b3b6a84b1e6
+FROM gcr.io/distroless/base-debian13:nonroot@sha256:f01077109844dbd3627d3ffbf9a16dc37c13016d96bfa1781761aa056a46f412
 
 COPY --from=builder /app /app
 
