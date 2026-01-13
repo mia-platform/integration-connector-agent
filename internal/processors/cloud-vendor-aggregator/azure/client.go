@@ -51,13 +51,19 @@ func apiVersionForSource(source string) string {
 	// how to find the API version for a given source:
 	// https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types#azure-portal
 	apiVersionsMap := map[string]string{
-		azure.WebSitesEventSource:              "2024-11-01",
-		azure.ComputeVirtualMachineEventSource: "2024-11-01",
-		azure.ComputeDiskEventSource:           "2025-01-02",
+		azure.ManagedClusterEventSource:           "2025-08-01",
+		azure.CognitiveServicesAccountEventSource: "2024-10-01",
+		azure.ContainerAppEventSource:             "2025-07-01",
+		azure.FlexibleServerEventSource:           "2025-08-01",
+		azure.StorageAccountEventSource:           "2024-01-01",
+		azure.ResourceGroupEventSource:            "2021-04-01",
+		azure.ComputeVirtualMachineEventSource:    "2025-04-01",
+		azure.VirtualNetworkEventSource:           "2024-10-01",
+		azure.WebSitesEventSource:                 "2025-03-01",
 	}
 	if version, ok := apiVersionsMap[source]; ok {
 		return version
 	}
 
-	return "2025-01-01" // Default API version if not found
+	return "2025-08-01" // Default API version if not found
 }

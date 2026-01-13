@@ -110,15 +110,26 @@ func webhookHandler(client azure.GraphClientInterface, config *Config, pg pipeli
 		}
 
 		supportedTypes := []string{
+			azure.ManagedClusterEventSource,
+			azure.CognitiveServicesAccountEventSource,
+			azure.ContainerAppEventSource,
+			azure.FlexibleServerEventSource,
 			azure.StorageAccountEventSource,
-			azure.WebSitesEventSource,
 			azure.ComputeVirtualMachineEventSource,
-			azure.ComputeDiskEventSource,
 			azure.VirtualNetworkEventSource,
-			azure.NetworkInterfaceEventSource,
-			azure.NetworkSecurityGroupEventSource,
-			azure.NetworkPublicIPAddressEventSource,
+			azure.WebSitesEventSource,
 		}
+
+		containerEntities, err := client.ResourceContainers(c.UserContext())
+		if err != nil {
+			log.WithError(err).Error("failed to fetch Azure resource containers")
+			return c.Status(http.StatusInternalServerError).JSON(utils.ValidationError(err.Error()))
+		}
+
+		for _, container := range containerEntities {
+			pg.AddMessage(container)
+		}
+
 		entities, err := client.Resources(c.UserContext(), supportedTypes)
 		if err != nil {
 			log.WithError(err).Error("failed to fetch Azure resources")
