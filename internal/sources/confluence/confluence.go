@@ -154,7 +154,7 @@ func (s *ConfluenceSource) Close() error {
 
 func (s *ConfluenceSource) registerImportWebhook() error {
 	apiPath := s.config.ImportWebhookPath
-	_, err := s.router.AddRoute(http.MethodPost, apiPath, s.importWebhookHandler, swagger.Definitions{})
+	_, err := s.router.AddRoute(http.MethodPost, apiPath, s.importWebhookHandler, swagger.Definitions{Responses: map[int]swagger.ContentValue{http.StatusNoContent: {Description: "No Content"}}})
 	return err
 }
 

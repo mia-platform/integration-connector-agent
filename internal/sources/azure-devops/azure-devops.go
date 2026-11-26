@@ -81,7 +81,7 @@ func AddSourceToRouter(ctx context.Context, cfg config.GenericConfig, pg pipelin
 	}
 
 	if devopsConfig.ImportWebhookPath != "" {
-		_, err = router.AddRoute(http.MethodPost, devopsConfig.ImportWebhookPath, importWebhookHandler(connection, pg), swagger.Definitions{}) //nolint: contextcheck
+		_, err = router.AddRoute(http.MethodPost, devopsConfig.ImportWebhookPath, importWebhookHandler(connection, pg), swagger.Definitions{Responses: map[int]swagger.ContentValue{http.StatusNoContent: {Description: "No Content"}}}) //nolint: contextcheck
 		if err != nil {
 			return fmt.Errorf("failed to add route: %w", err)
 		}
