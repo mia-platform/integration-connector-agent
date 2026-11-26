@@ -20,7 +20,7 @@ type GCPCloudVendorAggregator struct {
 }
 
 func New(logger *logrus.Logger, authOptions config.AuthOptions) (entities.Processor, error) {
-	options := gcpOptions.WithCredentialsJSON([]byte(authOptions.CredenialsJSON.String()))
+	options := gcpOptions.WithCredentialsJSON([]byte(authOptions.CredenialsJSON.String())) //nolint:staticcheck // TODO: migrate to WithAuthCredentialsJSON (needs the credential type)
 
 	return &GCPCloudVendorAggregator{
 		logger:  logger,

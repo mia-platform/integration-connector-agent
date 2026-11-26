@@ -62,7 +62,7 @@ func AddSource(ctx context.Context, cfg config.GenericConfig, pg pipeline.IPipel
 			http.MethodPost,
 			config.WebhookPath,
 			webhookHandler(client, config, pg), //nolint: contextcheck
-			swagger.Definitions{},
+			swagger.Definitions{Responses: map[int]swagger.ContentValue{http.StatusNoContent: {Description: "No Content"}}},
 		)
 		if err != nil {
 			return err

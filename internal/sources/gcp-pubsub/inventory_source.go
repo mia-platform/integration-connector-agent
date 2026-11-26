@@ -137,7 +137,7 @@ func (s *InventorySource) Close() error {
 func (s *InventorySource) registerImportWebhook() error {
 	apiPath := s.config.WebhookPath
 
-	_, err := s.router.AddRoute(http.MethodPost, apiPath, s.webhookHandler, swagger.Definitions{})
+	_, err := s.router.AddRoute(http.MethodPost, apiPath, s.webhookHandler, swagger.Definitions{Responses: map[int]swagger.ContentValue{http.StatusNoContent: {Description: "No Content"}}})
 	return err
 }
 

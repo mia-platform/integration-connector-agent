@@ -40,7 +40,7 @@ func SetupService[T Authentication](
 	p.Start(ctx)
 
 	handler := webhookHandler(config, p)
-	if _, err := router.AddRoute(http.MethodPost, config.WebhookPath, handler, swagger.Definitions{}); err != nil {
+	if _, err := router.AddRoute(http.MethodPost, config.WebhookPath, handler, swagger.Definitions{Responses: map[int]swagger.ContentValue{http.StatusOK: {Description: "OK"}}}); err != nil {
 		return err
 	}
 

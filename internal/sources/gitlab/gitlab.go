@@ -92,7 +92,7 @@ func AddSourceToRouter(ctx context.Context, cfg config.GenericConfig, pg pipelin
 			http.MethodPost,
 			gitlabConfig.ImportWebhookPath,
 			webhookHandlerImport(client, gitlabConfig, pg), //nolint: contextcheck
-			swagger.Definitions{})
+			swagger.Definitions{Responses: map[int]swagger.ContentValue{http.StatusNoContent: {Description: "No Content"}}})
 		if err != nil {
 			return err
 		}
