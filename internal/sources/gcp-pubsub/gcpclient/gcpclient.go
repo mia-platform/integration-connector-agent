@@ -60,7 +60,7 @@ func New(ctx context.Context, log *logrus.Logger, config GCPConfig) (GCP, error)
 	options := make([]option.ClientOption, 0)
 	if config.CredentialsJSON != "" {
 		log.Debug("using credentials JSON for Pub/Sub client")
-		options = append(options, option.WithCredentialsJSON([]byte(config.CredentialsJSON)))
+		options = append(options, option.WithCredentialsJSON([]byte(config.CredentialsJSON))) //nolint:staticcheck // TODO: migrate to WithAuthCredentialsJSON (needs the credential type)
 	}
 
 	pubSubClient, err := pubsub.NewClient(ctx, config.ProjectID, options...)
