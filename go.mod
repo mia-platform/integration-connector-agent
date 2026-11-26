@@ -2,7 +2,7 @@ module github.com/mia-platform/integration-connector-agent
 
 go 1.25
 
-toolchain go1.25.3
+toolchain go1.26.11
 
 require (
 	cloud.google.com/go/asset v1.22.0
