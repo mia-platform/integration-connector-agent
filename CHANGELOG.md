@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### Security
+
+- fix critical/high CVEs: update Go to v1.26.11, distroless base image to debian 13.8 and bump x/crypto, x/net, x/text, grpc, kin-openapi, fiber, go-jose, otel, klauspost/compress, jsonparser
+
 ### Chaged
 
 - update go to v1.25.3
